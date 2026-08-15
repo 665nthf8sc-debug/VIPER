@@ -3,30 +3,228 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VIPER3384 | Fortnite Sprite Trades & Collabs</title>
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <title>VIPER3384 | Fortnite Sprite Trades</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0b0618;
+      --card: #130b24;
+      --accent: #00e5ff;
+      --accent2: #c084fc;
+      --text: #e0f2fe;
+      --muted: #a5b4fc;
+      --border: #2e1065;
+    }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .navbar {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 1.5rem;
+      background: rgba(11, 6, 24, 0.95);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+    }
+    .logo {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 1.35rem;
+      background: linear-gradient(90deg, #00e5ff, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .nav-links { display: flex; gap: 1.2rem; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+    .nav-links a:hover { color: var(--accent); }
+    .hero {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      text-align: center; padding: 6rem 1.5rem 4rem;
+    }
+    .hero h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(2.5rem, 8vw, 4.5rem);
+      font-weight: 900;
+      background: linear-gradient(90deg, #00e5ff, #e879f9, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+    .tagline { color: var(--accent); font-weight: 600; margin-bottom: 0.8rem; }
+    .subtitle { color: var(--muted); max-width: 480px; margin: 0 auto 2rem; }
+    .btn {
+      display: inline-block; padding: 0.85rem 1.7rem; border-radius: 10px;
+      font-weight: 600; text-decoration: none; border: none; cursor: pointer; font-size: 1rem;
+    }
+    .btn.primary {
+      background: linear-gradient(90deg, #00e5ff, #c084fc);
+      color: #0b0618;
+    }
+    .btn.secondary {
+      background: transparent; color: var(--text); border: 1px solid var(--border);
+    }
+    .section { padding: 4.5rem 1.5rem; }
+    .section.alt { background: #0f0820; }
+    .container { max-width: 700px; margin: 0 auto; }
+    .section h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.7rem; text-align: center; color: var(--accent); margin-bottom: 0.7rem;
+    }
+    .section-desc { text-align: center; color: var(--muted); margin-bottom: 2rem; }
+    .form-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 1.75rem;
+    }
+    .form-group { margin-bottom: 1.2rem; }
+    .form-group label {
+      display: block; font-size: 0.9rem; color: var(--muted); margin-bottom: 0.4rem;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 0.75rem 1rem; background: #0b0618;
+      border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem;
+    }
+    .form-note { text-align: center; font-size: 0.85rem; color: var(--muted); margin-top: 1rem; }
+    .about-content { text-align: center; }
+    .social-btn {
+      display: inline-block; margin-top: 1.5rem; padding: 0.75rem 1.8rem;
+      background: linear-gradient(90deg, #00e5ff, #c084fc); color: #0b0618;
+      text-decoration: none; border-radius: 10px; font-weight: 700;
+    }
+    footer {
+      text-align: center; padding: 2rem; color: var(--muted);
+      border-top: 1px solid var(--border); font-size: 0.9rem;
+    }
+    @media (max-width: 600px) { .nav-links { display: none; } }
+  </style>
 </head>
 <body>
-  <div class="bg-glow"></div>
 
   <nav class="navbar">
-    <div class="logo">VIPER<span>3384</span></div>
+    <div class="logo">VIPER3384</div>
     <ul class="nav-links">
       <li><a href="#home">Home</a></li>
       <li><a href="#trades">Trade With Me</a></li>
-      <li><a href="#community">Community Trades</a></li>
-      <li><a href="#videos">Video Collabs</a></li>
+      <li><a href="#community">Community</a></li>
+      <li><a href="#videos">Video Requests</a></li>
       <li><a href="#about">About</a></li>
     </ul>
   </nav>
 
   <section id="home" class="hero">
-    <div class="hero-content">
-      <h1>VIPER<span>3384</span></h1>
-      <p class="tagline">Fortnite Sprite Trades • Video Collabs • Community</p>
-      <p class="subtitle">Trade this season’s Sprites with me or other players, or request to be in my videos.</p>
-      <div class="hero-buttons">
-        <a href="#trades" class="btn primary">Trade With Me</a>
+    <div>
+      <h1>VIPER3384</h1>
+      <p class="tagline">Fortnite Sprite Trades • Video Collabs</p>
+      <p class="subtitle">Trade this season’s Sprites or request to be in my videos.</p>
+      <a href="#trades" class="btn primary">Trade With Me</a>
+      <a href="#videos" class="btn secondary" style="margin-left:10px;">Video Request</a>
+    </div>
+  </section>
+
+  <section id="trades" class="section">
+    <div class="container">
+      <h2>Trade Sprites With Me</h2>
+      <p class="section-desc">Send a trade request for this season’s Sprites</p>
+      <form action="https://api.web3forms.com/submit" method="POST" class="form-card">
+        <input type="hidden" name="access_key" value="c8f38fc3-1336-491a-a738-054b81fc08bd">
+        <input type="hidden" name="subject" value="Sprite Trade Request - VIPER3384">
+        <div class="form-group">
+          <label>Your Epic Name</label>
+          <input type="text" name="Epic Name" required>
+        </div>
+        <div class="form-group">
+          <label>Platform</label>
+          <select name="Platform" required>
+            <option value="">Select</option>
+            <option>PC</option><option>PlayStation</option><option>Xbox</option>
+            <option>Nintendo Switch</option><option>Mobile</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Sprites you want</label>
+          <textarea name="Looking For" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Sprites you offer</label>
+          <textarea name="Offering" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Your Email</label>
+          <input type="email" name="email" required>
+        </div>
+        <button type="submit" class="btn primary" style="width:100%">Submit Trade</button>
+        <p class="form-note">No swearing please</p>
+      </form>
+    </div>
+  </section>
+
+  <section id="community" class="section alt">
+    <div class="container">
+      <h2>Community Trades</h2>
+      <p class="section-desc">Post a trade for other players</p>
+      <form action="https://api.web3forms.com/submit" method="POST" class="form-card">
+        <input type="hidden" name="access_key" value="c8f38fc3-1336-491a-a738-054b81fc08bd">
+        <input type="hidden" name="subject" value="Community Trade - VIPER3384">
+        <div class="form-group">
+          <label>Your Epic Name</label>
+          <input type="text" name="Epic Name" required>
+        </div>
+        <div class="form-group">
+          <label>Sprites you want</label>
+          <textarea name="Looking For" rows="2" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Sprites you offer</label>
+          <textarea name="Offering" rows="2" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Your Email</label>
+          <input type="email" name="email" required>
+        </div>
+        <button type="submit" class="btn primary" style="width:100%">Post Trade</button>
+      </form>
+    </div>
+  </section>
+
+  <section id="videos" class="section">
+    <div class="container">
+      <h2>Request to Be in a Video</h2>
+      <p class="section-desc">Want to appear in one of my videos?</p>
+      <form action="https://api.web3forms.com/submit" method="POST" class="form-card">
+        <input type="hidden" name="access_key" value="c8f38fc3-1336-491a-a738-054b81fc08bd">
+        <input type="hidden" name="subject" value="Video Collab Request - VIPER3384">
+        <div class="form-group">
+          <label>Your Name / Gamertag</label>
+          <input type="text" name="Name" required>
+        </div>
+        <div class="form-group">
+          <label>Why do you want to be in a video?</label>
+          <textarea name="Why" rows="4" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Your Email</label>
+          <input type="email" name="email" required>
+        </div>
+        <button type="submit" class="btn primary" style="width:100%">Submit Request</button>
+      </form>
+    </div>
+  </section>
+
+  <section id="about" class="section alt">
+    <div class="container about-content">
+      <h2>About VIPER3384</h2>
+      <p>Cool & funny Fortnite content creator</p>
+      <a href="https://youtube.com/@coolfox3384" target="_blank" class="social-btn">YouTube Channel</a>
+    </div>
+  </section>
+
+  <footer>
+    <p>© 2026 VIPER3384</p>
+  </footer>
+
+</body>
+</html>
