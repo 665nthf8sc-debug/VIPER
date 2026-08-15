@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VIPER3384 | Fortnite Trades & Collabs</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="bg-glow"></div>
+
+  <nav class="navbar">
+    <div class="logo">VIPER<span>3384</span></div>
+    <ul class="nav-links">
+      <li><a href="#home">Home</a></li>
+      <li><a href="#trades">Trade Requests</a></li>
+      <li><a href="#videos">Video Collabs</a></li>
+      <li><a href="#about">About</a></li>
+    </ul>
+  </nav>
+
+  <section id="home" class="hero">
+    <div class="hero-content">
+      <h1>VIPER<span>3384</span></h1>
+      <p class="tagline">Fortnite Trades • Video Collabs • Community</p>
+      <p class="subtitle">Request skin/item trades or ask to be featured in my videos.</p>
+      <div class="hero-buttons">
+        <a href="#trades" class="btn primary">Request a Trade</a>
+        <a href="#videos" class="btn secondary">Join a Video</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="trades" class="section">
+    <div class="container">
+      <h2>🔄 Request a Trade</h2>
+      <p class="section-desc">Want to trade Fortnite skins, wraps, or other items with me or other players? Fill out the form below.</p>
+
+      <form id="trade-form" class="form-card">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="trade-name">Your Epic / Discord Name</label>
+            <input type="text" id="trade-name" name="name" required placeholder="e.g. CoolPlayer123" />
+          </div>
+          <div class="form-group">
+            <label for="trade-platform">Platform</label>
+            <select id="trade-platform" name="platform" required>
+              <option value="">Select platform</option>
+              <option value="PC">PC</option>
+              <option value="PlayStation">PlayStation</option>
+              <option value="Xbox">Xbox</option>
+              <option value="Nintendo Switch">Nintendo Switch</option>
+              <option value="Mobile">Mobile</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="looking-for">What are you looking for?</label>
+          <textarea id="looking-for" name="looking_for" rows="3" required placeholder="e.g. Black Knight, Renegade Raider, specific wraps..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="offering">What are you offering?</label>
+          <textarea id="offering" name="offering" rows="3" required placeholder="List the skins/items you want to trade"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="trade-contact">How can I reach you? (Discord / Epic / Email)</label>
+          <input type="text" id="trade-contact" name="contact" required placeholder="Discord: username#0000 or Epic name" />
+        </div>
+
+        <div class="form-group">
+          <label for="trade-notes">Extra notes (optional)</label>
+          <textarea id="trade-notes" name="notes" rows="2" placeholder="Any extra details..."></textarea>
+        </div>
+
+        <button type="submit" class="btn primary full">Submit Trade Request</button>
+        <p class="form-note">Your request will be sent to VIPER3384. Please be patient for a reply.</p>
+      </form>
+    </div>
+  </section>
+
+  <section id="videos" class="section alt">
+    <div class="container">
+      <h2>🎥 Request to Be in a Video</h2>
+      <p class="section-desc">Want to appear in one of my Fortnite videos or collabs? Tell me why and how to reach you.</p>
+
+      <form id="video-form" class="form-card">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="video-name">Your Name / Gamertag</label>
+            <input type="text" id="video-name" name="name" required placeholder="Your in-game or real name" />
+          </div>
+          <div class="form-group">
+            <label for="video-platform">Preferred Platform</label>
+            <select id="video-platform" name="platform" required>
+              <option value="">Select platform</option>
+              <option value="PC">PC</option>
+              <option value="PlayStation">PlayStation</option>
+              <option value="Xbox">Xbox</option>
+              <option value="Nintendo Switch">Nintendo Switch</option>
+              <option value="Any">Any</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="why">Why do you want to be in a video?</label>
+          <textarea id="why" name="why" rows="4" required placeholder="Tell me a bit about yourself and why you'd be a good fit..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="video-contact">Contact (Discord preferred)</label>
+          <input type="text" id="video-contact" name="contact" required placeholder="Discord username or other contact" />
+        </div>
+
+        <div class="form-group">
+          <label for="experience">Any content experience? (optional)</label>
+          <input type="text" id="experience" name="experience" placeholder="YouTube channel, TikTok, etc." />
+        </div>
+
+        <button type="submit" class="btn primary full">Submit Video Request</button>
+        <p class="form-note">I review every request. Thanks for supporting the channel!</p>
+      </form>
+    </div>
+  </section>
+
+  <section id="about" class="section">
+    <div class="container about-content">
+      <h2>About VIPER3384</h2>
+      <p>Welcome to the official site for <strong>VIPER3384</strong> — Fortnite content, trades, and community collabs.</p>
+      <p>Use the forms above to request trades or ask to appear in videos. I try to reply to as many as possible!</p>
+      <div class="social-links">
+        <a href="https://www.youtube.com/@VIPER3384" target="_blank" rel="noopener" class="social-btn">YouTube</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>© 2026 VIPER3384 • Made for the community</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
