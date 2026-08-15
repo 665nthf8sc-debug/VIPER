@@ -78,7 +78,7 @@
     .section-desc { text-align: center; color: var(--muted); margin-bottom: 2rem; }
     .form-card {
       background: var(--card); border: 1px solid var(--border);
-      border-radius: 16px; padding: 1.75rem;
+      border-radius: 16px; padding: 1.75rem; margin-bottom: 2rem;
     }
     .form-group { margin-bottom: 1.2rem; }
     .form-group label {
@@ -89,6 +89,15 @@
       border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem;
     }
     .form-note { text-align: center; font-size: 0.85rem; color: var(--muted); margin-top: 1rem; }
+    .trade-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .trade-card h4 { color: var(--accent); margin-bottom: 0.4rem; }
+    .trade-card p { color: var(--muted); font-size: 0.95rem; margin-bottom: 0.3rem; }
     .about-content { text-align: center; }
     .social-btn {
       display: inline-block; margin-top: 1.5rem; padding: 0.75rem 1.8rem;
@@ -125,6 +134,7 @@
     </div>
   </section>
 
+  <!-- TRADE WITH ME -->
   <section id="trades" class="section">
     <div class="container">
       <h2>Trade Sprites With Me</h2>
@@ -162,10 +172,13 @@
     </div>
   </section>
 
+  <!-- COMMUNITY TRADES -->
   <section id="community" class="section alt">
     <div class="container">
-      <h2>Community Trades</h2>
-      <p class="section-desc">Post a trade for other players</p>
+      <h2>Community Sprite Trades</h2>
+      <p class="section-desc">Post a trade for other players. I will add approved trades below.</p>
+
+      <!-- FORM -->
       <form action="https://api.web3forms.com/submit" method="POST" class="form-card">
         <input type="hidden" name="access_key" value="c8f38fc3-1336-491a-a738-054b81fc08bd">
         <input type="hidden" name="subject" value="Community Trade - VIPER3384">
@@ -186,10 +199,36 @@
           <input type="email" name="email" required>
         </div>
         <button type="submit" class="btn primary" style="width:100%">Post Trade</button>
+        <p class="form-note">No swearing please. Approved trades will appear below.</p>
       </form>
+
+      <!-- OPEN TRADES LIST (you edit this part) -->
+      <h3 style="color: var(--accent2); margin: 2rem 0 1rem; text-align: center;">Current Open Trades</h3>
+
+      <!-- Example trade 1 - delete or edit these -->
+      <div class="trade-card">
+        <h4>Player: ExamplePlayer123</h4>
+        <p><strong>Looking for:</strong> Gem Zero Point Sprite</p>
+        <p><strong>Offering:</strong> Galaxy John Wick + Holofoil Duck</p>
+        <p><strong>Platform:</strong> PC</p>
+        <p style="font-size: 0.85rem; margin-top: 0.5rem;">Contact via email after requesting</p>
+      </div>
+
+      <!-- Example trade 2 -->
+      <div class="trade-card">
+        <h4>Player: ExamplePlayer123</h4>
+        <p><strong>Looking for:</strong> Any Gem variants</p>
+        <p><strong>Offering:</strong> Mythic Sprites</p>
+        <p><strong>Platform:</strong> PlayStation</p>
+      </div>
+
+      <p style="text-align: center; color: var(--muted); font-size: 0.9rem; margin-top: 1.5rem;">
+        More trades will appear here when I approve them.
+      </p>
     </div>
   </section>
 
+  <!-- VIDEO REQUESTS -->
   <section id="videos" class="section">
     <div class="container">
       <h2>Request to Be in a Video</h2>
@@ -214,7 +253,8 @@
     </div>
   </section>
 
-    <section id="about" class="section alt">
+  <!-- ABOUT -->
+  <section id="about" class="section alt">
     <div class="container about-content">
       <h2>About VIPER3384</h2>
       <p>Hi, I am a small content creator who uploads cool and funny Fortnite and sometimes Minecraft clips. Please subscribe if you want to help grow the channel!</p>
