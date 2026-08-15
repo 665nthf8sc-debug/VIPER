@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VIPER3384 | Fortnite Sprite Trades</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
@@ -15,7 +16,11 @@
       --text: #e0f2fe;
       --muted: #a5b4fc;
       --border: #2e1065;
+      --success: #22c55e;
+      --warning: #eab308;
+      --danger: #ef4444;
     }
+    
     body {
       font-family: 'Inter', system-ui, sans-serif;
       background: var(--bg);
@@ -23,14 +28,23 @@
       line-height: 1.6;
       min-height: 100vh;
     }
+    
+    /* Navigation */
     .navbar {
-      position: fixed; top: 0; left: 0; right: 0;
-      display: flex; justify-content: space-between; align-items: center;
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      right: 0;
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
       padding: 1rem 1.5rem;
       background: rgba(11, 6, 24, 0.95);
+      backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
-      z-index: 100;
+      z-index: 1000;
     }
+    
     .logo {
       font-family: 'Orbitron', sans-serif;
       font-weight: 700;
@@ -39,13 +53,66 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-    .nav-links { display: flex; gap: 1.2rem; list-style: none; }
-    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
-    .nav-links a:hover { color: var(--accent); }
-    .hero {
-      min-height: 100vh; display: flex; align-items: center; justify-content: center;
-      text-align: center; padding: 6rem 1.5rem 4rem;
+    
+    .nav-links { 
+      display: flex; 
+      gap: 1.5rem; 
+      list-style: none; 
+      align-items: center;
     }
+    
+    .nav-links a { 
+      color: var(--muted); 
+      text-decoration: none; 
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    
+    .nav-links a:hover { 
+      color: var(--accent); 
+    }
+    
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      top: 100px;
+      right: -400px;
+      background: linear-gradient(90deg, #22c55e, #16a34a);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      z-index: 2000;
+      transition: right 0.3s ease;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .toast.show { right: 20px; }
+    .toast.error { background: linear-gradient(90deg, #ef4444, #dc2626); }
+    
+    /* Hero */
+    .hero {
+      min-height: 100vh; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      text-align: center; 
+      padding: 6rem 1.5rem 4rem;
+    }
+    
     .hero h1 {
       font-family: 'Orbitron', sans-serif;
       font-size: clamp(2.5rem, 8vw, 4.5rem);
@@ -55,216 +122,887 @@
       -webkit-text-fill-color: transparent;
       margin-bottom: 0.5rem;
     }
-    .tagline { color: var(--accent); font-weight: 600; margin-bottom: 0.8rem; }
-    .subtitle { color: var(--muted); max-width: 480px; margin: 0 auto 2rem; }
-    .btn {
-      display: inline-block; padding: 0.85rem 1.7rem; border-radius: 10px;
-      font-weight: 600; text-decoration: none; border: none; cursor: pointer; font-size: 1rem;
+    
+    .tagline { 
+      color: var(--accent); 
+      font-weight: 600; 
+      margin-bottom: 0.8rem; 
+      font-size: 1.1rem;
     }
+    
+    .subtitle { 
+      color: var(--muted); 
+      max-width: 480px; 
+      margin: 0 auto 2rem; 
+    }
+    
+    .btn {
+      display: inline-block; 
+      padding: 0.85rem 1.7rem; 
+      border-radius: 10px;
+      font-weight: 600; 
+      text-decoration: none; 
+      border: none; 
+      cursor: pointer; 
+      font-size: 1rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .btn:hover { transform: translateY(-2px); }
+    
     .btn.primary {
       background: linear-gradient(90deg, #00e5ff, #c084fc);
       color: #0b0618;
+      box-shadow: 0 4px 15px rgba(0, 229, 255, 0.3);
     }
+    
     .btn.secondary {
-      background: transparent; color: var(--text); border: 1px solid var(--border);
+      background: transparent; 
+      color: var(--text); 
+      border: 1px solid var(--border);
     }
-    .section { padding: 4.5rem 1.5rem; }
-    .section.alt { background: #0f0820; }
-    .container { max-width: 700px; margin: 0 auto; }
+    
+    .btn.small {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.85rem;
+    }
+    
+    /* Sections */
+    .section { 
+      padding: 4rem 1.5rem; 
+    }
+    
+    .section.alt { 
+      background: #0f0820; 
+    }
+    
+    .container { 
+      max-width: 800px; 
+      margin: 0 auto; 
+    }
+    
     .section h2 {
       font-family: 'Orbitron', sans-serif;
-      font-size: 1.7rem; text-align: center; color: var(--accent); margin-bottom: 0.7rem;
+      font-size: 1.7rem; 
+      text-align: center; 
+      color: var(--accent); 
+      margin-bottom: 0.7rem;
     }
-    .section-desc { text-align: center; color: var(--muted); margin-bottom: 2rem; }
+    
+    .section-desc { 
+      text-align: center; 
+      color: var(--muted); 
+      margin-bottom: 2rem; 
+    }
+    
+    /* Rules Section */
+    .rules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    
+    .rule-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    
+    .rule-card i {
+      font-size: 1.5rem;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+    
+    .rule-card h4 {
+      color: var(--text);
+      margin-bottom: 0.3rem;
+      font-size: 0.95rem;
+    }
+    
+    .rule-card p {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    
+    /* Sprite Catalog */
+    .catalog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    
+    .sprite-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      transition: transform 0.2s, border-color 0.2s;
+      cursor: pointer;
+    }
+    
+    .sprite-item:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent);
+    }
+    
+    .sprite-item i {
+      font-size: 2rem;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+    
+    .sprite-item span {
+      font-size: 0.8rem;
+      color: var(--text);
+      font-weight: 500;
+    }
+    
+    /* Forms */
     .form-card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 16px; padding: 1.75rem; margin-bottom: 2rem;
+      background: var(--card); 
+      border: 1px solid var(--border);
+      border-radius: 16px; 
+      padding: 1.75rem; 
+      margin-bottom: 2rem;
     }
-    .form-group { margin-bottom: 1.2rem; }
+    
+    .form-group { 
+      margin-bottom: 1.2rem; 
+    }
+    
     .form-group label {
-      display: block; font-size: 0.9rem; color: var(--muted); margin-bottom: 0.4rem;
+      display: block; 
+      font-size: 0.9rem; 
+      color: var(--muted); 
+      margin-bottom: 0.4rem;
+      font-weight: 500;
     }
-    .form-group input, .form-group select, .form-group textarea {
-      width: 100%; padding: 0.75rem 1rem; background: #0b0618;
-      border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem;
+    
+    .form-group input, 
+    .form-group select, 
+    .form-group textarea {
+      width: 100%; 
+      padding: 0.75rem 1rem; 
+      background: #0b0618;
+      border: 1px solid var(--border); 
+      border-radius: 8px; 
+      color: var(--text); 
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
     }
-    .form-note { text-align: center; font-size: 0.85rem; color: var(--muted); margin-top: 1rem; }
+    
+    .form-group input:focus, 
+    .form-group select:focus, 
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.1);
+    }
+    
+    .form-note { 
+      text-align: center; 
+      font-size: 0.85rem; 
+      color: var(--muted); 
+      margin-top: 1rem; 
+    }
+    
+    /* Trade Cards */
     .trade-card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 1.25rem;
       margin-bottom: 1rem;
+      position: relative;
+      transition: transform 0.2s;
     }
-    .trade-card h4 { color: var(--accent); margin-bottom: 0.4rem; }
-    .trade-card p { color: var(--muted); font-size: 0.95rem; margin-bottom: 0.3rem; }
-    .about-content { text-align: center; }
+    
+    .trade-card:hover {
+      transform: translateX(5px);
+      border-color: var(--accent2);
+    }
+    
+    .trade-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    
+    .trade-card h4 { 
+      color: var(--accent); 
+      font-size: 1.1rem;
+    }
+    
+    .trade-card p { 
+      color: var(--muted); 
+      font-size: 0.95rem; 
+      margin-bottom: 0.4rem;
+    }
+    
+    .status-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .status-open { 
+      background: rgba(34, 197, 94, 0.2); 
+      color: #22c55e; 
+      border: 1px solid #22c55e;
+    }
+    
+    .status-pending { 
+      background: rgba(234, 179, 8, 0.2); 
+      color: #eab308; 
+      border: 1px solid #eab308;
+    }
+    
+    .status-completed { 
+      background: rgba(107, 114, 128, 0.2); 
+      color: #9ca3af; 
+      border: 1px solid #6b7280;
+      text-decoration: line-through;
+    }
+    
+    .platform-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      color: var(--accent2);
+      font-size: 0.9rem;
+    }
+    
+    .copy-btn {
+      background: rgba(0, 229, 255, 0.1);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+      margin-top: 0.5rem;
+    }
+    
+    .copy-btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+    
+    .copy-btn.copied {
+      background: var(--success);
+      border-color: var(--success);
+      color: white;
+    }
+    
+    /* My Trades Section */
+    .my-trades {
+      background: rgba(0, 229, 255, 0.05);
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .my-trades h3 {
+      color: var(--accent);
+      font-size: 1rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .my-trade-item {
+      background: var(--bg);
+      padding: 0.75rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    /* About */
+    .about-content { 
+      text-align: center; 
+    }
+    
     .social-btn {
-      display: inline-block; margin-top: 1.5rem; padding: 0.75rem 1.8rem;
-      background: linear-gradient(90deg, #00e5ff, #c084fc); color: #0b0618;
-      text-decoration: none; border-radius: 10px; font-weight: 700;
+      display: inline-block; 
+      margin-top: 1.5rem; 
+      padding: 0.75rem 1.8rem;
+      background: linear-gradient(90deg, #00e5ff, #c084fc); 
+      color: #0b0618;
+      text-decoration: none; 
+      border-radius: 10px; 
+      font-weight: 700;
+      transition: transform 0.2s;
     }
+    
+    .social-btn:hover {
+      transform: translateY(-2px);
+    }
+    
     footer {
-      text-align: center; padding: 2rem; color: var(--muted);
-      border-top: 1px solid var(--border); font-size: 0.9rem;
+      text-align: center; 
+      padding: 2rem; 
+      color: var(--muted);
+      border-top: 1px solid var(--border); 
+      font-size: 0.9rem;
     }
-    @media (max-width: 600px) { .nav-links { display: none; } }
+    
+    /* Mobile Styles */
+    @media (max-width: 768px) {
+      .mobile-menu-btn {
+        display: block;
+      }
+      
+      .nav-links {
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        background: rgba(11, 6, 24, 0.98);
+        flex-direction: column;
+        padding: 1rem;
+        gap: 1rem;
+        border-bottom: 1px solid var(--border);
+        transform: translateY(-150%);
+        transition: transform 0.3s;
+      }
+      
+      .nav-links.active {
+        transform: translateY(0);
+      }
+      
+      .nav-links a {
+        font-size: 1.1rem;
+        padding: 0.5rem;
+      }
+      
+      .catalog-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      
+      .rules-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
 
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">
+    <i class="fas fa-check-circle"></i>
+    <span id="toast-message">Success!</span>
+  </div>
+
+  <!-- Navigation -->
   <nav class="navbar">
     <div class="logo">VIPER3384</div>
-    <ul class="nav-links">
-      <li><a href="#home">Home</a></li>
-      <li><a href="#trades">Trade With Me</a></li>
-      <li><a href="#community">Community</a></li>
-      <li><a href="#videos">Video Requests</a></li>
-      <li><a href="#about">About</a></li>
+    <button class="mobile-menu-btn" onclick="toggleMenu()">
+      <i class="fas fa-bars"></i>
+    </button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#home" onclick="closeMenu()">Home</a></li>
+      <li><a href="#rules" onclick="closeMenu()">Rules</a></li>
+      <li><a href="#catalog" onclick="closeMenu()">Sprites</a></li>
+      <li><a href="#trades" onclick="closeMenu()">Trade With Me</a></li>
+      <li><a href="#community" onclick="closeMenu()">Community</a></li>
+      <li><a href="#videos" onclick="closeMenu()">Video Requests</a></li>
+      <li><a href="#about" onclick="closeMenu()">About</a></li>
     </ul>
   </nav>
 
+  <!-- Hero -->
   <section id="home" class="hero">
     <div>
       <h1>VIPER3384</h1>
       <p class="tagline">Fortnite Sprite Trades • Video Collabs</p>
-      <p class="subtitle">Trade this season’s Sprites or request to be in my videos.</p>
+      <p class="subtitle">Trade this season's Sprites or request to be in my videos. Join the community!</p>
       <a href="#trades" class="btn primary">Trade With Me</a>
-      <a href="#videos" class="btn secondary" style="margin-left:10px;">Video Request</a>
+      <a href="#community" class="btn secondary" style="margin-left:10px;">Community Trades</a>
     </div>
   </section>
 
-  <!-- TRADE WITH ME -->
-  <section id="trades" class="section">
+  <!-- Rules Section -->
+  <section id="rules" class="section alt">
     <div class="container">
-      <h2>Trade Sprites With Me</h2>
-      <p class="section-desc">Send a trade request for this season’s Sprites</p>
-      <form action="https://api.web3forms.com/submit" method="POST" class="form-card">
+      <h2>📋 Trading Rules & Safety</h2>
+      <p class="section-desc">Keep it safe and fair for everyone</p>
+      
+      <div class="rules-grid">
+        <div class="rule-card">
+          <i class="fas fa-shield-alt"></i>
+          <h4>No Password Sharing</h4>
+          <p>Never share your Epic password. I will never ask for it.</p>
+        </div>
+        <div class="rule-card">
+          <i class="fas fa-user-shield"></i>
+          <h4>Verify Traders</h4>
+          <p>Check email addresses match. Scammers often use similar names.</p>
+        </div>
+        <div class="rule-card">
+          <i class="fas fa-handshake"></i>
+          <h4>Trade Fair</h4>
+          <p>Don't lowball. Research sprite values before offering.</p>
+        </div>
+        <div class="rule-card">
+          <i class="fas fa-comments"></i>
+          <h4>Be Respectful</h4>
+          <p>No harassment. Swearing filter is active on all forms.</p>
+        </div>
+        <div class="rule-card">
+          <i class="fas fa-clock"></i>
+          <h4>Patience</h4>
+          <p>I review trades manually. Please wait 24-48 hours for replies.</p>
+        </div>
+        <div class="rule-card">
+          <i class="fas fa-exclamation-triangle"></i>
+          <h4>Trade at Own Risk</h4>
+          <p>Community trades are between users. I moderate but can't guarantee.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sprite Catalog -->
+  <section id="catalog" class="section">
+    <div class="container">
+      <h2>🎨 This Season's Sprites</h2>
+      <p class="section-desc">Click to copy name for your trade request</p>
+      
+      <div class="catalog-grid">
+        <div class="sprite-item" onclick="copyText('Gem Zero Point')">
+          <i class="fas fa-gem"></i>
+          <span>Gem Zero Point</span>
+        </div>
+        <div class="sprite-item" onclick="copyText('John Wick Sprite')">
+          <i class="fas fa-user-secret"></i>
+          <span>John Wick</span>
+        </div>
+        <div class="sprite-item" onclick="copyText('Galaxy John Wick')">
+          <i class="fas fa-star"></i>
+          <span>Galaxy Wick</span>
+        </div>
+        <div class="sprite-item" onclick="copyText('Holofoil Duck')">
+          <i class="fas fa-crow"></i>
+          <span>Holofoil Duck</span>
+        </div>
+        <div class="sprite-item" onclick="copyText('Mythic Sprite')">
+          <i class="fas fa-fire"></i>
+          <span>Mythic Sprite</span>
+        </div>
+        <div class="sprite-item" onclick="copyText('Gold Gem')">
+          <i class="fas fa-coins"></i>
+          <span>Gold Gem</span>
+        </div>
+        <div class="sprite-item" onclick="copyText('Shadow Sprite')">
+          <i class="fas fa-ghost"></i>
+          <span>Shadow Sprite</span>
+        </div>
+        <div class="sprite-item" onclick="copyText('Crystal Zero')">
+          <i class="fas fa-diamond"></i>
+          <span>Crystal Zero</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trade With Me -->
+  <section id="trades" class="section alt">
+    <div class="container">
+      <h2>🔄 Trade Sprites With Me</h2>
+      <p class="section-desc">Send a trade request for this season's Sprites</p>
+      
+      <form id="tradeForm" action="https://api.web3forms.com/submit" method="POST" class="form-card">
         <input type="hidden" name="access_key" value="c8f38fc3-1336-491a-a738-054b81fc08bd">
         <input type="hidden" name="subject" value="Sprite Trade Request - VIPER3384">
+        
         <div class="form-group">
           <label>Your Epic Name</label>
-          <input type="text" name="Epic Name" required>
+          <input type="text" name="Epic Name" required placeholder="Your in-game name">
         </div>
+        
+        <div class="form-group">
+          <label>Platform</label>
+          <select name="Platform" required>
+            <option value="">Select Platform</option>
+            <option value="PC">🖥️ PC</option>
+            <option value="PlayStation">🎮 PlayStation</option>
+            <option value="Xbox">🎮 Xbox</option>
+            <option value="Nintendo Switch">🎮 Nintendo Switch</option>
+            <option value="Mobile">📱 Mobile</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Sprites you want</label>
+          <textarea name="Looking For" rows="3" required placeholder="e.g. Gem Zero Point, Galaxy John Wick..."></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label>Sprites you offer</label>
+          <textarea name="Offering" rows="3" required placeholder="What you'll trade in return"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label>Your Email</label>
+          <input type="email" name="email" required placeholder="you@example.com">
+        </div>
+        
+        <button type="submit" class="btn primary" style="width:100%">Submit Trade Request</button>
+        <p class="form-note"><i class="fas fa-info-circle"></i> No swearing. I reply within 24-48 hours.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- Community Trades -->
+  <section id="community" class="section">
+    <div class="container">
+      <h2>🌐 Community Sprite Trades</h2>
+      <p class="section-desc">Trade with other players. Click copy to grab Epic names.</p>
+      
+      <!-- My Trades Tracker -->
+      <div id="myTradesSection" class="my-trades" style="display: none;">
+        <h3><i class="fas fa-history"></i> Your Recent Submissions</h3>
+        <div id="myTradesList"></div>
+      </div>
+      
+      <!-- Community Form -->
+      <form id="communityForm" action="https://api.web3forms.com/submit" method="POST" class="form-card">
+        <input type="hidden" name="access_key" value="c8f38fc3-1336-491a-a738-054b81fc08bd">
+        <input type="hidden" name="subject" value="Community Trade - VIPER3384">
+        
+        <div class="form-group">
+          <label>Your Epic Name</label>
+          <input type="text" name="Epic Name" id="comEpicName" required placeholder="Your in-game name">
+        </div>
+        
+        <div class="form-group">
+          <label>Sprites you want</label>
+          <textarea name="Looking For" rows="2" required placeholder="What Sprites are you looking for?"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label>Sprites you offer</label>
+          <textarea name="Offering" rows="2" required placeholder="What Sprites are you offering?"></textarea>
+        </div>
+        
         <div class="form-group">
           <label>Platform</label>
           <select name="Platform" required>
             <option value="">Select</option>
-            <option>PC</option><option>PlayStation</option><option>Xbox</option>
-            <option>Nintendo Switch</option><option>Mobile</option>
+            <option>PC</option>
+            <option>PlayStation</option>
+            <option>Xbox</option>
+            <option>Nintendo Switch</option>
+            <option>Mobile</option>
           </select>
         </div>
-        <div class="form-group">
-          <label>Sprites you want</label>
-          <textarea name="Looking For" rows="3" required></textarea>
-        </div>
-        <div class="form-group">
-          <label>Sprites you offer</label>
-          <textarea name="Offering" rows="3" required></textarea>
-        </div>
+        
         <div class="form-group">
           <label>Your Email</label>
-          <input type="email" name="email" required>
+          <input type="email" name="email" required placeholder="you@example.com">
         </div>
-        <button type="submit" class="btn primary" style="width:100%">Submit Trade</button>
-        <p class="form-note">No swearing please</p>
-      </form>
-    </div>
-  </section>
-
-  <!-- COMMUNITY TRADES -->
-  <section id="community" class="section alt">
-    <div class="container">
-      <h2>Community Sprite Trades</h2>
-      <p class="section-desc">Post a trade for other players. I will add approved trades below.</p>
-
-      <!-- FORM -->
-      <form action="https://api.web3forms.com/submit" method="POST" class="form-card">
-        <input type="hidden" name="access_key" value="c8f38fc3-1336-491a-a738-054b81fc08bd">
-        <input type="hidden" name="subject" value="Community Trade - VIPER3384">
-        <div class="form-group">
-          <label>Your Epic Name</label>
-          <input type="text" name="Epic Name" required>
-        </div>
-        <div class="form-group">
-          <label>Sprites you want</label>
-          <textarea name="Looking For" rows="2" required></textarea>
-        </div>
-        <div class="form-group">
-          <label>Sprites you offer</label>
-          <textarea name="Offering" rows="2" required></textarea>
-        </div>
-        <div class="form-group">
-          <label>Your Email</label>
-          <input type="email" name="email" required>
-        </div>
+        
         <button type="submit" class="btn primary" style="width:100%">Post Trade</button>
-        <p class="form-note">No swearing please. Approved trades will appear below.</p>
+        <p class="form-note">Approved trades appear below. Check your email for status updates.</p>
       </form>
-
-      <!-- OPEN TRADES LIST (you edit this part) -->
-      <h3 style="color: var(--accent2); margin: 2rem 0 1rem; text-align: center;">Current Open Trades</h3>
-
-      <!-- Example trade 1 - delete or edit these -->
+      
+      <!-- Open Trades List -->
+      <h3 style="color: var(--accent2); margin: 2rem 0 1rem; text-align: center;">
+        <i class="fas fa-list"></i> Current Open Trades
+      </h3>
+      
+      <!-- Example Trade 1 -->
       <div class="trade-card">
-        <h4>Player: ExamplePlayer123</h4>
+        <div class="trade-header">
+          <h4><i class="fas fa-user-circle"></i> ExamplePlayer123</h4>
+          <span class="status-badge status-open">Open</span>
+        </div>
         <p><strong>Looking for:</strong> Gem Zero Point Sprite</p>
         <p><strong>Offering:</strong> Galaxy John Wick + Holofoil Duck</p>
-        <p><strong>Platform:</strong> PC</p>
-        <p style="font-size: 0.85rem; margin-top: 0.5rem;">Contact via email after requesting</p>
+        <p class="platform-icon"><i class="fas fa-desktop"></i> PC</p>
+        <button class="copy-btn" onclick="copyText('ExamplePlayer123')">
+          <i class="fas fa-copy"></i> Copy Epic Name
+        </button>
       </div>
-
-      <!-- Example trade 2 -->
+      
+      <!-- Example Trade 2 -->
       <div class="trade-card">
-        <h4>Player: ExamplePlayer123</h4>
+        <div class="trade-header">
+          <h4><i class="fas fa-user-circle"></i> CoolGamer99</h4>
+          <span class="status-badge status-pending">Pending</span>
+        </div>
         <p><strong>Looking for:</strong> Any Gem variants</p>
-        <p><strong>Offering:</strong> Mythic Sprites</p>
-        <p><strong>Platform:</strong> PlayStation</p>
+        <p><strong>Offering:</strong> Mythic Sprites bundle</p>
+        <p class="platform-icon"><i class="fas fa-gamepad"></i> PlayStation</p>
+        <button class="copy-btn" onclick="copyText('CoolGamer99')">
+          <i class="fas fa-copy"></i> Copy Epic Name
+        </button>
       </div>
-
+      
+      <!-- Example Trade 3 (Completed) -->
+      <div class="trade-card" style="opacity: 0.6;">
+        <div class="trade-header">
+          <h4><i class="fas fa-user-circle"></i> TradeMaster_X</h4>
+          <span class="status-badge status-completed">Completed</span>
+        </div>
+        <p><strong>Traded:</strong> Shadow Sprite ↔ Crystal Zero</p>
+        <p class="platform-icon"><i class="fas fa-mobile-alt"></i> Xbox</p>
+      </div>
+      
       <p style="text-align: center; color: var(--muted); font-size: 0.9rem; margin-top: 1.5rem;">
-        More trades will appear here when I approve them.
+        <i class="fas fa-shield-alt"></i> Trade at your own risk. Verify users before trading.
       </p>
     </div>
   </section>
 
-  <!-- VIDEO REQUESTS -->
-  <section id="videos" class="section">
+  <!-- Video Requests -->
+  <section id="videos" class="section alt">
     <div class="container">
-      <h2>Request to Be in a Video</h2>
-      <p class="section-desc">Want to appear in one of my videos?</p>
-      <form action="https://api.web3forms.com/submit" method="POST" class="form-card">
+      <h2>🎥 Request to Be in a Video</h2>
+      <p class="section-desc">Want to appear in one of my Fortnite videos?</p>
+      
+      <form id="videoForm" action="https://api.web3forms.com/submit" method="POST" class="form-card">
         <input type="hidden" name="access_key" value="c8f38fc3-1336-491a-a738-054b81fc08bd">
         <input type="hidden" name="subject" value="Video Collab Request - VIPER3384">
+        
         <div class="form-group">
           <label>Your Name / Gamertag</label>
-          <input type="text" name="Name" required>
+          <input type="text" name="Name" required placeholder="Your in-game name">
         </div>
+        
+        <div class="form-group">
+          <label>Preferred Platform</label>
+          <select name="Platform" required>
+            <option value="">Select</option>
+            <option>PC</option>
+            <option>PlayStation</option>
+            <option>Xbox</option>
+            <option>Nintendo Switch</option>
+            <option>Any</option>
+          </select>
+        </div>
+        
         <div class="form-group">
           <label>Why do you want to be in a video?</label>
-          <textarea name="Why" rows="4" required></textarea>
+          <textarea name="Why" rows="4" required placeholder="Tell me about yourself and why you'd be great to feature..."></textarea>
         </div>
+        
         <div class="form-group">
           <label>Your Email</label>
-          <input type="email" name="email" required>
+          <input type="email" name="email" required placeholder="you@example.com">
         </div>
-        <button type="submit" class="btn primary" style="width:100%">Submit Request</button>
+        
+        <button type="submit" class="btn primary" style="width:100%">Submit Video Request</button>
+        <p class="form-note">I review every request. Subscribers get priority!</p>
       </form>
     </div>
   </section>
 
-  <!-- ABOUT -->
-  <section id="about" class="section alt">
+  <!-- About -->
+  <section id="about" class="section">
     <div class="container about-content">
       <h2>About VIPER3384</h2>
       <p>Hi, I am a small content creator who uploads cool and funny Fortnite and sometimes Minecraft clips. Please subscribe if you want to help grow the channel!</p>
-      <a href="https://youtube.com/@coolfox3384" target="_blank" class="social-btn">YouTube Channel</a>
+      <a href="https://youtube.com/@coolfox3384" target="_blank" class="social-btn">
+        <i class="fas fa-youtube"></i> YouTube Channel
+      </a>
     </div>
   </section>
 
   <footer>
-    <p>© 2026 VIPER3384</p>
+    <p>© 2026 VIPER3384 • Made with <i class="fas fa-heart" style="color: var(--accent2);"></i> for the community</p>
   </footer>
+
+  <script>
+    // Mobile Menu Toggle
+    function toggleMenu() {
+      const nav = document.getElementById('navLinks');
+      nav.classList.toggle('active');
+    }
+    
+    function closeMenu() {
+      document.getElementById('navLinks').classList.remove('active');
+    }
+    
+    // Toast Notification
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toast-message');
+      
+      toastMessage.textContent = message;
+      toast.className = isError ? 'toast error show' : 'toast show';
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+    
+    // Copy to Clipboard
+    function copyText(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(`Copied "${text}" to clipboard!`);
+      }).catch(() => {
+        // Fallback
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast(`Copied "${text}" to clipboard!`);
+      });
+    }
+    
+    // Swear Word Filter
+    const badWords = ["fuck", "shit", "bitch", "asshole", "cunt", "dick", "piss", "bastard",
+      "slut", "whore", "nigger", "faggot", "retard", "cocksucker", "motherfucker",
+      "fucking", "shitty", "bullshit", "damn", "crap"];
+    
+    function containsBadWords(text) {
+      if (!text) return false;
+      const lower = text.toLowerCase();
+      return badWords.some(word => lower.includes(word));
+    }
+    
+    function checkFormForSwearing(form) {
+      const inputs = form.querySelectorAll("input, textarea");
+      for (let input of inputs) {
+        if (containsBadWords(input.value)) return true;
+      }
+      return false;
+    }
+    
+    // Form Handling with LocalStorage
+    document.getElementById('tradeForm').addEventListener('submit', function(e) {
+      if (checkFormForSwearing(this)) {
+        e.preventDefault();
+        showToast("Please keep it clean - no swearing!", true);
+        return;
+      }
+      
+      // Save to localStorage before submitting
+      const formData = new FormData(this);
+      const trade = {
+        type: 'Trade with VIPER',
+        epic: formData.get('Epic Name'),
+        date: new Date().toLocaleDateString(),
+        status: 'Pending'
+      };
+      saveTrade(trade);
+    });
+    
+    document.getElementById('communityForm').addEventListener('submit', function(e) {
+      if (checkFormForSwearing(this)) {
+        e.preventDefault();
+        showToast("Please keep it clean - no swearing!", true);
+        return;
+      }
+      
+      const epicName = document.getElementById('comEpicName').value;
+      const trade = {
+        type: 'Community Trade',
+        epic: epicName,
+        date: new Date().toLocaleDateString(),
+        status: 'Posted'
+      };
+      saveTrade(trade);
+    });
+    
+    document.getElementById('videoForm').addEventListener('submit', function(e) {
+      if (checkFormForSwearing(this)) {
+        e.preventDefault();
+        showToast("Please keep it clean - no swearing!", true);
+        return;
+      }
+      
+      const formData = new FormData(this);
+      const trade = {
+        type: 'Video Request',
+        epic: formData.get('Name'),
+        date: new Date().toLocaleDateString(),
+        status: 'Pending'
+      };
+      saveTrade(trade);
+    });
+    
+    // LocalStorage Functions
+    function saveTrade(trade) {
+      let trades = JSON.parse(localStorage.getItem('viperTrades') || '[]');
+      trades.unshift(trade);
+      if (trades.length > 5) trades = trades.slice(0, 5); // Keep last 5
+      localStorage.setItem('viperTrades', JSON.stringify(trades));
+      updateMyTradesDisplay();
+    }
+    
+    function updateMyTradesDisplay() {
+      const trades = JSON.parse(localStorage.getItem('viperTrades') || '[]');
+      const section = document.getElementById('myTradesSection');
+      const list = document.getElementById('myTradesList');
+      
+      if (trades.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+      
+      section.style.display = 'block';
+      list.innerHTML = trades.map(t => `
+        <div class="my-trade-item">
+          <div>
+            <strong>${t.type}</strong> - ${t.epic}<br>
+            <small style="color: var(--muted);">${t.date}</small>
+          </div>
+          <span style="color: var(--accent); font-size: 0.85rem;">${t.status}</span>
+        </div>
+      `).join('');
+    }
+    
+    // Load trades on page load
+    updateMyTradesDisplay();
+    
+    // Smooth Scrolling
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+    
+    // Copy button feedback
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const originalHTML = this.innerHTML;
+        this.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        this.classList.add('copied');
+        setTimeout(() => {
+          this.innerHTML = originalHTML;
+          this.classList.remove('copied');
+        }, 2000);
+      });
+    });
+  </script>
 
 </body>
 </html>
