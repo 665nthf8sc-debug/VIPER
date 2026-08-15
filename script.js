@@ -1,8 +1,8 @@
-// Basic swear word filter
+// Swear word filter
 const badWords = [
   "fuck", "shit", "bitch", "asshole", "cunt", "dick", "piss", "bastard",
   "slut", "whore", "nigger", "faggot", "retard", "cocksucker", "motherfucker",
-  "fucking", "shitty", "asshole", "bullshit", "damn", "crap"
+  "fucking", "shitty", "bullshit", "damn", "crap"
 ];
 
 function containsBadWords(text) {
@@ -21,43 +21,14 @@ function checkFormForSwearing(form) {
   return false;
 }
 
-// Trade with me form
-document.getElementById('trade-form').addEventListener('submit', function(e) {
-  e.preventDefault();
-
-  if (checkFormForSwearing(this)) {
-    alert("⚠️ Please keep it clean.\nSwearing is not allowed on this site.");
-    return;
-  }
-
-  alert('✅ Trade request submitted!\n\nI will reply to your email soon.');
-  this.reset();
-});
-
-// Community trades form
-document.getElementById('community-form').addEventListener('submit', function(e) {
-  e.preventDefault();
-
-  if (checkFormForSwearing(this)) {
-    alert("⚠️ Please keep it clean.\nSwearing is not allowed on this site.");
-    return;
-  }
-
-  alert('✅ Your community trade has been submitted!\n\nIt will appear on the board after review.');
-  this.reset();
-});
-
-// Video collab form
-document.getElementById('video-form').addEventListener('submit', function(e) {
-  e.preventDefault();
-
-  if (checkFormForSwearing(this)) {
-    alert("⚠️ Please keep it clean.\nSwearing is not allowed on this site.");
-    return;
-  }
-
-  alert('✅ Video request submitted!\n\nThanks for wanting to collab!');
-  this.reset();
+// Add swear check before submitting any form
+document.querySelectorAll("form").forEach(form => {
+  form.addEventListener("submit", function(e) {
+    if (checkFormForSwearing(this)) {
+      e.preventDefault();
+      alert("⚠️ Please keep it clean.\nSwearing is not allowed on this site.");
+    }
+  });
 });
 
 // Smooth scrolling
