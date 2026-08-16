@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VIPER3384 | Fortnite Sprite Trades</title>
+  <title>VIPER3384 | My Hub</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -20,7 +20,6 @@
       --epic: #a855f7;
       --legendary: #eab308;
       --mythic: #ef4444;
-      --success: #22c55e;
     }
     
     body {
@@ -40,7 +39,7 @@
       justify-content: space-between; 
       align-items: center;
       padding: 1rem 1.5rem;
-      background: rgba(11, 6, 24, 0.95);
+      background: rgba(11, 6, 24, 0.98);
       backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
       z-index: 1000;
@@ -48,8 +47,8 @@
     
     .logo {
       font-family: 'Orbitron', sans-serif;
-      font-weight: 700;
-      font-size: 1.35rem;
+      font-weight: 900;
+      font-size: 1.5rem;
       background: linear-gradient(90deg, #00e5ff, #c084fc);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -59,7 +58,6 @@
       display: flex; 
       gap: 1.5rem; 
       list-style: none; 
-      align-items: center;
     }
     
     .nav-links a { 
@@ -114,7 +112,7 @@
     
     .hero h1 {
       font-family: 'Orbitron', sans-serif;
-      font-size: clamp(2.5rem, 8vw, 4.5rem);
+      font-size: clamp(3rem, 10vw, 5rem);
       font-weight: 900;
       background: linear-gradient(90deg, #00e5ff, #e879f9, #c084fc);
       -webkit-background-clip: text;
@@ -122,43 +120,50 @@
       margin-bottom: 0.5rem;
     }
     
-    .tagline { 
-      color: var(--accent); 
-      font-weight: 600; 
-      margin-bottom: 0.8rem; 
+    .hero-subtitle {
+      color: var(--accent);
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    
+    .hero-desc {
+      color: var(--muted);
+      max-width: 500px;
+      margin: 0 auto 2rem;
       font-size: 1.1rem;
     }
     
-    .subtitle { 
-      color: var(--muted); 
-      max-width: 480px; 
-      margin: 0 auto 2rem; 
-    }
-    
     .btn {
-      display: inline-block; 
-      padding: 0.85rem 1.7rem; 
-      border-radius: 10px;
-      font-weight: 600; 
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 2rem; 
+      border-radius: 12px;
+      font-weight: 700; 
       text-decoration: none; 
       border: none; 
       cursor: pointer; 
       font-size: 1rem;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: all 0.3s;
     }
     
-    .btn:hover { transform: translateY(-2px); }
+    .btn:hover { 
+      transform: translateY(-3px); 
+      box-shadow: 0 10px 30px rgba(0,229,255,0.3);
+    }
     
     .btn.primary {
       background: linear-gradient(90deg, #00e5ff, #c084fc);
       color: #0b0618;
-      box-shadow: 0 4px 15px rgba(0, 229, 255, 0.3);
     }
     
     .btn.secondary {
       background: transparent; 
       color: var(--text); 
-      border: 1px solid var(--border);
+      border: 2px solid var(--accent);
     }
     
     .section { 
@@ -176,62 +181,88 @@
     
     .section h2 {
       font-family: 'Orbitron', sans-serif;
-      font-size: 1.7rem; 
+      font-size: 2rem; 
       text-align: center; 
       color: var(--accent); 
-      margin-bottom: 0.7rem;
+      margin-bottom: 0.5rem;
     }
     
     .section-desc { 
       text-align: center; 
       color: var(--muted); 
-      margin-bottom: 2rem; 
-    }
-    
-    /* Sprite Catalog Styles */
-    .rarity-section {
       margin-bottom: 2rem;
     }
     
-    .rarity-header {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.1rem;
-      font-weight: 700;
-      text-transform: uppercase;
+    .video-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 2rem;
     }
     
-    .rarity-rare { 
-      background: rgba(59, 130, 246, 0.2); 
-      color: #60a5fa; 
-      border-left: 4px solid #3b82f6;
+    .video-placeholder {
+      width: 100%;
+      height: 300px;
+      background: linear-gradient(135deg, var(--card), #1a1033);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed var(--border);
+      margin-bottom: 1rem;
     }
-    .rarity-epic { 
-      background: rgba(168, 85, 247, 0.2); 
-      color: #c084fc; 
-      border-left: 4px solid #a855f7;
+    
+    .video-placeholder i {
+      font-size: 4rem;
+      color: var(--accent);
+      margin-bottom: 1rem;
     }
-    .rarity-legendary { 
-      background: rgba(234, 179, 8, 0.2); 
-      color: #facc15; 
-      border-left: 4px solid #eab308;
+    
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
     }
-    .rarity-mythic { 
-      background: rgba(239, 68, 68, 0.2); 
-      color: #f87171; 
-      border-left: 4px solid #ef4444;
+    
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--accent);
+    }
+    
+    .feature-card i {
+      font-size: 2.5rem;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+    
+    .feature-card h3 {
+      font-family: 'Orbitron', sans-serif;
+      margin-bottom: 0.5rem;
+    }
+    
+    .feature-card p {
+      color: var(--muted);
+      font-size: 0.95rem;
     }
     
     .catalog-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
       gap: 0.75rem;
-      margin-bottom: 2rem;
+      margin-top: 2rem;
     }
     
     .sprite-item {
@@ -240,26 +271,18 @@
       border-radius: 12px;
       padding: 1rem;
       text-align: center;
-      transition: all 0.2s;
       cursor: pointer;
-      position: relative;
-      overflow: hidden;
+      transition: all 0.2s;
     }
     
     .sprite-item:hover {
       transform: translateY(-3px);
       border-color: var(--accent);
-      box-shadow: 0 4px 20px rgba(0, 229, 255, 0.2);
     }
     
-    .sprite-item.rare:hover { border-color: var(--rare); }
-    .sprite-item.epic:hover { border-color: var(--epic); }
-    .sprite-item.legendary:hover { border-color: var(--legendary); }
-    .sprite-item.mythic:hover { border-color: var(--mythic); }
-    
     .sprite-item i {
-      font-size: 1.8rem;
-      margin-bottom: 0.5rem;
+      font-size: 1.5rem;
+      margin-bottom: 0.3rem;
       display: block;
     }
     
@@ -270,26 +293,16 @@
     
     .sprite-item span {
       font-size: 0.8rem;
-      color: var(--text);
-      font-weight: 500;
-      display: block;
-      line-height: 1.3;
+      font-weight: 600;
     }
     
-    .sprite-item small {
-      font-size: 0.7rem;
-      color: var(--muted);
-      display: block;
-      margin-top: 0.3rem;
-    }
-    
-    /* Forms */
     .form-card {
       background: var(--card); 
       border: 1px solid var(--border);
       border-radius: 16px; 
-      padding: 1.75rem; 
-      margin-bottom: 2rem;
+      padding: 2rem; 
+      max-width: 600px;
+      margin: 0 auto;
     }
     
     .form-group { 
@@ -301,7 +314,6 @@
       font-size: 0.9rem; 
       color: var(--muted); 
       margin-bottom: 0.4rem;
-      font-weight: 500;
     }
     
     .form-group input, 
@@ -315,7 +327,6 @@
       color: var(--text); 
       font-size: 1rem;
       font-family: inherit;
-      transition: border-color 0.2s;
     }
     
     .form-group input:focus, 
@@ -332,145 +343,37 @@
       margin-top: 1rem; 
     }
     
-    /* Trade Cards */
-    .trade-card {
+    .about-box {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.25rem;
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .about-box p {
+      color: var(--muted);
       margin-bottom: 1rem;
-      position: relative;
-      transition: transform 0.2s;
+      line-height: 1.8;
     }
     
-    .trade-card:hover {
-      transform: translateX(5px);
-      border-color: var(--accent2);
-    }
-    
-    .trade-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.75rem;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-    
-    .trade-card h4 { 
-      color: var(--accent); 
-      font-size: 1.1rem;
-    }
-    
-    .trade-card p { 
-      color: var(--muted); 
-      font-size: 0.95rem; 
-      margin-bottom: 0.4rem;
-    }
-    
-    .status-badge {
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-    
-    .status-open { 
-      background: rgba(34, 197, 94, 0.2); 
-      color: #22c55e; 
-      border: 1px solid #22c55e;
-    }
-    
-    .status-pending { 
-      background: rgba(234, 179, 8, 0.2); 
-      color: #eab308; 
-      border: 1px solid #eab308;
-    }
-    
-    .status-completed { 
-      background: rgba(107, 114, 128, 0.2); 
-      color: #9ca3af; 
-      border: 1px solid #6b7280;
-      text-decoration: line-through;
-    }
-    
-    .platform-icon {
+    .youtube-btn {
       display: inline-flex;
       align-items: center;
-      gap: 0.3rem;
-      color: var(--accent2);
-      font-size: 0.9rem;
-    }
-    
-    .copy-btn {
-      background: rgba(0, 229, 255, 0.1);
-      border: 1px solid var(--accent);
-      color: var(--accent);
-      padding: 0.4rem 0.8rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      transition: all 0.2s;
-      margin-top: 0.5rem;
-    }
-    
-    .copy-btn:hover {
-      background: var(--accent);
-      color: var(--bg);
-    }
-    
-    .copy-btn.copied {
-      background: var(--success);
-      border-color: var(--success);
-      color: white;
-    }
-    
-    .my-trades {
-      background: rgba(0, 229, 255, 0.05);
-      border: 1px solid var(--accent);
-      border-radius: 12px;
-      padding: 1rem;
-      margin-bottom: 2rem;
-    }
-    
-    .my-trades h3 {
-      color: var(--accent);
-      font-size: 1rem;
-      margin-bottom: 0.75rem;
-      display: flex;
-      align-items: center;
       gap: 0.5rem;
-    }
-    
-    .my-trade-item {
-      background: var(--bg);
-      padding: 0.75rem;
-      border-radius: 8px;
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .about-content { 
-      text-align: center; 
-    }
-    
-    .social-btn {
-      display: inline-block; 
-      margin-top: 1.5rem; 
-      padding: 0.75rem 1.8rem;
-      background: linear-gradient(90deg, #00e5ff, #c084fc); 
-      color: #0b0618;
-      text-decoration: none; 
-      border-radius: 10px; 
+      background: #ff0000;
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      text-decoration: none;
       font-weight: 700;
+      margin-top: 1rem;
       transition: transform 0.2s;
     }
     
-    .social-btn:hover {
+    .youtube-btn:hover {
       transform: translateY(-2px);
     }
     
@@ -489,12 +392,12 @@
       
       .nav-links {
         position: fixed;
-        top: 60px;
+        top: 70px;
         left: 0;
         right: 0;
         background: rgba(11, 6, 24, 0.98);
         flex-direction: column;
-        padding: 1rem;
+        padding: 2rem;
         gap: 1rem;
         border-bottom: 1px solid var(--border);
         transform: translateY(-150%);
@@ -504,33 +407,16 @@
       .nav-links.active {
         transform: translateY(0);
       }
-      
-      .nav-links a {
-        font-size: 1.1rem;
-        padding: 0.5rem;
-      }
-      
-      .catalog-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .catalog-grid {
-        grid-template-columns: 1fr;
-      }
     }
   </style>
 </head>
 <body>
 
-  <!-- Toast Notification -->
   <div id="toast" class="toast">
     <i class="fas fa-check-circle"></i>
     <span id="toast-message">Success!</span>
   </div>
 
-  <!-- Navigation -->
   <nav class="navbar">
     <div class="logo">VIPER3384</div>
     <button class="mobile-menu-btn" onclick="toggleMenu()">
@@ -538,202 +424,199 @@
     </button>
     <ul class="nav-links" id="navLinks">
       <li><a href="#home" onclick="closeMenu()">Home</a></li>
-      <li><a href="#catalog" onclick="closeMenu()">Sprite Catalog</a></li>
-      <li><a href="#trades" onclick="closeMenu()">Trade With Me</a></li>
-      <li><a href="#community" onclick="closeMenu()">Community</a></li>
-      <li><a href="#videos" onclick="closeMenu()">Video Requests</a></li>
-      <li><a href="#about" onclick="closeMenu()">About</a></li>
+      <li><a href="#videos" onclick="closeMenu()">My Videos</a></li>
+      <li><a href="#sprites" onclick="closeMenu()">Sprites</a></li>
+      <li><a href="#trading" onclick="closeMenu()">Trading</a></li>
+      <li><a href="#about" onclick="closeMenu()">About Me</a></li>
     </ul>
   </nav>
 
-  <!-- Hero -->
+  <!-- HOME -->
   <section id="home" class="hero">
     <div>
+      <div class="hero-subtitle">Welcome to My Hub</div>
       <h1>VIPER3384</h1>
-      <p class="tagline">Fortnite Sprite Trades • Video Collabs</p>
-      <p class="subtitle">Trade all 24 Sprite types including Rare, Epic, Legendary & Mythic variants!</p>
-      <a href="#catalog" class="btn primary">View Sprite Catalog</a>
-      <a href="#trades" class="btn secondary" style="margin-left:10px;">Start Trading</a>
-    </div>
-  </section>
-
-  <!-- Sprite Catalog -->
-  <section id="catalog" class="section alt">
-    <div class="container">
-      <h2>🎨 Complete Sprite Catalog</h2>
-      <p class="section-desc">All 24 Sprites in Chapter 7 Season 3. Click any to copy the name!</p>
-      
-      <!-- Rare Sprites -->
-      <div class="rarity-section">
-        <div class="rarity-header rarity-rare">
-          <i class="fas fa-star"></i> Rare Sprites (5)
-        </div>
-        <div class="catalog-grid">
-          <div class="sprite-item rare" onclick="copyText('Water Sprite')">
-            <i class="fas fa-water"></i>
-            <span>Water Sprite</span>
-            <small>Shield regen in water</small>
-          </div>
-          <div class="sprite-item rare" onclick="copyText('Earth Sprite')">
-            <i class="fas fa-leaf"></i>
-            <span>Earth Sprite</span>
-            <small>Better chest loot</small>
-          </div>
-          <div class="sprite-item rare" onclick="copyText('Fire Sprite')">
-            <i class="fas fa-fire"></i>
-            <span>Fire Sprite</span>
-            <small>Fiery burst damage</small>
-          </div>
-          <div class="sprite-item rare" onclick="copyText('Fishy Sprite')">
-            <i class="fas fa-fish"></i>
-            <span>Fishy Sprite</span>
-            <small>Fast swimming</small>
-          </div>
-          <div class="sprite-item rare" onclick="copyText('Air Sprite')">
-            <i class="fas fa-wind"></i>
-            <span>Air Sprite</span>
-            <small>Speed & jump boost</small>
-          </div>
-        </div>
-      </div>
-
-      <!-- Epic Sprites -->
-      <div class="rarity-section">
-        <div class="rarity-header rarity-epic">
-          <i class="fas fa-gem"></i> Epic Sprites (6)
-        </div>
-        <div class="catalog-grid">
-          <div class="sprite-item epic" onclick="copyText('Duck Sprite')">
-            <i class="fas fa-feather"></i>
-            <span>Duck Sprite</span>
-            <small>Emote = shield regen</small>
-          </div>
-          <div class="sprite-item epic" onclick="copyText('Ghost Sprite')">
-            <i class="fas fa-ghost"></i>
-            <span>Ghost Sprite</span>
-            <small>Cloak after reload</small>
-          </div>
-          <div class="sprite-item epic" onclick="copyText('Demon Sprite')">
-            <i class="fas fa-fire-alt"></i>
-            <span>Demon Sprite</span>
-            <small>Siphon on elim</small>
-          </div>
-          <div class="sprite-item epic" onclick="copyText('King Sprite')">
-            <i class="fas fa-crown"></i>
-            <span>King Sprite</span>
-            <strong>+Pickaxe damage</small>
-          </div>
-          <div class="sprite-item epic" onclick="copyText('Aura Sprite')">
-            <i class="fas fa-bolt"></i>
-            <span>Aura Sprite</span>
-            <small>Shock Rock charge</small>
-          </div>
-          <div class="sprite-item epic" onclick="copyText('Striker Sprite')">
-            <i class="fas fa-running"></i>
-            <span>Striker Sprite</span>
-            <small>Overdrive on mantle</small>
-          </div>
-        </div>
-      </div>
-
-      <!-- Legendary Sprites -->
-      <div class="rarity-section">
-        <div class="rarity-header rarity-legendary">
-          <i class="fas fa-crown"></i> Legendary Sprites (6)
-        </div>
-        <div class="catalog-grid">
-          <div class="sprite-item legendary" onclick="copyText('Dream Sprite')">
-            <i class="fas fa-cloud"></i>
-            <span>Dream Sprite</span>
-            <small>Random legendary loot</small>
-          </div>
-          <div class="sprite-item legendary" onclick="copyText('Punk Sprite')">
-            <i class="fas fa-guitar"></i>
-            <span>Punk Sprite</span>
-            <small>Infinite ammo chance</small>
-          </div>
-          <div class="sprite-item legendary" onclick="copyText('Boss Sprite')">
-            <i class="fas fa-user-tie"></i>
-            <span>Boss Sprite</span>
-            <small>+Max health/shield</small>
-          </div>
-          <div class="sprite-item legendary" onclick="copyText('Seven Sprite')">
-            <i class="fas fa-shield-alt"></i>
-            <span>Seven Sprite</span>
-            <small>See enemy trails</small>
-          </div>
-          <div class="sprite-item legendary" onclick="copyText('Lootin Llama Sprite')">
-            <i class="fas fa-horse"></i>
-            <span>Lootin' Llama Sprite</span>
-            <small>Weapon upgrades</small>
-          </div>
-          <div class="sprite-item legendary" onclick="copyText('Peeky Peely Sprite')">
-            <i class="fas fa-eye"></i>
-            <span>Peeky Peely Sprite</span>
-            <small>Marks rare Sprites</small>
-          </div>
-        </div>
-      </div>
-
-      <!-- Mythic Sprites -->
-      <div class="rarity-section">
-        <div class="rarity-header rarity-mythic">
-          <i class="fas fa-fire"></i> Mythic Sprites (7)
-        </div>
-        <div class="catalog-grid">
-          <div class="sprite-item mythic" onclick="copyText('Grim Reaper Sprite')">
-            <i class="fas fa-skull"></i>
-            <span>Grim Reaper Sprite</span>
-            <small>Marks attackers</small>
-          </div>
-          <div class="sprite-item mythic" onclick="copyText('Zero Point Sprite')">
-            <i class="fas fa-dot-circle"></i>
-            <span>Zero Point Sprite</span>
-            <small>Shield Bubble Jr.</small>
-          </div>
-          <div class="sprite-item mythic" onclick="copyText('Burnt Peanut Sprite')">
-            <i class="fas fa-seedling"></i>
-            <span>Burnt Peanut Sprite</span>
-            <small>Mythic loot drops</small>
-          </div>
-          <div class="sprite-item mythic" onclick="copyText('Batman Sprite')">
-            <i class="fas fa-bat"></i>
-            <span>Batman Sprite</span>
-            <small>Bat Cape + rare finds</small>
-          </div>
-          <div class="sprite-item mythic" onclick="copyText('Pollo Sprite')">
-            <i class="fas fa-drumstick-bite"></i>
-            <span>Pollo Sprite</span>
-            <small>Team shield restore</small>
-          </div>
-          <div class="sprite-item mythic" onclick="copyText('Vini Jr Sprite')">
-            <i class="fas fa-futbol"></i>
-            <span>Vini Jr. Sprite</span>
-            <small>Slide + fire rate</small>
-          </div>
-          <div class="sprite-item mythic" onclick="copyText('John Wick Sprite')">
-            <i class="fas fa-user-secret"></i>
-            <span>John Wick Sprite</span>
-            <small>Reveals enemies</small>
-          </div>
-        </div>
-      </div>
-      
-      <p style="text-align: center; color: var(--muted); font-size: 0.9rem; margin-top: 1rem;">
-        <i class="fas fa-info-circle"></i> Each Sprite has variants: Normal, Gold, Gummy, Galaxy, Holofoil, Cube, and Gem!
+      <p class="hero-desc">
+        I make Fortnite & Minecraft videos.<br>
+        This is my spot for trading Sprites and collabs.
       </p>
+      <a href="#videos" class="btn primary">
+        <i class="fas fa-play"></i> Watch My Videos
+      </a>
+      <a href="#trading" class="btn secondary" style="margin-left: 10px;">
+        <i class="fas fa-exchange-alt"></i> Trade Sprites
+      </a>
     </div>
   </section>
 
-  <!-- Trade With Me -->
-  <section id="trades" class="section">
+  <!-- VIDEOS -->
+  <section id="videos" class="section alt">
     <div class="container">
-      <h2>🔄 Trade Sprites With Me</h2>
-      <p class="section-desc">Send a trade request for specific Sprites or variants</p>
+      <h2><i class="fas fa-video"></i> My Latest Video</h2>
+      <p class="section-desc">Check out what I've been working on</p>
       
-      <form id="tradeForm" action="https://api.web3forms.com/submit" method="POST" class="form-card">
+      <div class="video-box">
+        <div class="video-placeholder">
+          <i class="fab fa-youtube"></i>
+          <p>Latest YouTube Video</p>
+        </div>
+        <p style="color: var(--muted); margin-bottom: 1rem;">
+          I post cool and funny Fortnite clips. Subscribe to help me grow!
+        </p>
+        <a href="https://youtube.com/@coolfox3384" target="_blank" class="youtube-btn">
+          <i class="fab fa-youtube"></i> Subscribe on YouTube
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features" class="section">
+    <div class="container">
+      <h2><i class="fas fa-star"></i> What's Here</h2>
+      <p class="section-desc">Stuff I built for the community</p>
+      
+      <div class="features-grid">
+        <div class="feature-card">
+          <i class="fas fa-exchange-alt"></i>
+          <h3>Sprite Trading</h3>
+          <p>Trade all 24 Sprites with me or post in the community.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-video"></i>
+          <h3>Video Collabs</h3>
+          <p>Want to be in my videos? Submit a request here.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-book"></i>
+          <h3>Sprite List</h3>
+          <p>Full catalog of every Sprite. Click to copy the names.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-mobile-alt"></i>
+          <h3>Works on Phone</h3>
+          <p>Fully mobile. Trade from anywhere.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPRITE CATALOG -->
+  <section id="sprites" class="section alt">
+    <div class="container">
+      <h2><i class="fas fa-gem"></i> All 24 Sprites</h2>
+      <p class="section-desc">Click any to copy the name</p>
+      
+      <div class="catalog-grid">
+        <div class="sprite-item rare" onclick="copyText('Water Sprite')">
+          <i class="fas fa-water"></i>
+          <span>Water</span>
+        </div>
+        <div class="sprite-item rare" onclick="copyText('Earth Sprite')">
+          <i class="fas fa-leaf"></i>
+          <span>Earth</span>
+        </div>
+        <div class="sprite-item rare" onclick="copyText('Fire Sprite')">
+          <i class="fas fa-fire"></i>
+          <span>Fire</span>
+        </div>
+        <div class="sprite-item rare" onclick="copyText('Fishy Sprite')">
+          <i class="fas fa-fish"></i>
+          <span>Fishy</span>
+        </div>
+        <div class="sprite-item rare" onclick="copyText('Air Sprite')">
+          <i class="fas fa-wind"></i>
+          <span>Air</span>
+        </div>
+        <div class="sprite-item epic" onclick="copyText('Duck Sprite')">
+          <i class="fas fa-feather"></i>
+          <span>Duck</span>
+        </div>
+        <div class="sprite-item epic" onclick="copyText('Ghost Sprite')">
+          <i class="fas fa-ghost"></i>
+          <span>Ghost</span>
+        </div>
+        <div class="sprite-item epic" onclick="copyText('Demon Sprite')">
+          <i class="fas fa-fire-alt"></i>
+          <span>Demon</span>
+        </div>
+        <div class="sprite-item epic" onclick="copyText('King Sprite')">
+          <i class="fas fa-crown"></i>
+          <span>King</span>
+        </div>
+        <div class="sprite-item epic" onclick="copyText('Aura Sprite')">
+          <i class="fas fa-bolt"></i>
+          <span>Aura</span>
+        </div>
+        <div class="sprite-item epic" onclick="copyText('Striker Sprite')">
+          <i class="fas fa-running"></i>
+          <span>Striker</span>
+        </div>
+        <div class="sprite-item legendary" onclick="copyText('Dream Sprite')">
+          <i class="fas fa-cloud"></i>
+          <span>Dream</span>
+        </div>
+        <div class="sprite-item legendary" onclick="copyText('Punk Sprite')">
+          <i class="fas fa-guitar"></i>
+          <span>Punk</span>
+        </div>
+        <div class="sprite-item legendary" onclick="copyText('Boss Sprite')">
+          <i class="fas fa-user-tie"></i>
+          <span>Boss</span>
+        </div>
+        <div class="sprite-item legendary" onclick="copyText('Seven Sprite')">
+          <i class="fas fa-shield-alt"></i>
+          <span>Seven</span>
+        </div>
+        <div class="sprite-item legendary" onclick="copyText('Lootin Llama Sprite')">
+          <i class="fas fa-horse"></i>
+          <span>Llama</span>
+        </div>
+        <div class="sprite-item legendary" onclick="copyText('Peeky Peely Sprite')">
+          <i class="fas fa-eye"></i>
+          <span>Peely</span>
+        </div>
+        <div class="sprite-item mythic" onclick="copyText('Grim Reaper Sprite')">
+          <i class="fas fa-skull"></i>
+          <span>Reaper</span>
+        </div>
+        <div class="sprite-item mythic" onclick="copyText('Zero Point Sprite')">
+          <i class="fas fa-dot-circle"></i>
+          <span>Zero Point</span>
+        </div>
+        <div class="sprite-item mythic" onclick="copyText('Burnt Peanut Sprite')">
+          <i class="fas fa-seedling"></i>
+          <span>Peanut</span>
+        </div>
+        <div class="sprite-item mythic" onclick="copyText('Batman Sprite')">
+          <i class="fas fa-bat"></i>
+          <span>Batman</span>
+        </div>
+        <div class="sprite-item mythic" onclick="copyText('Pollo Sprite')">
+          <i class="fas fa-drumstick-bite"></i>
+          <span>Pollo</span>
+        </div>
+        <div class="sprite-item mythic" onclick="copyText('Vini Jr Sprite')">
+          <i class="fas fa-futbol"></i>
+          <span>Vini Jr</span>
+        </div>
+        <div class="sprite-item mythic" onclick="copyText('John Wick Sprite')">
+          <i class="fas fa-user-secret"></i>
+          <span>John Wick</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRADING -->
+  <section id="trading" class="section">
+    <div class="container">
+      <h2><i class="fas fa-exchange-alt"></i> Trading</h2>
+      <p class="section-desc">Trade with me or the community</p>
+      
+      <form action="https://api.web3forms.com/submit" method="POST" class="form-card">
         <input type="hidden" name="access_key" value="c8f38fc3-1336-491a-a738-054b81fc08bd">
-        <input type="hidden" name="subject" value="Sprite Trade Request - VIPER3384">
+        <input type="hidden" name="subject" value="VIPER Trade Request">
         
         <div class="form-group">
           <label>Your Epic Name</label>
@@ -741,194 +624,59 @@
         </div>
         
         <div class="form-group">
-          <label>Platform</label>
-          <select name="Platform" required>
-            <option value="">Select Platform</option>
-            <option value="PC">🖥️ PC</option>
-            <option value="PlayStation">🎮 PlayStation</option>
-            <option value="Xbox">🎮 Xbox</option>
-            <option value="Nintendo Switch">🎮 Nintendo Switch</option>
-            <option value="Mobile">📱 Mobile</option>
-          </select>
+          <label>What You Want</label>
+          <textarea name="Looking For" rows="2" required placeholder="Which Sprite? Which variant?"></textarea>
         </div>
         
         <div class="form-group">
-          <label>Sprites you want (check catalog for exact names)</label>
-          <textarea name="Looking For" rows="3" required placeholder="e.g. Mythic John Wick Sprite, Gold variant..."></textarea>
-        </div>
-        
-        <div class="form-group">
-          <label>Sprites you offer</label>
-          <textarea name="Offering" rows="3" required placeholder="What you'll trade in return"></textarea>
+          <label>What You Offer</label>
+          <textarea name="Offering" rows="2" required placeholder="Your offer"></textarea>
         </div>
         
         <div class="form-group">
           <label>Your Email</label>
-          <input type="email" name="email" required placeholder="you@example.com">
+          <input type="email" name="email" required placeholder="So I can reply">
         </div>
         
-        <button type="submit" class="btn primary" style="width:100%">Submit Trade Request</button>
-        <p class="form-note"><i class="fas fa-shield-alt"></i> Safe trading only. I never ask for passwords.</p>
-      </form>
-    </div>
-  </section>
-
-  <!-- Community Trades -->
-  <section id="community" class="section alt">
-    <div class="container">
-      <h2>🌐 Community Sprite Trades</h2>
-      <p class="section-desc">Trade with other players. 109+ variants available!</p>
-      
-      <div id="myTradesSection" class="my-trades" style="display: none;">
-        <h3><i class="fas fa-history"></i> Your Recent Submissions</h3>
-        <div id="myTradesList"></div>
-      </div>
-      
-      <form id="communityForm" action="https://api.web3forms.com/submit" method="POST" class="form-card">
-        <input type="hidden" name="access_key" value="c8f38fc3-1336-491a-a738-054b81fc08bd">
-        <input type="hidden" name="subject" value="Community Trade - VIPER3384">
-        
-        <div class="form-group">
-          <label>Your Epic Name</label>
-          <input type="text" name="Epic Name" id="comEpicName" required placeholder="Your in-game name">
-        </div>
-        
-        <div class="form-group">
-          <label>Sprites you want</label>
-          <textarea name="Looking For" rows="2" required placeholder="Be specific: e.g. 'Legendary Dream Sprite (Galaxy variant)'"></textarea>
-        </div>
-        
-        <div class="form-group">
-          <label>Sprites you offer</label>
-          <textarea name="Offering" rows="2" required placeholder="What variants are you trading?"></textarea>
-        </div>
-        
-        <div class="form-group">
-          <label>Platform</label>
-          <select name="Platform" required>
-            <option value="">Select</option>
-            <option>PC</option>
-            <option>PlayStation</option>
-            <option>Xbox</option>
-            <option>Nintendo Switch</option>
-            <option>Mobile</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label>Your Email</label>
-          <input type="email" name="email" required placeholder="you@example.com">
-        </div>
-        
-        <button type="submit" class="btn primary" style="width:100%">Post Trade</button>
-        <p class="form-note">Approved trades appear below. Check email for status updates.</p>
-      </form>
-      
-      <h3 style="color: var(--accent2); margin: 2rem 0 1rem; text-align: center;">
-        <i class="fas fa-list"></i> Current Open Trades
-      </h3>
-      
-      <div class="trade-card">
-        <div class="trade-header">
-          <h4><i class="fas fa-user-circle"></i> SpriteCollector_X</h4>
-          <span class="status-badge status-open">Open</span>
-        </div>
-        <p><strong>Looking for:</strong> Mythic John Wick Sprite (Any variant)</p>
-        <p><strong>Offering:</strong> Legendary Punk Sprite (Gold) + Epic Demon Sprite</p>
-        <p class="platform-icon"><i class="fas fa-desktop"></i> PC</p>
-        <button class="copy-btn" onclick="copyText('SpriteCollector_X')">
-          <i class="fas fa-copy"></i> Copy Epic Name
+        <button type="submit" class="btn primary" style="width:100%">
+          <i class="fas fa-paper-plane"></i> Send Trade Request
         </button>
-      </div>
-      
-      <div class="trade-card">
-        <div class="trade-header">
-          <h4><i class="fas fa-user-circle"></i> GalaxyHunter99</h4>
-          <span class="status-badge status-pending">Pending</span>
-        </div>
-        <p><strong>Looking for:</strong> Zero Point Sprite (Galaxy variant)</p>
-        <p><strong>Offering:</strong> Grim Reaper Sprite + Vini Jr. Sprite</p>
-        <p class="platform-icon"><i class="fas fa-gamepad"></i> PlayStation</p>
-        <button class="copy-btn" onclick="copyText('GalaxyHunter99')">
-          <i class="fas fa-copy"></i> Copy Epic Name
-        </button>
-      </div>
-      
-      <div class="trade-card" style="opacity: 0.6;">
-        <div class="trade-header">
-          <h4><i class="fas fa-user-circle"></i> TradeMaster_2024</h4>
-          <span class="status-badge status-completed">Completed</span>
-        </div>
-        <p><strong>Traded:</strong> Water Sprite (Gem) ↔ Fire Sprite (Holofoil)</p>
-        <p class="platform-icon"><i class="fas fa-gamepad"></i> Xbox</p>
-      </div>
-      
-      <p style="text-align: center; color: var(--muted); font-size: 0.9rem; margin-top: 1.5rem;">
-        <i class="fas fa-exclamation-triangle"></i> Trade at your own risk. Verify users before trading.
-      </p>
-    </div>
-  </section>
-
-  <!-- Video Requests -->
-  <section id="videos" class="section">
-    <div class="container">
-      <h2>🎥 Request to Be in a Video</h2>
-      <p class="section-desc">Want to appear in one of my Fortnite videos?</p>
-      
-      <form id="videoForm" action="https://api.web3forms.com/submit" method="POST" class="form-card">
-        <input type="hidden" name="access_key" value="c8f38fc3-1336-491a-a738-054b81fc08bd">
-        <input type="hidden" name="subject" value="Video Collab Request - VIPER3384">
-        
-        <div class="form-group">
-          <label>Your Name / Gamertag</label>
-          <input type="text" name="Name" required placeholder="Your in-game name">
-        </div>
-        
-        <div class="form-group">
-          <label>Preferred Platform</label>
-          <select name="Platform" required>
-            <option value="">Select</option>
-            <option>PC</option>
-            <option>PlayStation</option>
-            <option>Xbox</option>
-            <option>Nintendo Switch</option>
-            <option>Any</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label>Why do you want to be in a video?</label>
-          <textarea name="Why" rows="4" required placeholder="Tell me about yourself..."></textarea>
-        </div>
-        
-        <div class="form-group">
-          <label>Your Email</label>
-          <input type="email" name="email" required placeholder="you@example.com">
-        </div>
-        
-        <button type="submit" class="btn primary" style="width:100%">Submit Video Request</button>
-        <p class="form-note">Subscribers get priority!</p>
+        <p class="form-note">No passwords. Safe trading only.</p>
       </form>
     </div>
   </section>
 
-  <!-- About -->
+  <!-- ABOUT -->
   <section id="about" class="section alt">
-    <div class="container about-content">
-      <h2>About VIPER3384</h2>
-      <p>Hi, I am a small content creator who uploads cool and funny Fortnite and sometimes Minecraft clips. Please subscribe if you want to help grow the channel!</p>
-      <a href="https://youtube.com/@coolfox3384" target="_blank" class="social-btn">
-        <i class="fas fa-youtube"></i> YouTube Channel
-      </a>
+    <div class="container">
+      <h2><i class="fas fa-user"></i> About Me</h2>
+      
+      <div class="about-box">
+        <p>
+          Hey! I'm VIPER3384 (Coolfox3384 on YouTube). I make funny Fortnite videos and sometimes Minecraft stuff.
+        </p>
+        <p>
+          I built this website so people can trade Sprites easily and request to be in my videos. 
+          It's just me running this, so be patient with replies!
+        </p>
+        <p style="color: var(--accent); font-weight: 600;">
+          <i class="fas fa-heart"></i> Please subscribe if you want to help me grow!
+        </p>
+        <a href="https://youtube.com/@coolfox3384" target="_blank" class="youtube-btn">
+          <i class="fab fa-youtube"></i> My YouTube Channel
+        </a>
+      </div>
     </div>
   </section>
 
   <footer>
-    <p>© 2026 VIPER3384 • 24 Sprites • 109+ Variants</p>
+    <p><i class="fas fa-dragon" style="color: var(--accent);"></i> VIPER3384 Hub</p>
+    <p style="font-size: 0.85rem; opacity: 0.7; margin-top: 0.5rem;">
+      Made for trading Sprites & making videos
+    </p>
   </footer>
 
   <script>
-    // Mobile Menu
     function toggleMenu() {
       document.getElementById('navLinks').classList.toggle('active');
     }
@@ -937,117 +685,40 @@
       document.getElementById('navLinks').classList.remove('active');
     }
     
-    // Toast
-    function showToast(message, isError = false) {
+    function showToast(msg, error = false) {
       const toast = document.getElementById('toast');
-      document.getElementById('toast-message').textContent = message;
-      toast.className = isError ? 'toast error show' : 'toast show';
+      document.getElementById('toast-message').textContent = msg;
+      toast.className = error ? 'toast error show' : 'toast show';
       setTimeout(() => toast.classList.remove('show'), 3000);
     }
     
-    // Copy Text
     function copyText(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        showToast(`Copied "${text}"!`);
-      }).catch(() => {
-        showToast(`Copied "${text}"!`);
+      navigator.clipboard.writeText(text + ' Sprite').then(() => {
+        showToast('Copied ' + text + '!');
       });
     }
     
-    // Swear Filter
-    const badWords = ["fuck", "shit", "bitch", "asshole", "cunt", "dick", "piss", "bastard",
-      "slut", "whore", "nigger", "faggot", "retard", "cocksucker", "motherfucker",
-      "fucking", "shitty", "bullshit", "damn", "crap"];
+    // Swear filter
+    const badWords = ["fuck", "shit", "bitch", "asshole", "cunt", "dick", "bastard",
+      "slut", "whore", "nigger", "faggot", "retard", "cocksucker", "motherfucker"];
     
-    function containsBadWords(text) {
-      return badWords.some(word => text.toLowerCase().includes(word));
-    }
-    
-    function checkForm(form) {
-      const inputs = form.querySelectorAll("input, textarea");
-      for (let input of inputs) {
-        if (containsBadWords(input.value)) return true;
-      }
-      return false;
-    }
-    
-    // Form Handling
-    document.getElementById('tradeForm').addEventListener('submit', function(e) {
-      if (checkForm(this)) {
-        e.preventDefault();
-        showToast("No swearing allowed!", true);
-      } else {
-        saveTrade({type: 'Trade with VIPER', epic: this.querySelector('[name="Epic Name"]').value, date: new Date().toLocaleDateString(), status: 'Pending'});
-      }
+    document.querySelectorAll('form').forEach(form => {
+      form.addEventListener('submit', function(e) {
+        const text = this.innerText.toLowerCase();
+        if (badWords.some(w => text.includes(w))) {
+          e.preventDefault();
+          showToast("Keep it clean!", true);
+        } else {
+          showToast("Request sent! Check your email.");
+        }
+      });
     });
     
-    document.getElementById('communityForm').addEventListener('submit', function(e) {
-      if (checkForm(this)) {
-        e.preventDefault();
-        showToast("No swearing allowed!", true);
-      } else {
-        saveTrade({type: 'Community Trade', epic: document.getElementById('comEpicName').value, date: new Date().toLocaleDateString(), status: 'Posted'});
-      }
-    });
-    
-    document.getElementById('videoForm').addEventListener('submit', function(e) {
-      if (checkForm(this)) {
-        e.preventDefault();
-        showToast("No swearing allowed!", true);
-      } else {
-        saveTrade({type: 'Video Request', epic: this.querySelector('[name="Name"]').value, date: new Date().toLocaleDateString(), status: 'Pending'});
-      }
-    });
-    
-    // LocalStorage
-    function saveTrade(trade) {
-      let trades = JSON.parse(localStorage.getItem('viperTrades') || '[]');
-      trades.unshift(trade);
-      if (trades.length > 5) trades = trades.slice(0, 5);
-      localStorage.setItem('viperTrades', JSON.stringify(trades));
-      updateDisplay();
-    }
-    
-    function updateDisplay() {
-      const trades = JSON.parse(localStorage.getItem('viperTrades') || '[]');
-      const section = document.getElementById('myTradesSection');
-      const list = document.getElementById('myTradesList');
-      
-      if (trades.length === 0) {
-        section.style.display = 'none';
-        return;
-      }
-      
-      section.style.display = 'block';
-      list.innerHTML = trades.map(t => `
-        <div class="my-trade-item">
-          <div><strong>${t.type}</strong> - ${t.epic}<br><small style="color: var(--muted);">${t.date}</small></div>
-          <span style="color: var(--accent); font-size: 0.85rem;">${t.status}</span>
-        </div>
-      `).join('');
-    }
-    
-    updateDisplay();
-    
-    // Smooth Scroll
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function(e) {
         e.preventDefault();
         const target = document.querySelector(this.getAttribute('href'));
         if (target) target.scrollIntoView({ behavior: 'smooth' });
-      });
-    });
-    
-    // Copy button feedback
-    document.querySelectorAll('.copy-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const original = this.innerHTML;
-        this.innerHTML = '<i class="fas fa-check"></i> Copied!';
-        this.classList.add('copied');
-        setTimeout(() => {
-          this.innerHTML = original;
-          this.classList.remove('copied');
-        }, 2000);
       });
     });
   </script>
