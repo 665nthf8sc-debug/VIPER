@@ -20,6 +20,8 @@
       --epic: #a855f7;
       --legendary: #eab308;
       --mythic: #ef4444;
+      --success: #22c55e;
+      --warning: #eab308;
     }
     
     body {
@@ -166,6 +168,11 @@
       border: 2px solid var(--accent);
     }
     
+    .btn.small {
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+    }
+    
     .section { 
       padding: 4rem 1.5rem; 
     }
@@ -193,32 +200,24 @@
       margin-bottom: 2rem;
     }
     
-    .video-box {
+    .video-container {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      border-radius: 16px;
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 2rem;
-      text-align: center;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
     }
     
-    .video-placeholder {
+    .video-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
-      height: 300px;
-      background: linear-gradient(135deg, var(--card), #1a1033);
-      border-radius: 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      border: 2px dashed var(--border);
-      margin-bottom: 1rem;
-    }
-    
-    .video-placeholder i {
-      font-size: 4rem;
-      color: var(--accent);
-      margin-bottom: 1rem;
+      height: 100%;
+      border: none;
     }
     
     .features-grid {
@@ -262,7 +261,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
       gap: 0.75rem;
-      margin-top: 2rem;
+      margin: 2rem 0;
     }
     
     .sprite-item {
@@ -302,7 +301,7 @@
       border-radius: 16px; 
       padding: 2rem; 
       max-width: 600px;
-      margin: 0 auto;
+      margin: 0 auto 2rem;
     }
     
     .form-group { 
@@ -341,6 +340,91 @@
       font-size: 0.85rem; 
       color: var(--muted); 
       margin-top: 1rem; 
+    }
+    
+    /* Trade Cards */
+    .trade-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      transition: all 0.2s;
+    }
+    
+    .trade-card:hover {
+      transform: translateX(5px);
+      border-color: var(--accent);
+    }
+    
+    .trade-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    
+    .trade-card h4 { 
+      color: var(--accent); 
+      font-size: 1.1rem;
+    }
+    
+    .trade-card p { 
+      color: var(--muted); 
+      font-size: 0.95rem; 
+      margin-bottom: 0.4rem;
+    }
+    
+    .status-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .status-open { 
+      background: rgba(34, 197, 94, 0.2); 
+      color: #22c55e; 
+      border: 1px solid #22c55e;
+    }
+    
+    .status-pending { 
+      background: rgba(234, 179, 8, 0.2); 
+      color: #eab308; 
+      border: 1px solid #eab308;
+    }
+    
+    .status-completed { 
+      background: rgba(107, 114, 128, 0.2); 
+      color: #9ca3af; 
+      border: 1px solid #6b7280;
+      text-decoration: line-through;
+    }
+    
+    .copy-btn {
+      background: rgba(0, 229, 255, 0.1);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+      margin-top: 0.5rem;
+    }
+    
+    .copy-btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+    
+    .copy-btn.copied {
+      background: var(--success);
+      border-color: var(--success);
+      color: white;
     }
     
     .about-box {
@@ -424,10 +508,11 @@
     </button>
     <ul class="nav-links" id="navLinks">
       <li><a href="#home" onclick="closeMenu()">Home</a></li>
-      <li><a href="#videos" onclick="closeMenu()">My Videos</a></li>
+      <li><a href="#videos" onclick="closeMenu()">Videos</a></li>
       <li><a href="#sprites" onclick="closeMenu()">Sprites</a></li>
       <li><a href="#trading" onclick="closeMenu()">Trading</a></li>
-      <li><a href="#about" onclick="closeMenu()">About Me</a></li>
+      <li><a href="#collabs" onclick="closeMenu()">Collabs</a></li>
+      <li><a href="#about" onclick="closeMenu()">About</a></li>
     </ul>
   </nav>
 
@@ -438,10 +523,10 @@
       <h1>VIPER3384</h1>
       <p class="hero-desc">
         I make Fortnite & Minecraft videos.<br>
-        This is my spot for trading Sprites and collabs.
+        Trade Sprites, join videos, or just say hi!
       </p>
       <a href="#videos" class="btn primary">
-        <i class="fas fa-play"></i> Watch My Videos
+        <i class="fas fa-play"></i> Latest Video
       </a>
       <a href="#trading" class="btn secondary" style="margin-left: 10px;">
         <i class="fas fa-exchange-alt"></i> Trade Sprites
@@ -449,19 +534,25 @@
     </div>
   </section>
 
-  <!-- VIDEOS -->
+  <!-- VIDEOS - NOW WITH EMBED -->
   <section id="videos" class="section alt">
     <div class="container">
       <h2><i class="fas fa-video"></i> My Latest Video</h2>
-      <p class="section-desc">Check out what I've been working on</p>
+      <p class="section-desc">Fresh from the channel</p>
       
-      <div class="video-box">
-        <div class="video-placeholder">
-          <i class="fab fa-youtube"></i>
-          <p>Latest YouTube Video</p>
-        </div>
+      <!-- Replace BK5NgFbkO8U with your actual latest video ID -->
+      <div class="video-container">
+        <iframe 
+          src="https://www.youtube.com/embed/BK5NgFbkO8U" 
+          title="Latest VIPER3384 Video"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+          allowfullscreen>
+        </iframe>
+      </div>
+      
+      <div style="text-align: center;">
         <p style="color: var(--muted); margin-bottom: 1rem;">
-          I post cool and funny Fortnite clips. Subscribe to help me grow!
+          Subscribe for more Fortnite clips and Sprite trading content!
         </p>
         <a href="https://youtube.com/@coolfox3384" target="_blank" class="youtube-btn">
           <i class="fab fa-youtube"></i> Subscribe on YouTube
@@ -474,28 +565,27 @@
   <section id="features" class="section">
     <div class="container">
       <h2><i class="fas fa-star"></i> What's Here</h2>
-      <p class="section-desc">Stuff I built for the community</p>
       
       <div class="features-grid">
         <div class="feature-card">
           <i class="fas fa-exchange-alt"></i>
           <h3>Sprite Trading</h3>
-          <p>Trade all 24 Sprites with me or post in the community.</p>
+          <p>Trade with me or post on the community board.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-users"></i>
+          <h3>Community Board</h3>
+          <p>See open trades from other players. Copy Epic names.</p>
         </div>
         <div class="feature-card">
           <i class="fas fa-video"></i>
           <h3>Video Collabs</h3>
-          <p>Want to be in my videos? Submit a request here.</p>
+          <p>Request to be featured in my videos.</p>
         </div>
         <div class="feature-card">
           <i class="fas fa-book"></i>
-          <h3>Sprite List</h3>
-          <p>Full catalog of every Sprite. Click to copy the names.</p>
-        </div>
-        <div class="feature-card">
-          <i class="fas fa-mobile-alt"></i>
-          <h3>Works on Phone</h3>
-          <p>Fully mobile. Trade from anywhere.</p>
+          <h3>Full Catalog</h3>
+          <p>All 24 Sprites with copy buttons.</p>
         </div>
       </div>
     </div>
@@ -505,7 +595,7 @@
   <section id="sprites" class="section alt">
     <div class="container">
       <h2><i class="fas fa-gem"></i> All 24 Sprites</h2>
-      <p class="section-desc">Click any to copy the name</p>
+      <p class="section-desc">Click to copy the name</p>
       
       <div class="catalog-grid">
         <div class="sprite-item rare" onclick="copyText('Water Sprite')">
@@ -608,15 +698,20 @@
     </div>
   </section>
 
-  <!-- TRADING -->
+  <!-- TRADING HUB -->
   <section id="trading" class="section">
     <div class="container">
-      <h2><i class="fas fa-exchange-alt"></i> Trading</h2>
+      <h2><i class="fas fa-exchange-alt"></i> Trading Hub</h2>
       <p class="section-desc">Trade with me or the community</p>
       
+      <!-- Trade with VIPER -->
       <form action="https://api.web3forms.com/submit" method="POST" class="form-card">
         <input type="hidden" name="access_key" value="c8f38fc3-1336-491a-a738-054b81fc08bd">
-        <input type="hidden" name="subject" value="VIPER Trade Request">
+        <input type="hidden" name="subject" value="Trade With VIPER - New Request">
+        
+        <h3 style="color: var(--accent); margin-bottom: 1rem; text-align: center;">
+          <i class="fas fa-user"></i> Trade With Me
+        </h3>
         
         <div class="form-group">
           <label>Your Epic Name</label>
@@ -625,7 +720,7 @@
         
         <div class="form-group">
           <label>What You Want</label>
-          <textarea name="Looking For" rows="2" required placeholder="Which Sprite? Which variant?"></textarea>
+          <textarea name="Looking For" rows="2" required placeholder="Which Sprite/variant?"></textarea>
         </div>
         
         <div class="form-group">
@@ -639,21 +734,109 @@
         </div>
         
         <button type="submit" class="btn primary" style="width:100%">
-          <i class="fas fa-paper-plane"></i> Send Trade Request
+          <i class="fas fa-paper-plane"></i> Send to VIPER
         </button>
-        <p class="form-note">No passwords. Safe trading only.</p>
+      </form>
+      
+      <!-- Community Board -->
+      <h3 style="color: var(--accent2); margin: 2rem 0 1rem; text-align: center;">
+        <i class="fas fa-users"></i> Community Trading Board
+      </h3>
+      
+      <!-- Example Trade 1 -->
+      <div class="trade-card">
+        <div class="trade-header">
+          <h4><i class="fas fa-user-circle"></i> SpriteTrader_X</h4>
+          <span class="status-badge status-open">Open</span>
+        </div>
+        <p><strong>Want:</strong> Mythic John Wick (Galaxy)</p>
+        <p><strong>Offer:</strong> Legendary Punk (Gold) + Epic Demon</p>
+        <button class="copy-btn" onclick="copyText('SpriteTrader_X')">
+          <i class="fas fa-copy"></i> Copy Epic Name
+        </button>
+      </div>
+      
+      <!-- Example Trade 2 -->
+      <div class="trade-card">
+        <div class="trade-header">
+          <h4><i class="fas fa-user-circle"></i> GalaxyHunter99</h4>
+          <span class="status-badge status-pending">Pending</span>
+        </div>
+        <p><strong>Want:</strong> Zero Point Sprite</p>
+        <p><strong>Offer:</strong> Grim Reaper + Vini Jr.</p>
+        <button class="copy-btn" onclick="copyText('GalaxyHunter99')">
+          <i class="fas fa-copy"></i> Copy Epic Name
+        </button>
+      </div>
+      
+      <!-- Example Trade 3 (Completed) -->
+      <div class="trade-card" style="opacity: 0.6;">
+        <div class="trade-header">
+          <h4><i class="fas fa-user-circle"></i> CoolDude_2024</h4>
+          <span class="status-badge status-completed">Completed</span>
+        </div>
+        <p><strong>Traded:</strong> Water Sprite ↔ Fire Sprite</p>
+      </div>
+      
+      <p style="text-align: center; color: var(--muted); font-size: 0.9rem; margin-top: 1.5rem;">
+        <i class="fas fa-info-circle"></i> To post here, use the form above and select "Community"
+      </p>
+    </div>
+  </section>
+
+  <!-- VIDEO COLLABS -->
+  <section id="collabs" class="section alt">
+    <div class="container">
+      <h2><i class="fas fa-video"></i> Video Collabs</h2>
+      <p class="section-desc">Want to be in my videos?</p>
+      
+      <form action="https://api.web3forms.com/submit" method="POST" class="form-card">
+        <input type="hidden" name="access_key" value="c8f38fc3-1336-491a-a738-054b81fc08bd">
+        <input type="hidden" name="subject" value="Video Collab Request - VIPER3384">
+        
+        <div class="form-group">
+          <label>Your Name / Gamertag</label>
+          <input type="text" name="Name" required placeholder="What should I call you?">
+        </div>
+        
+        <div class="form-group">
+          <label>Platform</label>
+          <select name="Platform" required>
+            <option value="">Select your platform</option>
+            <option>PC</option>
+            <option>PlayStation</option>
+            <option>Xbox</option>
+            <option>Nintendo Switch</option>
+            <option>Mobile</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Why do you want to collab?</label>
+          <textarea name="Why" rows="3" required placeholder="Tell me about yourself and why you'd be fun to feature..."></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label>Your Email</label>
+          <input type="email" name="email" required placeholder="How I contact you">
+        </div>
+        
+        <button type="submit" class="btn primary" style="width:100%">
+          <i class="fas fa-video"></i> Request Collab
+        </button>
+        <p class="form-note">Subscribers get priority! Make sure you're subscribed.</p>
       </form>
     </div>
   </section>
 
   <!-- ABOUT -->
-  <section id="about" class="section alt">
+  <section id="about" class="section">
     <div class="container">
       <h2><i class="fas fa-user"></i> About Me</h2>
       
       <div class="about-box">
         <p>
-          Hey! I'm VIPER3384 (Coolfox3384 on YouTube). I make funny Fortnite videos and sometimes Minecraft stuff.
+          Hey! I'm VIPER3384. I make funny Fortnite videos and sometimes Minecraft stuff.
         </p>
         <p>
           I built this website so people can trade Sprites easily and request to be in my videos. 
@@ -672,7 +855,7 @@
   <footer>
     <p><i class="fas fa-dragon" style="color: var(--accent);"></i> VIPER3384 Hub</p>
     <p style="font-size: 0.85rem; opacity: 0.7; margin-top: 0.5rem;">
-      Made for trading Sprites & making videos
+      Trading Sprites & Making Videos
     </p>
   </footer>
 
@@ -693,8 +876,8 @@
     }
     
     function copyText(text) {
-      navigator.clipboard.writeText(text + ' Sprite').then(() => {
-        showToast('Copied ' + text + '!');
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied: ' + text);
       });
     }
     
@@ -708,9 +891,20 @@
         if (badWords.some(w => text.includes(w))) {
           e.preventDefault();
           showToast("Keep it clean!", true);
-        } else {
-          showToast("Request sent! Check your email.");
         }
+      });
+    });
+    
+    // Copy button feedback
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const original = this.innerHTML;
+        this.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        this.classList.add('copied');
+        setTimeout(() => {
+          this.innerHTML = original;
+          this.classList.remove('copied');
+        }, 2000);
       });
     });
     
