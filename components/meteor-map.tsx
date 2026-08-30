@@ -53,6 +53,7 @@ export function MeteorMap() {
   const running = useRef(true);
 
   useEffect(() => {
+    running.current = true;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -119,6 +120,10 @@ export function MeteorMap() {
       toastLife = 70;
       sfx.warp();
     };
+
+    seedTilted();
+    toast = "SPAWN ISLAND";
+    toastLife = 90;
 
     const onKey = (e: KeyboardEvent, down: boolean) => {
       if (e.code === "KeyA") pads[0].left = down;
@@ -272,8 +277,8 @@ export function MeteorMap() {
         }
       }
 
-      setLoadout(`P1 ${GUN_NAME[p1.gun]}  ·  P2 ${GUN_NAME[p2.gun]}`);
-      if (tick % 20 === 0) {
+      if (tick % 12 === 0) {
+        setLoadout(`P1 ${GUN_NAME[p1.gun]}  ·  P2 ${GUN_NAME[p2.gun]}`);
         const onPad = !p1.airborne && p1.y <= PAD_Y + 2;
         setBanner(
           onPad
@@ -363,9 +368,9 @@ export function MeteorMap() {
         ctx.fillText(toast.slice(0, 22), 24, 114);
       }
 
-      requestAnimationFrame(loop);
+      raf = requestAnimationFrame(loop);
     };
-    const raf = requestAnimationFrame(loop);
+    let raf = requestAnimationFrame(loop);
     return () => {
       running.current = false;
       cancelAnimationFrame(raf);
