@@ -12,7 +12,10 @@ import {
 import {
   angleFrame,
   loadBossSheets,
+  loadEnemyShootSheets,
   loadFpsArt,
+  loadGunFireStrips,
+  loadHudFaceStrip,
   loadLevelSkyImages,
   type AngleKind,
   type BossAngleKind,
@@ -20,6 +23,7 @@ import {
 import {
   angleKindFor,
   buildEnemySprite,
+  buildMuzzleFlash,
   buildPickupSprite,
   buildWeaponView,
   isBossKind,
@@ -30,18 +34,20 @@ import {
 } from "@/lib/fps/sprites";
 import {
   buildMapGrid,
-  MAP_H,
-  MAP_W,
+  isBlocked,
   PICKUP_SPAWNS,
   SPAWN,
+  wallAt,
 } from "@/lib/fps/map";
 import {
   farOpenCell,
+  findOpenSpawn,
   LEVELS,
   levelById,
   pickRegularSpawns,
   type LevelDef,
 } from "@/lib/fps/levels";
+import { buildViperFace, drawWolfBar, RENDER_H, RENDER_W, WORLD_H } from "@/lib/fps/hud";
 import {
   formatAmmo,
   WEAPON_ORDER,
@@ -78,6 +84,8 @@ export type FpsHud = {
   remaining: number;
   bossLive: boolean;
   bossName: string;
+  score: number;
+  lives: number;
 };
 
 type Enemy = {
@@ -96,6 +104,11 @@ type Enemy = {
   melee: number;
   rush: number;
   standIn: boolean;
+  fireCool: number;
+  muzzle: number;
+  gunDmg: number;
+  gunRange: number;
+  gunCool: number;
 };
 
 type Pickup = {
@@ -108,39 +121,26 @@ type Pickup = {
 
 type GunAmmo = { mag: number; reserve: number };
 
-const RENDER_W = 640;
-const RENDER_H = 360;
 const FOV = Math.PI / 2.8;
 const MAX_DEPTH = 22;
 const MOVE_SPEED = 3.4;
 const SPRINT = 1.55;
 const ROT_SPEED = 2.4;
-const VIEW_GUN_W = 100;
-const VIEW_GUN_H = 70;
+const VIEW_GUN_W = 176;
+const VIEW_GUN_H = 114;
+/** Walking is silent. Optional dirt step stays off. */
+const FOOTSTEP_SFX = false;
 const PICKUP_SCALE = 0.5;
 const CHAR_SCALE = 1.15;
 const PICKUP_REACH = 1.6;
 const MELEE_REACH = 0.7;
 const FLOOR_W = 640;
-const FLOOR_H = 180;
+const FLOOR_H = 160;
 const FLOOR_SCALE = 2.6;
+const SCORE_REGULAR = 100;
+const SCORE_BOSS = 500;
+const START_LIVES = 3;
 type GunId = "pump" | "scar" | "exotic";
-
-function wallAt(grid: number[][], x: number, y: number) {
-  const gx = Math.floor(x);
-  const gy = Math.floor(y);
-  if (gx < 0 || gy < 0 || gx >= MAP_W || gy >= MAP_H) return 1;
-  return grid[gy][gx];
-}
-
-function isBlocked(grid: number[][], x: number, y: number, r = 0.22) {
-  return (
-    wallAt(grid, x - r, y - r) > 0 ||
-    wallAt(grid, x + r, y - r) > 0 ||
-    wallAt(grid, x - r, y + r) > 0 ||
-    wallAt(grid, x + r, y + r) > 0
-  );
-}
 
 function emptyAmmo(): Record<GunId, GunAmmo> {
   return {
@@ -169,7 +169,7 @@ export function mountFps(
     indoor: wallTex[2],
     industrial: wallTex[3],
   };
-  let skyCanvas = buildSkyCanvas(RENDER_W, RENDER_H);
+  let skyCanvas = buildSkyCanvas(RENDER_W, WORLD_H);
   let stormSky = skyCanvas;
   let floorTiles = buildThemeFloors([], []);
   let themeFloors = floorTiles;
@@ -198,6 +198,12 @@ export function mountFps(
     ammo: buildPickupSprite("ammo"),
   };
   const gunHd: Partial<Record<WeaponId, HTMLCanvasElement>> = {};
+  const gunFire: Partial<Record<WeaponId, HTMLCanvasElement[]>> = {};
+  const enemyShoot: Partial<Record<AngleKind, HTMLCanvasElement>> = {};
+  let hudFaces: HTMLCanvasElement[] = [0, 1, 2, 3, 4].map((t) =>
+    buildViperFace(t as 0 | 1 | 2 | 3 | 4)
+  );
+  const muzzleTex = buildMuzzleFlash();
   let level = 1;
   let bossLive = false;
   let pendingAdvance = 0;
@@ -231,7 +237,7 @@ export function mountFps(
     themeWalls.indoor = wallTex[2];
     themeWalls.industrial = wallTex[3];
     if (art.env.sky) {
-      stormSky = buildSkyFromImage(art.env.sky, RENDER_W, RENDER_H);
+      stormSky = buildSkyFromImage(art.env.sky, RENDER_W, WORLD_H);
     }
     floorTiles = buildThemeFloors(art.env.surfaces, art.env.interiors, art.env.floors);
     themeFloors = floorTiles;
@@ -261,13 +267,34 @@ export function mountFps(
       .then((skies) => {
         const wrapped: Partial<Record<1 | 2 | 3, HTMLCanvasElement>> = {};
         ([1, 2, 3] as const).forEach((id) => {
-          if (skies[id]) wrapped[id] = buildSkyFromImage(skies[id]!, RENDER_W, RENDER_H);
+          if (skies[id]) wrapped[id] = buildSkyFromImage(skies[id]!, RENDER_W, WORLD_H);
         });
         levelSkies = { ...levelSkies, ...wrapped };
         if (mode === "play") paintLevelTheme(levelById(level));
       })
       .catch(() => {
         /* keep storm sky */
+      });
+    void loadGunFireStrips()
+      .then((strips) => {
+        Object.assign(gunFire, strips);
+      })
+      .catch(() => {
+        /* procedural fire */
+      });
+    void loadHudFaceStrip()
+      .then((faces) => {
+        if (faces && faces.length >= 5) hudFaces = faces;
+      })
+      .catch(() => {
+        /* procedural VIPER face */
+      });
+    void loadEnemyShootSheets()
+      .then((sheets) => {
+        Object.assign(enemyShoot, sheets);
+      })
+      .catch(() => {
+        /* muzzle flash on body */
       });
   };
   const bootArt = () => {
@@ -285,9 +312,12 @@ export function mountFps(
   };
 
   const enemyTexFor = (e: Enemy) => {
+    const kind = angleKindFor(e.kind);
+    if (e.muzzle > 0 && enemyShoot[kind]) return enemyShoot[kind]!;
     const bossSheet = e.boss && isBossKind(e.kind) ? bossAngles[e.kind] : undefined;
-    const sheet = bossSheet ?? enemyAngles[angleKindFor(e.kind)];
-    if (sheet && sheet.length === 8) {
+    const sheet = bossSheet ?? enemyAngles[kind];
+    if (sheet && sheet.length >= 8) {
+      if (e.muzzle > 0 && sheet.length > 8) return sheet[8] ?? sheet[0];
       const idx = angleFrame(e.facing, px, py, e.x, e.y);
       return sheet[idx] ?? sheet[0];
     }
@@ -301,6 +331,8 @@ export function mountFps(
   let hp = 100;
   let shield = 50;
   let elims = 0;
+  let score = 0;
+  let lives = START_LIVES;
   let weapon: WeaponId = "pickaxe";
   let owned = new Set<WeaponId>(["pickaxe"]);
   let ammo = emptyAmmo();
@@ -317,6 +349,7 @@ export function mountFps(
   let tick = 0;
   let musicArmed = false;
   let spawnGuard = 0;
+  let pendingLifeLoss = false;
 
   const spawnRegular = (s: { kind: EnemyKind; x: number; y: number }): Enemy => {
     const vx = (Math.random() - 0.5) * 0.6;
@@ -337,6 +370,11 @@ export function mountFps(
       melee: 12,
       rush: 0,
       standIn: false,
+      fireCool: 20 + ((Math.random() * 30) | 0),
+      muzzle: 0,
+      gunDmg: s.kind === "chief" ? 10 : 8,
+      gunRange: 9.5,
+      gunCool: 52 + ((Math.random() * 18) | 0),
     };
   };
 
@@ -430,6 +468,8 @@ export function mountFps(
       remaining: enemies.filter((e) => e.alive && !e.boss).length,
       bossLive,
       bossName: bossLive ? levelById(level).bossName : "",
+      score,
+      lives,
     });
   };
 
@@ -507,7 +547,12 @@ export function mountFps(
   };
 
   const spawnBoss = (def: LevelDef) => {
-    const at = farOpenCell(grid, px, py);
+    const at = farOpenCell(
+      grid,
+      px,
+      py,
+      enemies.filter((e) => e.alive).map((e) => ({ x: e.x, y: e.y }))
+    );
     const standIn = !bossAngles[def.bossKind];
     enemies.push({
       kind: def.bossKind,
@@ -525,6 +570,11 @@ export function mountFps(
       melee: def.bossMelee,
       rush: 0,
       standIn,
+      fireCool: 36,
+      muzzle: 0,
+      gunDmg: def.bossGun,
+      gunRange: 13,
+      gunCool: def.bossGunCool,
     });
     bossLive = true;
     banner = def.bossName;
@@ -539,6 +589,7 @@ export function mountFps(
     level = def.id;
     bossLive = false;
     pendingAdvance = 0;
+    pendingLifeLoss = false;
     bootArt();
     paintLevelTheme(def);
     px = SPAWN.x;
@@ -548,6 +599,8 @@ export function mountFps(
     shield = 50;
     if (!keepLoadout) {
       elims = 0;
+      score = 0;
+      lives = START_LIVES;
       weapon = "pickaxe";
       owned = new Set<WeaponId>(["pickaxe"]);
       ammo = emptyAmmo();
@@ -579,10 +632,7 @@ export function mountFps(
 
   const beginRun = () => startLevel(1, false);
 
-  const continuePlay = () => {
-    if (mode === "over") startLevel(level, true);
-    else beginRun();
-  };
+  const continuePlay = () => beginRun();
 
   const finish = (win: boolean) => {
     mode = win ? "win" : "over";
@@ -658,6 +708,7 @@ export function mountFps(
     if (e.hp <= 0) {
       e.alive = false;
       elims += 1;
+      score += e.boss ? SCORE_BOSS : SCORE_REGULAR;
       sfx.ko();
       if (e.boss) {
         bossLive = false;
@@ -679,6 +730,7 @@ export function mountFps(
   };
 
   const applyPlayerDamage = (amount: number, fromAng: number) => {
+    if (mode !== "play" || pendingLifeLoss || hp <= 0) return;
     let dmg = amount;
     if (shield > 0) {
       const soak = Math.min(shield, dmg);
@@ -690,7 +742,13 @@ export function mountFps(
     hurtFrom = fromAng;
     sfx.playerHurt();
     pushHud();
-    if (hp <= 0) finish(false);
+    if (hp <= 0) {
+      if (lives > 1) pendingLifeLoss = true;
+      else {
+        lives = 0;
+        finish(false);
+      }
+    }
   };
 
   const shoot = () => {
@@ -709,7 +767,7 @@ export function mountFps(
       pack.mag -= 1;
     }
     cool = w.cool;
-    fireFrame = 6;
+    fireFrame = w.fireFrames;
     shotTrace = 5;
     shotHit = false;
     sfx.playWeapon(weapon);
@@ -942,7 +1000,7 @@ export function mountFps(
   /** Classic Wolfenstein DDA + canvas column strips (no ImageData gaps). */
   const renderWorld = (offCtx: CanvasRenderingContext2D) => {
     const w = RENDER_W;
-    const h = RENDER_H;
+    const h = WORLD_H;
     const half = (h / 2) | 0;
     const zBuffer = new Float32Array(w);
 
@@ -1052,7 +1110,7 @@ export function mountFps(
   ) => {
     list.sort((a, b) => b.dist - a.dist);
     const w = RENDER_W;
-    const h = RENDER_H;
+    const h = WORLD_H;
     const halfTan = Math.tan(FOV / 2);
 
     for (const sp of list) {
@@ -1175,6 +1233,9 @@ export function mountFps(
       }
       if (!isBlocked(grid, nx, py)) px = nx;
       if (!isBlocked(grid, px, ny)) py = ny;
+      if (FOOTSTEP_SFX && (nx !== px || ny !== py) && tick % 18 === 0) {
+        /* dirt step stays off */
+      }
       tryPickup();
 
       const keyFire =
@@ -1200,39 +1261,71 @@ export function mountFps(
       for (const e of enemies) {
         if (!e.alive) continue;
         if (e.flash > 0) e.flash -= 1;
+        if (e.muzzle > 0) e.muzzle -= 1;
+        if (e.fireCool > 0) e.fireCool -= 1;
+        if (isBlocked(grid, e.x, e.y)) {
+          const unstick = findOpenSpawn(grid, e.x, e.y, {
+            px,
+            py,
+            others: enemies.filter((o) => o !== e && o.alive),
+          });
+          if (unstick) {
+            e.x = unstick.x;
+            e.y = unstick.y;
+          }
+        }
         const d = Math.hypot(e.x - px, e.y - py);
         if (e.boss) {
           if (e.rush > 0) e.rush -= 1;
           else if (tick % 160 === 0) e.rush = 48;
           if (e.standIn && tick % 22 < 9) e.flash = Math.max(e.flash, 3);
         }
+        const see = hasLineOfSight(cellBlocked, e.x, e.y, px, py);
         if (d < (e.boss ? 11 : 8) && d > 0.58) {
           const ang = Math.atan2(py - e.y, px - e.x);
           e.facing = ang;
           const step = dt * (e.rush > 0 ? e.speed * 2.6 : e.speed);
           const nx = e.x + Math.cos(ang) * step;
           const ny = e.y + Math.sin(ang) * step;
-          if (!isBlocked(grid, nx, e.y, 0.18)) e.x = nx;
-          if (!isBlocked(grid, e.x, ny, 0.18)) e.y = ny;
+          if (!isBlocked(grid, nx, e.y)) e.x = nx;
+          if (!isBlocked(grid, e.x, ny)) e.y = ny;
         } else if (d >= (e.boss ? 11 : 8)) {
           const nx = e.x + e.vx * dt;
           const ny = e.y + e.vy * dt;
-          if (!isBlocked(grid, nx, e.y, 0.18)) e.x = nx;
+          if (!isBlocked(grid, nx, e.y)) e.x = nx;
           else e.vx *= -1;
-          if (!isBlocked(grid, e.x, ny, 0.18)) e.y = ny;
+          if (!isBlocked(grid, e.x, ny)) e.y = ny;
           else e.vy *= -1;
           if (Math.abs(e.vx) + Math.abs(e.vy) > 0.01) e.facing = Math.atan2(e.vy, e.vx);
         }
         if (
           spawnGuard <= 0 &&
+          e.fireCool <= 0 &&
+          d < e.gunRange &&
+          d > 0.45 &&
+          see
+        ) {
+          e.facing = Math.atan2(py - e.y, px - e.x);
+          e.muzzle = e.boss ? 10 : 7;
+          e.fireCool = e.gunCool;
+          e.flash = Math.max(e.flash, 5);
+          sfx.playEnemyGun(e.boss);
+          applyPlayerDamage(e.gunDmg, Math.atan2(e.y - py, e.x - px));
+        }
+        if (
+          spawnGuard <= 0 &&
           d < meleeDist &&
-          hasLineOfSight(cellBlocked, e.x, e.y, px, py)
+          see
         ) {
           meleeAttacker = e;
           meleeDist = d;
         }
       }
-      if (meleeAttacker && tick % (meleeAttacker.boss ? 26 : 36) === 0) {
+      if (
+        meleeAttacker &&
+        meleeAttacker.muzzle <= 0 &&
+        tick % (meleeAttacker.boss ? 26 : 36) === 0
+      ) {
         applyPlayerDamage(
           meleeAttacker.melee,
           Math.atan2(meleeAttacker.y - py, meleeAttacker.x - px)
@@ -1254,15 +1347,24 @@ export function mountFps(
           const ay = a.y - dy * push;
           const bx = b.x + dx * push;
           const by = b.y + dy * push;
-          if (!isBlocked(grid, ax, a.y, 0.18)) a.x = ax;
-          if (!isBlocked(grid, a.x, ay, 0.18)) a.y = ay;
-          if (!isBlocked(grid, bx, b.y, 0.18)) b.x = bx;
-          if (!isBlocked(grid, b.x, by, 0.18)) b.y = by;
+          if (!isBlocked(grid, ax, a.y)) a.x = ax;
+          if (!isBlocked(grid, a.x, ay)) a.y = ay;
+          if (!isBlocked(grid, bx, b.y)) b.x = bx;
+          if (!isBlocked(grid, b.x, by)) b.y = by;
         }
       }
 
       for (const p of pickups) {
         if (!p.taken) p.bob += dt * 3;
+      }
+
+      if (pendingLifeLoss && mode === "play") {
+        pendingLifeLoss = false;
+        lives = Math.max(0, lives - 1);
+        startLevel(level, true);
+        banner = `${lives} LIVE${lives === 1 ? "" : "S"} LEFT`;
+        bannerT = 90;
+        pushHud();
       }
 
       if (tick % 12 === 0) pushHud();
@@ -1292,6 +1394,17 @@ export function mountFps(
                 : "#d4af37"
             : undefined,
         });
+        if (e.muzzle > 0) {
+          const ang = Math.atan2(py - e.y, px - e.x);
+          sprites.push({
+            dist: Math.hypot(e.x - px, e.y - py) - 0.05,
+            x: e.x + Math.cos(ang) * 0.32,
+            y: e.y + Math.sin(ang) * 0.32,
+            tex: muzzleTex,
+            flash: true,
+            scale: e.boss ? 0.55 : 0.38,
+          });
+        }
       }
       for (const p of pickups) {
         if (p.taken) continue;
@@ -1306,11 +1419,23 @@ export function mountFps(
       }
       drawSprites(offCtx, zBuffer, sprites);
 
-      const kick = fireFrame > 0 ? fireFrame * 2 : 0;
+      const kick = fireFrame > 0 ? Math.min(14, fireFrame * 1.4) : 0;
+      const fireStrip = gunFire[weapon];
       const hdGun = gunHd[weapon];
-      const gx = RENDER_W - VIEW_GUN_W - 16;
-      const gy = RENDER_H - VIEW_GUN_H - 8 + kick;
-      if (hdGun) {
+      const gx = ((RENDER_W * 0.44) | 0);
+      const gy = WORLD_H - VIEW_GUN_H + 8 + kick;
+      offCtx.imageSmoothingEnabled = false;
+      if (fireStrip && fireStrip.length > 0) {
+        const maxF = Math.max(1, WEAPONS[weapon].fireFrames);
+        const idx =
+          fireFrame > 0
+            ? Math.min(
+                fireStrip.length - 1,
+                ((1 - fireFrame / maxF) * (fireStrip.length - 1)) | 0
+              )
+            : 0;
+        offCtx.drawImage(fireStrip[idx] ?? fireStrip[0], gx, gy, VIEW_GUN_W, VIEW_GUN_H);
+      } else if (hdGun && fireFrame <= 0) {
         offCtx.drawImage(hdGun, gx, gy, VIEW_GUN_W, VIEW_GUN_H);
       } else {
         if (weapon !== gunWeapon || fireFrame !== gunFrame) {
@@ -1320,11 +1445,21 @@ export function mountFps(
         }
         offCtx.drawImage(gunCanvas, gx, gy, VIEW_GUN_W, VIEW_GUN_H);
       }
+      const barrelX = gx + 18;
+      const barrelY = gy + 72;
       if (fireFrame > 0) {
-        offCtx.fillStyle = `rgba(255,210,90,${0.28 + fireFrame * 0.08})`;
-        offCtx.fillRect(RENDER_W - 40, RENDER_H - 52 + kick, 18, 10);
-        offCtx.fillStyle = `rgba(255,255,200,${fireFrame * 0.1})`;
-        offCtx.fillRect(RENDER_W - 34, RENDER_H - 56 + kick, 8, 6);
+        const hot = Math.min(1, fireFrame / 6);
+        offCtx.fillStyle = `rgba(255,230,120,${0.35 * hot})`;
+        offCtx.beginPath();
+        offCtx.moveTo(barrelX, barrelY);
+        offCtx.lineTo(RENDER_W / 2 - 10, WORLD_H / 2 + 4);
+        offCtx.lineTo(RENDER_W / 2 + 10, WORLD_H / 2 + 4);
+        offCtx.closePath();
+        offCtx.fill();
+        offCtx.fillStyle = `rgba(255,210,90,${0.4 + hot * 0.35})`;
+        offCtx.fillRect(barrelX - 10, barrelY - 6, 22, 10);
+        offCtx.fillStyle = `rgba(255,255,220,${0.55 * hot})`;
+        offCtx.fillRect(barrelX - 4, barrelY - 9, 10, 6);
       }
       if (shotTrace > 0) {
         offCtx.strokeStyle = shotHit
@@ -1332,12 +1467,12 @@ export function mountFps(
           : `rgba(255,255,255,${0.12 + shotTrace * 0.06})`;
         offCtx.lineWidth = 1;
         offCtx.beginPath();
-        offCtx.moveTo(RENDER_W - 32, RENDER_H - 46 + kick);
-        offCtx.lineTo(RENDER_W / 2 + (shotHit ? 0 : 2), RENDER_H / 2);
+        offCtx.moveTo(barrelX, barrelY);
+        offCtx.lineTo(RENDER_W / 2 + (shotHit ? 0 : 2), WORLD_H / 2);
         offCtx.stroke();
         if (shotHit) {
           const cx = RENDER_W / 2;
-          const cy = RENDER_H / 2;
+          const cy = WORLD_H / 2;
           offCtx.strokeStyle = "#ffcc00";
           offCtx.beginPath();
           offCtx.moveTo(cx - 7, cy - 7);
@@ -1354,41 +1489,22 @@ export function mountFps(
 
       if (hurtFlash > 0) {
         offCtx.fillStyle = `rgba(224,32,32,${hurtFlash * 0.025})`;
-        offCtx.fillRect(0, 0, RENDER_W, RENDER_H);
+        offCtx.fillRect(0, 0, RENDER_W, WORLD_H);
         let rel = hurtFrom - pa;
         while (rel > Math.PI) rel -= Math.PI * 2;
         while (rel < -Math.PI) rel += Math.PI * 2;
         const edge = `rgba(255,48,32,${hurtFlash * 0.09})`;
         offCtx.fillStyle = edge;
-        if (rel > 0.45) offCtx.fillRect(RENDER_W - 16, 0, 16, RENDER_H);
-        else if (rel < -0.45) offCtx.fillRect(0, 0, 16, RENDER_H);
+        if (rel > 0.45) offCtx.fillRect(RENDER_W - 16, 0, 16, WORLD_H);
+        else if (rel < -0.45) offCtx.fillRect(0, 0, 16, WORLD_H);
         else if (Math.abs(rel) > 2.1) {
           offCtx.fillRect(0, 0, RENDER_W, 16);
           offCtx.fillStyle = "#ffcc00";
           offCtx.font = '8px "Press Start 2P", monospace';
           offCtx.fillText("HIT BEHIND", RENDER_W / 2 - 52, 28);
-        } else offCtx.fillRect(0, RENDER_H - 16, RENDER_W, 16);
+        } else offCtx.fillRect(0, WORLD_H - 16, RENDER_W, 16);
       }
 
-      offCtx.fillStyle = "#00e800";
-      offCtx.font = '8px "Press Start 2P", monospace';
-      offCtx.fillText(`${Math.max(0, Math.ceil(hp))} HP`, 12, 18);
-      offCtx.fillStyle = "#3cdcff";
-      offCtx.fillText(`${Math.max(0, Math.ceil(shield))} SHD`, 12, 32);
-      offCtx.fillStyle = "#ffcc00";
-      offCtx.fillText(WEAPONS[weapon].name, 12, 46);
-      offCtx.fillStyle = "#f8f0d8";
-      offCtx.fillText(weaponAmmo(), 12, 60);
-      offCtx.fillStyle = "#ffcc00";
-      offCtx.fillText(`LEVEL ${level}`, 12, 74);
-      offCtx.fillStyle = bossLive ? "#ff2a6a" : "#f8f0d8";
-      offCtx.fillText(
-        bossLive ? "BOSS" : `REMAIN ${enemies.filter((e) => e.alive && !e.boss).length}`,
-        12,
-        88
-      );
-      offCtx.fillStyle = "#ffcc00";
-      offCtx.fillText(`ELIMS ${elims}`, RENDER_W - 110, 18);
       drawMinimap(offCtx, {
         wallMap: radarWalls,
         px,
@@ -1397,37 +1513,49 @@ export function mountFps(
         fov: FOV,
         enemies,
         viewW: RENDER_W,
+        viewH: WORLD_H,
       });
 
       offCtx.strokeStyle = "rgba(255,255,255,0.85)";
       offCtx.lineWidth = 1;
       offCtx.beginPath();
-      offCtx.moveTo(RENDER_W / 2 - 8, RENDER_H / 2);
-      offCtx.lineTo(RENDER_W / 2 + 8, RENDER_H / 2);
-      offCtx.moveTo(RENDER_W / 2, RENDER_H / 2 - 8);
-      offCtx.lineTo(RENDER_W / 2, RENDER_H / 2 + 8);
+      offCtx.moveTo(RENDER_W / 2 - 8, WORLD_H / 2);
+      offCtx.lineTo(RENDER_W / 2 + 8, WORLD_H / 2);
+      offCtx.moveTo(RENDER_W / 2, WORLD_H / 2 - 8);
+      offCtx.lineTo(RENDER_W / 2, WORLD_H / 2 + 8);
       offCtx.stroke();
 
       if (bannerT > 0 && banner) {
         offCtx.fillStyle = "rgba(10,0,20,0.75)";
-        offCtx.fillRect(80, RENDER_H / 2 - 24, RENDER_W - 160, 28);
+        offCtx.fillRect(80, WORLD_H / 2 - 24, RENDER_W - 160, 28);
         offCtx.fillStyle = "#ffcc00";
         offCtx.font = '8px "Press Start 2P", monospace';
-        offCtx.fillText(banner.slice(0, 22), 92, RENDER_H / 2 - 6);
+        offCtx.fillText(banner.slice(0, 22), 92, WORLD_H / 2 - 6);
       }
+
+      drawWolfBar(offCtx, WORLD_H, {
+        level,
+        score,
+        lives,
+        hp,
+        ammo: weaponAmmo(),
+        weapon,
+        weaponIcon: gunHd[weapon] ?? null,
+        faces: hudFaces,
+      });
 
       if (mode === "win" || mode === "over") {
         offCtx.fillStyle = "rgba(10,0,20,0.72)";
-        offCtx.fillRect(0, 0, RENDER_W, RENDER_H);
+        offCtx.fillRect(0, 0, RENDER_W, WORLD_H);
         offCtx.fillStyle = mode === "win" ? "#ffcc00" : "#e02020";
         offCtx.font = '16px "Press Start 2P", monospace';
-        offCtx.fillText(mode === "win" ? "VICTORY" : "ELIMINATED", 120, RENDER_H / 2);
+        offCtx.fillText(mode === "win" ? "VICTORY" : "GAME OVER", 120, WORLD_H / 2);
         offCtx.fillStyle = "#ffcc00";
         offCtx.font = '10px "Press Start 2P", monospace';
         offCtx.fillText(
-          mode === "over" ? "RETRY LEVEL" : "ENTER / SPACE / CLICK",
-          mode === "over" ? 200 : 118,
-          RENDER_H / 2 + 36
+          mode === "over" ? "ENTER / SPACE  NEW RUN" : "ENTER / SPACE / CLICK",
+          mode === "over" ? 150 : 118,
+          WORLD_H / 2 + 36
         );
       }
     }

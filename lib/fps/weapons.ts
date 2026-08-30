@@ -15,6 +15,7 @@ export type WeaponDef = {
   startMag: number;
   startReserve: number;
   pickupReserve: number;
+  fireFrames: number;
 };
 
 export const WEAPONS: Record<WeaponId, WeaponDef> = {
@@ -33,6 +34,7 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
     startMag: 0,
     startReserve: 0,
     pickupReserve: 0,
+    fireFrames: 12,
   },
   pump: {
     id: "pump",
@@ -49,6 +51,7 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
     startMag: 5,
     startReserve: 15,
     pickupReserve: 10,
+    fireFrames: 18,
   },
   scar: {
     id: "scar",
@@ -65,6 +68,7 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
     startMag: 30,
     startReserve: 90,
     pickupReserve: 30,
+    fireFrames: 7,
   },
   exotic: {
     id: "exotic",
@@ -81,6 +85,7 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
     startMag: 25,
     startReserve: 75,
     pickupReserve: 25,
+    fireFrames: 10,
   },
 };
 

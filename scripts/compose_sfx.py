@@ -64,6 +64,8 @@ SFX_NAMES = [
     "llama",
     "playerHurt",
     "reload",
+    "enemyShot",
+    "enemyBossShot",
 ]
 
 
@@ -235,38 +237,72 @@ def sfx_emote() -> np.ndarray:
 
 
 def sfx_scarShot() -> np.ndarray:
-    n = int(0.11 * SR)
-    crackle = crack(0.055, 0.85)
-    body = boom(0.08, 210, 85, 0.42)
-    mech = click(0.018, 2800, 0.35)
-    tail = bandpass(noise(n), 1800, 7000) * exp_env(n, 0.025) * 0.28
-    return mix([crackle, body, mech, tail])
+    """Sharp 5.56-style crack — tight snap, little boom."""
+    n = int(0.16 * SR)
+    snap = highpass(noise(int(0.04 * SR)), 4200, taps=41) * exp_env(int(0.04 * SR), 0.012) * 1.05
+    mid = bandpass(pinkish(int(0.07 * SR)), 900, 3800) * exp_env(int(0.07 * SR), 0.028) * 0.7
+    body = boom(0.07, 240, 110, 0.28)
+    bolt = click(0.016, 3100, 0.4)
+    tail = bandpass(noise(n), 2200, 9000) * exp_env(n, 0.03) * 0.22
+    buf = mix([snap, mid, body, tail])
+    place(buf, bolt, 0.018)
+    return tanh_sat(buf, 1.15)
 
 
 def sfx_pumpShot() -> np.ndarray:
-    n = int(0.3 * SR)
-    body = boom(0.28, 78, 28, 1.0)
-    blast = bandpass(pinkish(n), 180, 2200) * exp_env(n, 0.07) * 0.85
-    crackle = crack(0.09, 0.55)
-    shell = click(0.04, 1400, 0.3)
-    buf = mix([body, blast, crackle])
-    place(buf, shell, 0.12)
+    """12-gauge boom then pump rack — fat and slow."""
+    n = int(0.42 * SR)
+    body = boom(0.34, 62, 22, 1.15)
+    blast = bandpass(pinkish(n), 90, 1600) * exp_env(n, 0.09) * 1.0
+    grit = bandpass(noise(int(0.12 * SR)), 400, 2400) * exp_env(int(0.12 * SR), 0.05) * 0.55
+    buf = tanh_sat(mix([body, blast, grit]), 1.2)
+    place(buf, click(0.03, 900, 0.45), 0.16)
+    place(buf, click(0.035, 1600, 0.38), 0.22)
+    place(buf, boom(0.06, 140, 70, 0.18), 0.2)
     return buf
 
 
 def sfx_exoticShot() -> np.ndarray:
-    zap = render_osc(520, 0.12, "saw", 0.16, 0.002, 0.03, 0.25, 0.06, slide=1480)
-    core = render_osc(330, 0.14, "tri", 0.14, 0.004, 0.04, 0.3, 0.07, slide=90)
-    fizz = highpass(noise(int(0.1 * SR)), 4000, taps=33) * exp_env(int(0.1 * SR), 0.04) * 0.35
-    return mix([lowpass(zap, 2400, taps=49), core, fizz])
+    """Heavy sniper thump + delayed distant crack."""
+    n = int(0.38 * SR)
+    thump = boom(0.28, 48, 18, 1.05)
+    punch = boom(0.1, 160, 70, 0.35)
+    crack_n = int(0.12 * SR)
+    far = highpass(noise(crack_n), 2800, taps=41) * exp_env(crack_n, 0.04) * 0.55
+    room = bandpass(pinkish(n), 200, 900) * exp_env(n, 0.12) * 0.35
+    buf = tanh_sat(mix([thump, punch, room]), 1.18)
+    place(buf, far, 0.04)
+    place(buf, click(0.02, 1800, 0.22), 0.11)
+    return buf
 
 
 def sfx_pickaxeSwing() -> np.ndarray:
-    whoosh = sweep_whoosh(0.18, 350, 2400, amp=0.7)
-    thunk = boom(0.08, 160, 60, 0.25)
-    buf = mix([whoosh])
-    place(buf, thunk, 0.09)
+    """Air whoosh, no gun crack."""
+    whoosh = sweep_whoosh(0.2, 280, 2600, amp=0.85)
+    air = bandpass(noise(int(0.16 * SR)), 600, 5000) * exp_env(int(0.16 * SR), 0.06) * 0.28
+    thunk = boom(0.07, 150, 55, 0.22)
+    buf = mix([whoosh, air])
+    place(buf, thunk, 0.1)
     return buf
+
+
+def sfx_enemyShot() -> np.ndarray:
+    """Thin rival crack — distinct from player SCAR."""
+    n = int(0.13 * SR)
+    snap = highpass(noise(int(0.035 * SR)), 5000, taps=41) * exp_env(int(0.035 * SR), 0.01) * 0.9
+    body = boom(0.06, 190, 95, 0.22)
+    sting = render_osc(880, 0.05, "square", 0.08, 0.001, 0.012, 0.15, 0.02, slide=420)
+    tail = bandpass(noise(n), 2400, 8000) * exp_env(n, 0.022) * 0.2
+    return tanh_sat(mix([snap, body, sting, tail]), 1.1)
+
+
+def sfx_enemyBossShot() -> np.ndarray:
+    """Slower, heavier boss report."""
+    n = int(0.28 * SR)
+    body = boom(0.22, 70, 26, 0.95)
+    crackle = crack(0.08, 0.45)
+    room = bandpass(pinkish(n), 140, 700) * exp_env(n, 0.1) * 0.4
+    return tanh_sat(mix([body, crackle, room]), 1.16)
 
 
 def sfx_dryClick() -> np.ndarray:
@@ -386,6 +422,8 @@ BUILDERS = {
     "llama": sfx_llama,
     "playerHurt": sfx_playerHurt,
     "reload": sfx_reload,
+    "enemyShot": sfx_enemyShot,
+    "enemyBossShot": sfx_enemyBossShot,
 }
 
 
@@ -393,7 +431,8 @@ def main() -> None:
     assert set(BUILDERS) == set(SFX_NAMES)
     PUBLIC_SFX.mkdir(parents=True, exist_ok=True)
     OUT_WAV.mkdir(parents=True, exist_ok=True)
-    for name in SFX_NAMES:
+    names = [n for n in sys.argv[1:] if n in BUILDERS] or list(SFX_NAMES)
+    for name in names:
         mono = BUILDERS[name]()
         stereo = stereo_out(mono)
         wav = OUT_WAV / f"{name}.wav"

@@ -35,6 +35,8 @@ const SFX_NAMES = [
   "llama",
   "playerHurt",
   "reload",
+  "enemyShot",
+  "enemyBossShot",
 ] as const;
 
 type SfxName = (typeof SFX_NAMES)[number];
@@ -383,12 +385,23 @@ class SamplePlayer {
   reload() {
     this.oneshot("reload");
   }
+  enemyShot() {
+    this.oneshot("enemyShot");
+  }
+  enemyBossShot() {
+    this.oneshot("enemyBossShot");
+  }
 
   playWeapon(id: "pickaxe" | "pump" | "scar" | "exotic") {
     if (id === "pickaxe") this.pickaxeSwing();
     else if (id === "pump") this.pumpShot();
     else if (id === "scar") this.scarShot();
     else this.exoticShot();
+  }
+
+  playEnemyGun(boss: boolean) {
+    if (boss) this.enemyBossShot();
+    else this.enemyShot();
   }
 
   playFpsMusic(mode: Exclude<FpsMusicMode, "off">) {

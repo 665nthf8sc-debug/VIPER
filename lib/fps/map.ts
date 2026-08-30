@@ -55,6 +55,32 @@ export function buildMapGrid() {
   return grid;
 }
 
+export function wallAt(grid: number[][], x: number, y: number) {
+  const gx = Math.floor(x);
+  const gy = Math.floor(y);
+  if (gx < 0 || gy < 0 || gx >= MAP_W || gy >= MAP_H) return 1;
+  return grid[gy][gx];
+}
+
+/** Radius collision against walls. Default 0.22 is the live move clamp. */
+export function isBlocked(grid: number[][], x: number, y: number, r = 0.22) {
+  return (
+    wallAt(grid, x - r, y - r) > 0 ||
+    wallAt(grid, x + r, y - r) > 0 ||
+    wallAt(grid, x - r, y + r) > 0 ||
+    wallAt(grid, x + r, y + r) > 0
+  );
+}
+
+/** Walkable floor cell (grid==0) with clearance from walls. */
+export function isWalkableFloor(grid: number[][], x: number, y: number, r = 0.4) {
+  const gx = Math.floor(x);
+  const gy = Math.floor(y);
+  if (gx < 0 || gy < 0 || gx >= MAP_W || gy >= MAP_H) return false;
+  if (grid[gy][gx] !== 0) return false;
+  return !isBlocked(grid, x, y, r);
+}
+
 function isDoorway(grid: number[][], x: number, y: number) {
   if (grid[y][x] > 0) return false;
   const n = y > 0 ? grid[y - 1][x] : 1;
