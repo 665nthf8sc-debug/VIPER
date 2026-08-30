@@ -1,12 +1,14 @@
 import { About } from "@/components/about";
 import { BattlePass } from "@/components/battle-pass";
 import { CrtOverlay } from "@/components/crt-overlay";
+import { GameLibrary } from "@/components/game-library";
 import { Hero } from "@/components/hero";
 import { Locker } from "@/components/locker";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 import { Timeline } from "@/components/timeline";
 import { ViperDrop } from "@/components/viper-drop";
+import { ViperRoyale } from "@/components/viper-royale";
 import { YoutubeTv } from "@/components/youtube-tv";
 
 export default function Home() {
@@ -18,7 +20,9 @@ export default function Home() {
         <Hero />
         <YoutubeTv />
         <BattlePass />
+        <GameLibrary />
         <ViperDrop />
+        <ViperRoyale />
         <Timeline />
         <Locker />
         <About />

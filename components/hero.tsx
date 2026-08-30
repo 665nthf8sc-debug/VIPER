@@ -28,8 +28,8 @@ export function Hero() {
           </p>
         </div>
         <p className="font-vt max-w-xl text-xl text-[#f8f0d8] sm:text-2xl">
-          Ride the bus. Farm the pass. Jump the spray. Walk off the edge of the
-          screen and land in a new POI. This cart is all VIPER.
+          Ride the 8-bit bus or drop into 3D VIPER Royale. Farm the pass. Jump
+          the spray. This cart is all VIPER.
         </p>
         <CountdownClock />
         <div className="flex flex-wrap items-center justify-center gap-3">
@@ -54,9 +54,9 @@ export function Hero() {
             variant="arcade"
             className="h-12 px-5 text-[11px]"
             nativeButton={false}
-            render={<a href="#pass" onClick={() => sfx.select()} />}
+            render={<a href="#royale" onClick={() => sfx.start()} />}
           >
-            BATTLE PASS
+            3D ROYALE
           </Button>
         </div>
         <p className="blink font-press text-[10px] text-[#f8f0d8]">

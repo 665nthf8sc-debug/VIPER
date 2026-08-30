@@ -204,10 +204,20 @@
   padding: 0;
 }
 
-.game-stage:fullscreen canvas {
-  width: min(100vw, calc(100vh * 256 / 224));
-  height: auto;
-  max-width: none;
+.royale-stage {
+  aspect-ratio: 16 / 9;
+  min-height: 280px;
+}
+
+.royale-stage:fullscreen {
+  aspect-ratio: auto;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+}
+
+.royale-stage:fullscreen canvas {
+  height: 100%;
 }
 
 .dialog-box {
