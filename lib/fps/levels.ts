@@ -1,7 +1,7 @@
 import type { FloorTheme } from "@/lib/fps/textures";
 import type { BossKind } from "@/lib/fps/sprites";
 
-export { collectOpenCells, farOpenCell, findOpenSpawn, pickRegularSpawns, MIX } from "@/lib/fps/spawn";
+export { collectOpenCells, farOpenCell, findOpenSpawn, mixForLevel, pickRegularSpawns, MIX } from "@/lib/fps/spawn";
 
 export type LevelDef = {
   id: 1 | 2 | 3;

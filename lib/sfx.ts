@@ -1,6 +1,6 @@
 "use client";
 
-type FpsMusicMode = "off" | "title" | "game";
+type FpsMusicMode = "off" | "title" | "game" | "level1" | "level2" | "level3";
 
 const SFX_NAMES = [
   "coin",
@@ -35,6 +35,9 @@ const SFX_NAMES = [
   "llama",
   "playerHurt",
   "reload",
+  "scarReload",
+  "pumpReload",
+  "exoticReload",
   "enemyShot",
   "enemyBossShot",
 ] as const;
@@ -44,6 +47,9 @@ type SfxName = (typeof SFX_NAMES)[number];
 const MUSIC_URL = {
   title: "/audio/music/viper-title-theme.ogg",
   game: "/audio/music/viper-locker-theme.ogg",
+  level1: "/audio/music/viper-level1-beach.ogg",
+  level2: "/audio/music/viper-level2-neon.ogg",
+  level3: "/audio/music/viper-level3-foundry.ogg",
 } as const;
 
 const MASTER_GAIN = 0.9;
@@ -76,6 +82,7 @@ class SamplePlayer {
   private musicNodes: MusicNode[] = [];
   private musicTimer: number | null = null;
   private musicGen = 0;
+  private musicMissing = new Set<string>();
   muted = false;
 
   private audio() {
@@ -149,8 +156,9 @@ class SamplePlayer {
     const jobs: Promise<void>[] = SFX_NAMES.map((name) =>
       this.loadBuffer(`/audio/sfx/${name}.ogg`, name)
     );
-    jobs.push(this.loadBuffer(MUSIC_URL.title, "music:title"));
-    jobs.push(this.loadBuffer(MUSIC_URL.game, "music:game"));
+    (Object.keys(MUSIC_URL) as Array<keyof typeof MUSIC_URL>).forEach((id) => {
+      jobs.push(this.loadBuffer(MUSIC_URL[id], `music:${id}`));
+    });
     await Promise.all(jobs);
     this.maybeStartPendingMusic();
   }
@@ -158,18 +166,28 @@ class SamplePlayer {
   private async loadBuffer(path: string, key: string) {
     try {
       const res = await fetch(publicAsset(path));
-      if (!res.ok) return;
+      if (!res.ok) {
+        this.musicMissing.add(key);
+        return;
+      }
       const data = await res.arrayBuffer();
       const buf = await this.decoder().decodeAudioData(data.slice(0));
       this.buffers.set(key, buf);
     } catch {
-      /* missing / decode failure: skip */
+      this.musicMissing.add(key);
     }
+  }
+
+  private resolveMusicKey(mode: Exclude<FpsMusicMode, "off">) {
+    const key = `music:${mode}`;
+    if (this.buffers.has(key)) return key;
+    if (this.musicMissing.has(key) && mode !== "game") return "music:game";
+    return key;
   }
 
   private maybeStartPendingMusic() {
     if (this.muted) return;
-    if (this.musicMode !== "title" && this.musicMode !== "game") return;
+    if (this.musicMode === "off") return;
     if (this.musicNodes.length > 0 || this.musicTimer != null) return;
     if (!this.ctx) return;
     this.startMusic(this.musicMode, this.musicGen);
@@ -219,13 +237,13 @@ class SamplePlayer {
     const bus = this.musicBus;
     if (!ctx || !bus) return;
     if (ctx.state === "suspended") void ctx.resume();
-    const buf = this.buffers.get(mode === "title" ? "music:title" : "music:game");
+    const buf = this.buffers.get(this.resolveMusicKey(mode));
     if (!buf) return;
 
     bus.gain.cancelScheduledValues(ctx.currentTime);
     bus.gain.setTargetAtTime(MUSIC_GAIN, ctx.currentTime, 0.02);
 
-    if (mode === "game") {
+    if (mode !== "title") {
       const src = ctx.createBufferSource();
       const gain = ctx.createGain();
       src.buffer = buf;
@@ -385,6 +403,15 @@ class SamplePlayer {
   reload() {
     this.oneshot("reload");
   }
+  scarReload() {
+    this.oneshot("scarReload");
+  }
+  pumpReload() {
+    this.oneshot("pumpReload");
+  }
+  exoticReload() {
+    this.oneshot("exoticReload");
+  }
   enemyShot() {
     this.oneshot("enemyShot");
   }
@@ -399,9 +426,22 @@ class SamplePlayer {
     else this.exoticShot();
   }
 
+  playReload(id: "pickaxe" | "pump" | "scar" | "exotic") {
+    if (id === "pump") this.pumpReload();
+    else if (id === "scar") this.scarReload();
+    else if (id === "exotic") this.exoticReload();
+    else this.reload();
+  }
+
   playEnemyGun(boss: boolean) {
     if (boss) this.enemyBossShot();
     else this.enemyShot();
+  }
+
+  fpsMusicForLevel(id: number): Exclude<FpsMusicMode, "off"> {
+    if (id === 2) return "level2";
+    if (id === 3) return "level3";
+    return "level1";
   }
 
   playFpsMusic(mode: Exclude<FpsMusicMode, "off">) {

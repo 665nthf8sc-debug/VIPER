@@ -18,6 +18,8 @@ const SHEET: Record<AngleKind, string> = {
   chief: "/fps/sprites/char-chief-8angle.png",
   peely: "/fps/sprites/char-peely-8angle.png",
   stormstep: "/fps/sprites/char-stormstep-8angle.png",
+  arc: "/fps/sprites/char-arc-8angle.png",
+  bush: "/fps/sprites/char-bush-8angle.png",
 };
 
 const painted = new Map<string, HTMLCanvasElement>();

@@ -123,7 +123,13 @@ export function ViperFps() {
                     const next = !m;
                     sfx.setMuted(next);
                     if (!next) {
-                      sfx.playFpsMusic(hud.mode === "play" || hud.mode === "win" || hud.mode === "over" ? "game" : "title");
+                      sfx.playFpsMusic(
+                        hud.mode === "play"
+                          ? sfx.fpsMusicForLevel(hud.level)
+                          : hud.mode === "title"
+                            ? "title"
+                            : "game"
+                      );
                     }
                     return next;
                   });

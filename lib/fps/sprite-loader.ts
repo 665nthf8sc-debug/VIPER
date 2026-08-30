@@ -201,7 +201,7 @@ export function angleFrame(
   return Math.round(rel / (Math.PI / 4)) & 7;
 }
 
-export type AngleKind = "viper" | "chief" | "peely" | "stormstep";
+export type AngleKind = "viper" | "chief" | "peely" | "stormstep" | "arc" | "bush";
 
 export type HdSpriteSet = {
   chief: HTMLCanvasElement;
@@ -250,6 +250,8 @@ const ANGLE_FILES: Record<AngleKind, string> = {
   chief: "/fps/sprites/char-chief-8angle.png",
   peely: "/fps/sprites/char-peely-8angle.png",
   stormstep: "/fps/sprites/char-stormstep-8angle.png",
+  arc: "/fps/sprites/char-arc-8angle.png",
+  bush: "/fps/sprites/char-bush-8angle.png",
 };
 
 async function loadKeyedSheet(path: string) {
@@ -335,7 +337,7 @@ export async function loadEnvArt(): Promise<EnvArt> {
     /* procedural floors */
   }
 
-  const [wallOut, wallIn, wallInd, floorOut, floorIn, floorInd, skyStorm, skyLegacy, title] =
+  const [wallOut, wallIn, wallInd, floorOut, floorIn, floorInd, skyStorm, skyLegacy, title80s, titleGta] =
     await Promise.all([
       tryCanvas("/fps/sprites/wall-outdoor.png"),
       tryCanvas("/fps/sprites/wall-indoor.png"),
@@ -345,6 +347,7 @@ export async function loadEnvArt(): Promise<EnvArt> {
       tryCanvas("/fps/sprites/floor-industrial.png"),
       tryCanvas("/fps/sprites/sky-storm.png"),
       tryCanvas("/fps/sprites/env-sky-storm.png"),
+      tryCanvas("/fps/sprites/title-viper-80s.png"),
       tryCanvas("/fps/sprites/title-viper-gta.png"),
     ]);
 
@@ -357,7 +360,7 @@ export async function loadEnvArt(): Promise<EnvArt> {
     env.sky = skyLegacy;
     env.skySeamless = false;
   }
-  env.title = title;
+  env.title = title80s ?? titleGta;
   return env;
 }
 
@@ -507,7 +510,16 @@ const GUN_FIRE_FILES: Record<"pickaxe" | "pump" | "scar" | "exotic", string> = {
   exotic: "/fps/sprites/gun-fire-exotic.png",
 };
 
-const ENEMY_SHOOT_FILES: Record<AngleKind, string> = {
+const ENEMY_FIRE_FILES: Record<AngleKind, string> = {
+  viper: "/fps/sprites/char-viper-fire.png",
+  chief: "/fps/sprites/char-chief-fire.png",
+  peely: "/fps/sprites/char-peely-fire.png",
+  stormstep: "/fps/sprites/char-stormstep-fire.png",
+  arc: "/fps/sprites/char-arc-fire.png",
+  bush: "/fps/sprites/char-bush-fire.png",
+};
+
+const ENEMY_SHOOT_FILES: Partial<Record<AngleKind, string>> = {
   viper: "/fps/sprites/char-viper-shoot.png",
   chief: "/fps/sprites/char-chief-shoot.png",
   peely: "/fps/sprites/char-peely-shoot.png",
@@ -519,19 +531,28 @@ function sliceHorizontalFrames(source: HTMLCanvasElement) {
   return sliceAngleStrip(source, frames);
 }
 
-export async function loadGunFireStrips(): Promise<
-  Partial<Record<"pickaxe" | "pump" | "scar" | "exotic", HTMLCanvasElement[]>>
-> {
-  const out: Partial<Record<"pickaxe" | "pump" | "scar" | "exotic", HTMLCanvasElement[]>> = {};
-  await Promise.all(
-    (Object.keys(GUN_FIRE_FILES) as Array<keyof typeof GUN_FIRE_FILES>).map(async (id) => {
+export type GunFirePack = {
+  weapons: Partial<Record<"pickaxe" | "pump" | "scar" | "exotic", HTMLCanvasElement[]>>;
+  muzzle: HTMLCanvasElement[];
+};
+
+export async function loadGunFireStrips(): Promise<GunFirePack> {
+  const weapons: GunFirePack["weapons"] = {};
+  const [muzzleSheet] = await Promise.all([
+    loadOptionalCanvas("/fps/sprites/muzzle-flash-anim.png"),
+    ...((Object.keys(GUN_FIRE_FILES) as Array<keyof typeof GUN_FIRE_FILES>).map(async (id) => {
       const sheet = await loadOptionalCanvas(GUN_FIRE_FILES[id]);
       if (!sheet) return;
       knockChroma(sheet, "magenta");
-      out[id] = sliceHorizontalFrames(sheet);
-    })
-  );
-  return out;
+      weapons[id] = sliceHorizontalFrames(sheet);
+    })),
+  ]);
+  let muzzle: HTMLCanvasElement[] = [];
+  if (muzzleSheet) {
+    knockChroma(muzzleSheet, "magenta");
+    muzzle = sliceHorizontalFrames(muzzleSheet);
+  }
+  return { weapons, muzzle };
 }
 
 export async function loadHudFaceStrip(): Promise<HTMLCanvasElement[] | null> {
@@ -554,14 +575,22 @@ export async function loadHudFaceStrip(): Promise<HTMLCanvasElement[] | null> {
   return out;
 }
 
-export async function loadEnemyShootSheets(): Promise<Partial<Record<AngleKind, HTMLCanvasElement>>> {
-  const out: Partial<Record<AngleKind, HTMLCanvasElement>> = {};
+export async function loadEnemyShootSheets(): Promise<Partial<Record<AngleKind, HTMLCanvasElement[]>>> {
+  const out: Partial<Record<AngleKind, HTMLCanvasElement[]>> = {};
   await Promise.all(
-    (Object.keys(ENEMY_SHOOT_FILES) as AngleKind[]).map(async (kind) => {
-      const sheet = await loadOptionalCanvas(ENEMY_SHOOT_FILES[kind]);
-      if (!sheet) return;
-      knockChroma(sheet, "magenta");
-      out[kind] = normalizeSpriteSize(cropToAlpha(sheet));
+    (Object.keys(ENEMY_FIRE_FILES) as AngleKind[]).map(async (kind) => {
+      const sheet = await loadOptionalCanvas(ENEMY_FIRE_FILES[kind]);
+      if (sheet) {
+        knockChroma(sheet, "magenta");
+        out[kind] = sliceHorizontalFrames(sheet);
+        return;
+      }
+      const legacyPath = ENEMY_SHOOT_FILES[kind];
+      if (!legacyPath) return;
+      const legacy = await loadOptionalCanvas(legacyPath);
+      if (!legacy) return;
+      knockChroma(legacy, "magenta");
+      out[kind] = [normalizeSpriteSize(cropToAlpha(legacy))];
     })
   );
   return out;
