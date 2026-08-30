@@ -92,20 +92,48 @@ function collide(x: number, z: number, boxes: BoxCol[], rad = 0.42) {
   return false;
 }
 
+function canCreateWebGL() {
+  try {
+    const probe = document.createElement("canvas");
+    return Boolean(
+      probe.getContext("webgl2") ||
+        probe.getContext("webgl") ||
+        probe.getContext("experimental-webgl")
+    );
+  } catch {
+    return false;
+  }
+}
+
+const NOOP_API = {
+  start() {},
+  stop() {},
+  setMusicMuted(_m: boolean) {},
+  unsupported: true as const,
+};
+
 export function mountRoyale(
   canvas: HTMLCanvasElement,
   onHud: (hud: RoyaleHud) => void
 ) {
+  if (!canCreateWebGL()) return NOOP_API;
+
   const skin = equippedSkin();
   const body = skin.palette.O || "#ff6a00";
   const skinTone = skin.palette.W || "#f8f0d8";
   const accent = skin.palette.y || "#ffcc00";
 
-  const renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: true,
-    alpha: false,
-  });
+  let renderer: THREE.WebGLRenderer;
+  try {
+    renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      alpha: false,
+      failIfMajorPerformanceCaveat: false,
+    });
+  } catch {
+    return NOOP_API;
+  }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
   renderer.setClearColor(0x7ec8f8, 1);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -886,6 +914,7 @@ export function mountRoyale(
   return {
     start: reset,
     setMusicMuted: (m: boolean) => score.setMuted(m),
+    unsupported: false as const,
     stop() {
       running = false;
       score.stop();

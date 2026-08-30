@@ -194,6 +194,11 @@
     inset -4px -4px 0 #3a4a20;
 }
 
+.game-stage {
+  position: relative;
+  z-index: 90;
+}
+
 .game-stage:fullscreen {
   background: #05000a;
   display: flex;

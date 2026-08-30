@@ -304,7 +304,7 @@ export function MeteorMap() {
         if (who.slot === 0) {
           drawSidekick(ctx, loadPass().sidekick, who.x + 16, who.y + 8, tick);
         }
-        if (dancing) {
+        if (dancing && !who.bot) {
           const label = EMOTES.find((e) => e.id === who.emote)?.name ?? "EMOTE";
           drawEmoteName(ctx, label, who.x - 10, who.y - 10);
         }

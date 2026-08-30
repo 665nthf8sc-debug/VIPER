@@ -118,24 +118,37 @@ function LobbyPad() {
 
 export function PartyLobby() {
   const [pass, setPass] = useState<PassState>(EMPTY_PASS);
-  const [tab, setTab] = useState<"skins" | "emotes" | "pets">("skins");
+  const [tab, setTab] = useState<"skins" | "emotes" | "pets">("emotes");
+  const [nowPlaying, setNowPlaying] = useState("WAVE");
 
   useEffect(() => {
     const sync = () => setPass(loadPass());
     sync();
+    const onDance = (event: Event) => {
+      sync();
+      const id = (event as CustomEvent<{ id?: string }>).detail?.id;
+      const name =
+        EMOTES.find((e) => e.id === (id ?? loadPass().emote))?.name ?? "EMOTE";
+      setNowPlaying(name);
+    };
     window.addEventListener(PASS_EVENT, sync);
-    window.addEventListener(DANCE_EVENT, sync);
+    window.addEventListener(DANCE_EVENT, onDance);
     return () => {
       window.removeEventListener(PASS_EVENT, sync);
-      window.removeEventListener(DANCE_EVENT, sync);
+      window.removeEventListener(DANCE_EVENT, onDance);
     };
   }, []);
 
   return (
-    <div className="pixel-bevel bg-[#05000a] p-3">
+    <div className="relative z-[90] pixel-bevel bg-[#05000a] p-3">
       <p className="font-press mb-2 text-[8px] text-[#3cdcff]">PRE-GAME LOBBY</p>
-      <LobbyPad />
-      <p className="font-vt mt-2 text-center text-lg text-[#ffcc00]">
+      <div className="game-stage pixel-bevel bg-[#05000a] p-1">
+        <LobbyPad />
+      </div>
+      <p className="font-press mt-2 text-center text-[10px] text-[#00e800]">
+        {nowPlaying ? `DANCING  ${nowPlaying}` : "IDLE  ·  PICK A DANCE"}
+      </p>
+      <p className="font-vt mt-1 text-center text-lg text-[#ffcc00]">
         {SKINS.find((s) => s.id === pass.equipped)?.name} ·{" "}
         {EMOTES.find((e) => e.id === pass.emote)?.name}
         {pass.sidekick !== "none"
@@ -152,19 +165,25 @@ export function PartyLobby() {
       >
         PLAY EMOTE
       </Button>
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex gap-2" role="tablist">
         {(["skins", "emotes", "pets"] as const).map((id) => (
-          <Button
+          <button
             key={id}
-            variant={tab === id ? "pixel" : "arcade"}
-            className="h-8 flex-1 px-1 text-[8px]"
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            className={
+              tab === id
+                ? "font-press h-8 flex-1 bg-[#ff6a00] px-1 text-[8px] text-[#1a0033]"
+                : "font-press h-8 flex-1 bg-[#1a0033] px-1 text-[8px] text-[#ffcc00]"
+            }
             onClick={() => {
               setTab(id);
               sfx.select();
             }}
           >
             {id.toUpperCase()}
-          </Button>
+          </button>
         ))}
       </div>
       <div className="mt-2 grid max-h-48 grid-cols-2 gap-2 overflow-y-auto">

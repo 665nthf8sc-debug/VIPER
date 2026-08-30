@@ -47,15 +47,23 @@ export function ViperRoyale() {
     return () => window.removeEventListener(PASS_EVENT, sync);
   }, []);
 
+  const [glOk, setGlOk] = useState(true);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const api = mountRoyale(canvas, setHud);
-    apiRef.current = api;
-    return () => {
-      api.stop();
-      apiRef.current = null;
-    };
+    try {
+      const api = mountRoyale(canvas, setHud);
+      apiRef.current = api;
+      if (api.unsupported) setGlOk(false);
+      return () => {
+        api.stop();
+        apiRef.current = null;
+      };
+    } catch {
+      setGlOk(false);
+      return;
+    }
   }, [skinName]);
 
   useEffect(() => {
@@ -138,6 +146,15 @@ export function ViperRoyale() {
             className="block h-full w-full cursor-grab active:cursor-grabbing"
             onContextMenu={(e) => e.preventDefault()}
           />
+          {!glOk ? (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#0a3d73] px-6 text-center">
+              <p className="text-2xl font-black text-amber-300">ISLAND DROP</p>
+              <p className="mt-3 max-w-md text-sm text-white/85">
+                This 3D match needs WebGL. The 8-bit cart, lobby emotes, and
+                Tilted plaza still work above.
+              </p>
+            </div>
+          ) : null}
           <div className="pointer-events-none absolute inset-0 font-sans">
             {hud.mode !== "title" ? (
               <div className="absolute left-1/2 top-1/2 size-5 -translate-x-1/2 -translate-y-1/2">
