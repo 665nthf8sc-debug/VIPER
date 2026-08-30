@@ -1,0 +1,98 @@
+"use client";
+
+import { toggleCrt } from "@/components/crt-overlay";
+import { PixelIcon } from "@/components/pixel-panel";
+import { Button } from "@/components/ui/button";
+import { sfx } from "@/lib/sfx";
+import { CHANNEL_HANDLE } from "@/lib/youtube";
+import { useState } from "react";
+
+const LINKS = [
+  { href: "#hero", label: "START" },
+  { href: "#tv", label: "TV" },
+  { href: "#game", label: "GAME" },
+  { href: "#lore", label: "LORE" },
+  { href: "#gallery", label: "PAK" },
+  { href: "#about", label: "ABOUT" },
+];
+
+export function SiteNav() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <header className="sticky top-0 z-40 bg-[#0a0014]/95">
+      <div className="section-wrap flex items-center justify-between gap-3 py-3">
+        <a
+          href="#hero"
+          className="font-press flex items-center gap-2 text-[10px] text-[#ffcc00] sm:text-xs"
+          onClick={() => sfx.select()}
+        >
+          <PixelIcon name="meteor" className="size-5" />
+          <span className="hidden sm:inline">VIPER3384</span>
+          <span className="sm:hidden">VIPER</span>
+        </a>
+        <nav className="hidden items-center gap-1 md:flex">
+          {LINKS.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              onClick={() => sfx.select()}
+              className="font-press pixel-link px-2 py-2 text-[9px] text-[#f8f0d8]"
+            >
+              {link.label}
+            </a>
+          ))}
+        </nav>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="arcade"
+            size="sm"
+            className="h-8 px-2"
+            onClick={() => {
+              sfx.select();
+              toggleCrt();
+            }}
+          >
+            CRT
+          </Button>
+          <Button
+            variant="pixel"
+            size="sm"
+            className="hidden h-8 px-2 sm:inline-flex"
+            nativeButton={false}
+            render={<a href="#tv" />}
+          >
+            {CHANNEL_HANDLE}
+          </Button>
+          <Button
+            variant="arcade"
+            size="sm"
+            className="h-8 px-2 md:hidden"
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? "CLOSE" : "MENU"}
+          </Button>
+        </div>
+      </div>
+      {open ? (
+        <nav className="border-t-4 border-[#ff6a00] bg-[#12001f] md:hidden">
+          <div className="section-wrap grid grid-cols-2 gap-2 py-3">
+            {LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={() => {
+                  sfx.select();
+                  setOpen(false);
+                }}
+                className="font-press pixel-bevel bg-[#1a0033] px-3 py-3 text-center text-[10px] text-[#ffcc00]"
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+        </nav>
+      ) : null}
+    </header>
+  );
+}

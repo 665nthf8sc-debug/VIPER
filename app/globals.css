@@ -1,0 +1,281 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-vt);
+  --font-mono: var(--font-press);
+  --font-heading: var(--font-press);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-4xl: 0;
+}
+
+:root {
+  --background: #0a0014;
+  --foreground: #f8f0d8;
+  --card: #160028;
+  --card-foreground: #f8f0d8;
+  --popover: #12001f;
+  --popover-foreground: #f8f0d8;
+  --primary: #ff6a00;
+  --primary-foreground: #1a0033;
+  --secondary: #3d1466;
+  --secondary-foreground: #ffcc00;
+  --muted: #1a0033;
+  --muted-foreground: #c9a0ff;
+  --accent: #ffcc00;
+  --accent-foreground: #1a0033;
+  --destructive: #e02020;
+  --border: #ff6a00;
+  --input: #3d1466;
+  --ring: #ffcc00;
+  --chart-1: #ff6a00;
+  --chart-2: #ffcc00;
+  --chart-3: #6b2d9e;
+  --chart-4: #00e800;
+  --chart-5: #3cdcff;
+  --radius: 0;
+  --sidebar: #12001f;
+  --sidebar-foreground: #f8f0d8;
+  --sidebar-primary: #ff6a00;
+  --sidebar-primary-foreground: #1a0033;
+  --sidebar-accent: #3d1466;
+  --sidebar-accent-foreground: #ffcc00;
+  --sidebar-border: #ff6a00;
+  --sidebar-ring: #ffcc00;
+  --nes-black: #0a0014;
+  --nes-purple: #1a0033;
+  --nes-purple-2: #3d1466;
+  --nes-orange: #ff6a00;
+  --nes-yellow: #ffcc00;
+  --nes-green: #00e800;
+  --nes-cyan: #3cdcff;
+}
+
+.dark {
+  --background: #0a0014;
+  --foreground: #f8f0d8;
+  --card: #160028;
+  --card-foreground: #f8f0d8;
+  --popover: #12001f;
+  --popover-foreground: #f8f0d8;
+  --primary: #ff6a00;
+  --primary-foreground: #1a0033;
+  --secondary: #3d1466;
+  --secondary-foreground: #ffcc00;
+  --muted: #1a0033;
+  --muted-foreground: #c9a0ff;
+  --accent: #ffcc00;
+  --accent-foreground: #1a0033;
+  --destructive: #e02020;
+  --border: #ff6a00;
+  --input: #3d1466;
+  --ring: #ffcc00;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    image-rendering: pixelated;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, #3d146655, transparent),
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 7px,
+        rgba(255, 106, 0, 0.03) 7px,
+        rgba(255, 106, 0, 0.03) 8px
+      );
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-press), monospace;
+    image-rendering: pixelated;
+    letter-spacing: 0.04em;
+    line-height: 1.6;
+  }
+
+  button,
+  a,
+  input {
+    image-rendering: pixelated;
+  }
+}
+
+.font-press {
+  font-family: var(--font-press), monospace;
+}
+
+.font-vt {
+  font-family: var(--font-vt), monospace;
+}
+
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.pixel-border {
+  box-shadow:
+    4px 0 0 0 #140008,
+    -4px 0 0 0 #140008,
+    0 4px 0 0 #140008,
+    0 -4px 0 0 #140008;
+}
+
+.pixel-bevel {
+  box-shadow:
+    4px 0 0 0 #140008,
+    -4px 0 0 0 #140008,
+    0 4px 0 0 #140008,
+    0 -4px 0 0 #140008,
+    inset 4px 4px 0 #6b2d9e,
+    inset -4px -4px 0 #05000a;
+}
+
+.pixel-bevel-orange {
+  box-shadow:
+    4px 0 0 0 #140008,
+    -4px 0 0 0 #140008,
+    0 4px 0 0 #140008,
+    0 -4px 0 0 #140008,
+    inset 4px 4px 0 #ffcc66,
+    inset -4px -4px 0 #b33d00;
+}
+
+.dialog-box {
+  background: #12001f;
+  border: 4px solid #f8f0d8;
+  box-shadow:
+    0 0 0 4px #12001f,
+    8px 8px 0 #05000a,
+    inset 0 0 0 4px #3d1466;
+}
+
+.blink {
+  animation: nes-blink 1s steps(2, start) infinite;
+}
+
+.blink-slow {
+  animation: nes-blink 1.4s steps(2, start) infinite;
+}
+
+@keyframes nes-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.scanlines {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.18) 2px,
+    rgba(0, 0, 0, 0.18) 4px
+  );
+  mix-blend-mode: multiply;
+}
+
+.crt-vignette {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 79;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 55%,
+    rgba(0, 0, 0, 0.45) 100%
+  );
+}
+
+.tv-bezel {
+  background: linear-gradient(180deg, #3a2a4a 0%, #1a1024 40%, #0c0614 100%);
+  box-shadow:
+    6px 0 0 #0a0010,
+    -6px 0 0 #0a0010,
+    0 6px 0 #0a0010,
+    0 -6px 0 #0a0010,
+    inset 6px 6px 0 #5a406e,
+    inset -6px -6px 0 #08040c,
+    10px 12px 0 #050008;
+}
+
+.section-wrap {
+  width: min(1080px, calc(100% - 1.5rem));
+  margin-inline: auto;
+}
+
+.hud-digits {
+  font-family: var(--font-press), monospace;
+  color: #00e800;
+  text-shadow: 2px 2px 0 #003300;
+  letter-spacing: 0.12em;
+}
+
+.pixel-link:hover {
+  color: #ffcc00;
+  background: #ff6a00;
+}
+
+@media (max-width: 640px) {
+  .scanlines,
+  .crt-vignette {
+    display: none;
+  }
+}
