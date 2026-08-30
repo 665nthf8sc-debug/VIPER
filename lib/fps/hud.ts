@@ -13,6 +13,9 @@ const LABEL = "#c8c8e8";
 const NUM = "#f8e060";
 const NUM_DIM = "#a89040";
 const FACE_WELL = "#000028";
+const CHROME = "#f4e0b0";
+const GOLD = "#e8b84a";
+const MAGENTA = "#e01890";
 
 export function faceTierForHp(hp: number): 0 | 1 | 2 | 3 | 4 {
   if (hp <= 0) return 4;
@@ -146,6 +149,40 @@ export type WolfBarState = {
   faces: HTMLCanvasElement[];
 };
 
+/** Small 80s chrome plaque in the 3D view (top-left). */
+export function drawBannerPlaque(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x = 8,
+  y = 8
+) {
+  const label = text.slice(0, 22);
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.font = '8px "Press Start 2P", monospace';
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  const tw = ctx.measureText(label).width;
+  const pw = Math.min(268, Math.max(118, (tw + 20) | 0));
+  const ph = 20;
+  ctx.fillStyle = "#140810";
+  ctx.fillRect(x, y, pw, ph);
+  ctx.fillStyle = CHROME;
+  ctx.fillRect(x, y, pw, 1);
+  ctx.fillRect(x, y, 1, ph);
+  ctx.fillStyle = GOLD;
+  ctx.fillRect(x + 1, y + 1, pw - 2, 1);
+  ctx.fillRect(x + 1, y + 1, 1, ph - 2);
+  ctx.fillStyle = MAGENTA;
+  ctx.fillRect(x + 2, y + 2, pw - 4, 1);
+  ctx.fillStyle = NAVY_LO;
+  ctx.fillRect(x, y + ph - 1, pw, 1);
+  ctx.fillRect(x + pw - 1, y, 1, ph);
+  ctx.fillStyle = "#ffcc00";
+  ctx.fillText(label, x + 8, y + 14);
+  ctx.restore();
+}
+
 /** Classic Wolf3D-style stats bar under the 3D view. */
 export function drawWolfBar(
   ctx: CanvasRenderingContext2D,
@@ -160,10 +197,18 @@ export function drawWolfBar(
   ctx.imageSmoothingEnabled = false;
   ctx.fillStyle = NAVY;
   ctx.fillRect(0, y, w, h);
+  ctx.fillStyle = CHROME;
+  ctx.fillRect(0, y, w, 1);
+  ctx.fillStyle = GOLD;
+  ctx.fillRect(0, y + 1, w, 1);
+  ctx.fillStyle = MAGENTA;
+  ctx.fillRect(0, y + 2, w, 1);
   ctx.fillStyle = NAVY_HI;
-  ctx.fillRect(0, y, w, 2);
+  ctx.fillRect(0, y + 3, w, 1);
   ctx.fillStyle = NAVY_LO;
   ctx.fillRect(0, y + h - 2, w, 2);
+  ctx.fillStyle = GOLD;
+  ctx.fillRect(0, y + h - 1, w, 1);
 
   const cols = [
     { x: 0, w: 78, label: "LEVEL", value: String(state.level) },

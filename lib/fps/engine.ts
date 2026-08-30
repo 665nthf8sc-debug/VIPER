@@ -44,10 +44,11 @@ import {
   findOpenSpawn,
   LEVELS,
   levelById,
+  mixForLevel,
   pickRegularSpawns,
   type LevelDef,
 } from "@/lib/fps/levels";
-import { buildViperFace, drawWolfBar, RENDER_H, RENDER_W, WORLD_H } from "@/lib/fps/hud";
+import { buildViperFace, drawBannerPlaque, drawWolfBar, RENDER_H, RENDER_W, WORLD_H } from "@/lib/fps/hud";
 import {
   formatAmmo,
   WEAPON_ORDER,
@@ -130,7 +131,7 @@ const VIEW_GUN_W = 176;
 const VIEW_GUN_H = 114;
 /** Walking is silent. Optional dirt step stays off. */
 const FOOTSTEP_SFX = false;
-const PICKUP_SCALE = 0.5;
+const PICKUP_SCALE = 0.36;
 const CHAR_SCALE = 1.15;
 const PICKUP_REACH = 1.6;
 const MELEE_REACH = 0.7;
@@ -141,6 +142,21 @@ const SCORE_REGULAR = 100;
 const SCORE_BOSS = 500;
 const START_LIVES = 3;
 type GunId = "pump" | "scar" | "exotic";
+
+const LEVEL_FOG: Record<
+  FloorTheme,
+  { r: number; g: number; b: number; max: number; wash: number }
+> = {
+  outdoor: { r: 48, g: 18, b: 6, max: 0.82, wash: 0.1 },
+  indoor: { r: 52, g: 0, b: 58, max: 0.86, wash: 0.12 },
+  industrial: { r: 52, g: 22, b: 4, max: 0.88, wash: 0.11 },
+};
+
+const LEVEL_TINT: Record<FloorTheme, { r: number; g: number; b: number }> = {
+  outdoor: { r: 1.08, g: 0.9, b: 0.7 },
+  indoor: { r: 1.05, g: 0.7, b: 1.14 },
+  industrial: { r: 1.12, g: 0.88, b: 0.58 },
+};
 
 function emptyAmmo(): Record<GunId, GunAmmo> {
   return {
@@ -178,11 +194,16 @@ export function mountFps(
   let levelTheme: FloorTheme = "outdoor";
   let levelSkies: Partial<Record<1 | 2 | 3, HTMLCanvasElement>> = {};
   let bossAngles: Partial<Record<BossAngleKind, HTMLCanvasElement[]>> = {};
-  const enemyFlat: Record<"peely" | "chief" | "viper" | "stormstep" | "jonesy" | "fox", HTMLCanvasElement> = {
+  const enemyFlat: Record<
+    "peely" | "chief" | "viper" | "stormstep" | "arc" | "bush" | "jonesy" | "fox",
+    HTMLCanvasElement
+  > = {
     peely: buildEnemySprite("peely"),
     chief: buildEnemySprite("chief"),
     viper: buildEnemySprite("viper"),
     stormstep: buildEnemySprite("stormstep"),
+    arc: buildEnemySprite("arc"),
+    bush: buildEnemySprite("bush"),
     jonesy: buildEnemySprite("jonesy"),
     fox: buildEnemySprite("fox"),
   };
@@ -199,7 +220,8 @@ export function mountFps(
   };
   const gunHd: Partial<Record<WeaponId, HTMLCanvasElement>> = {};
   const gunFire: Partial<Record<WeaponId, HTMLCanvasElement[]>> = {};
-  const enemyShoot: Partial<Record<AngleKind, HTMLCanvasElement>> = {};
+  const enemyShoot: Partial<Record<AngleKind, HTMLCanvasElement[]>> = {};
+  let muzzleAnim: HTMLCanvasElement[] = [];
   let hudFaces: HTMLCanvasElement[] = [0, 1, 2, 3, 4].map((t) =>
     buildViperFace(t as 0 | 1 | 2 | 3 | 4)
   );
@@ -219,6 +241,8 @@ export function mountFps(
       enemyFlat.stormstep = art.angles.stormstep[0];
       enemyFlat.jonesy = art.angles.stormstep[0];
     }
+    if (art.angles.arc?.[0]) enemyFlat.arc = art.angles.arc[0];
+    if (art.angles.bush?.[0]) enemyFlat.bush = art.angles.bush[0];
     const wpn = art.items.weapons;
     if (wpn?.[0]) pickupTex.scar = wpn[0];
     if (wpn?.[1]) pickupTex.pump = wpn[1];
@@ -276,8 +300,9 @@ export function mountFps(
         /* keep storm sky */
       });
     void loadGunFireStrips()
-      .then((strips) => {
-        Object.assign(gunFire, strips);
+      .then((pack) => {
+        Object.assign(gunFire, pack.weapons);
+        if (pack.muzzle.length) muzzleAnim = pack.muzzle;
       })
       .catch(() => {
         /* procedural fire */
@@ -311,9 +336,18 @@ export function mountFps(
     bootOptionalArt();
   };
 
+  const fireFrameAt = (frames: HTMLCanvasElement[], t: number) => {
+    if (frames.length === 1) return frames[0];
+    const idx = Math.min(frames.length - 1, Math.max(0, (t * frames.length) | 0));
+    return frames[idx] ?? frames[0];
+  };
+
   const enemyTexFor = (e: Enemy) => {
     const kind = angleKindFor(e.kind);
-    if (e.muzzle > 0 && enemyShoot[kind]) return enemyShoot[kind]!;
+    if (e.muzzle > 0 && enemyShoot[kind]?.length) {
+      const maxM = e.boss ? 10 : 7;
+      return fireFrameAt(enemyShoot[kind]!, 1 - e.muzzle / maxM);
+    }
     const bossSheet = e.boss && isBossKind(e.kind) ? bossAngles[e.kind] : undefined;
     const sheet = bossSheet ?? enemyAngles[kind];
     if (sheet && sheet.length >= 8) {
@@ -350,6 +384,9 @@ export function mountFps(
   let musicArmed = false;
   let spawnGuard = 0;
   let pendingLifeLoss = false;
+  let bobPhase = 0;
+  let bobX = 0;
+  let bobY = 0;
 
   const spawnRegular = (s: { kind: EnemyKind; x: number; y: number }): Enemy => {
     const vx = (Math.random() - 0.5) * 0.6;
@@ -358,7 +395,7 @@ export function mountFps(
       kind: s.kind,
       x: s.x,
       y: s.y,
-      hp: s.kind === "chief" ? 120 : 90,
+      hp: s.kind === "chief" ? 120 : s.kind === "bush" ? 100 : s.kind === "arc" ? 80 : 90,
       alive: true,
       flash: 0,
       vx,
@@ -366,7 +403,7 @@ export function mountFps(
       facing: Math.atan2(vy, vx),
       boss: false,
       scale: CHAR_SCALE,
-      speed: s.kind === "chief" ? 1.5 : 1.1,
+      speed: s.kind === "chief" ? 1.5 : s.kind === "arc" ? 1.35 : s.kind === "bush" ? 0.95 : 1.1,
       melee: 12,
       rush: 0,
       standIn: false,
@@ -473,7 +510,7 @@ export function mountFps(
     });
   };
 
-  const armMusic = (next: "title" | "game") => {
+  const armMusic = (next: "title" | "game" | "level1" | "level2" | "level3") => {
     sfx.unlock();
     musicArmed = true;
     sfx.playFpsMusic(next);
@@ -520,7 +557,7 @@ export function mountFps(
     pack.reserve -= take;
     pack.mag += take;
     cool = Math.max(cool, 16);
-    sfx.reload();
+    sfx.playReload(weapon);
     banner = "RELOAD";
     bannerT = 40;
     pushHud();
@@ -607,14 +644,17 @@ export function mountFps(
     }
     cool = 0;
     fireFrame = 0;
-    banner = `LEVEL ${def.id}`;
+    bobPhase = 0;
+    bobX = 0;
+    bobY = 0;
+    banner = def.name;
     bannerT = 100;
     hurtFlash = 0;
     hurtFrom = 0;
     shotTrace = 0;
     shotHit = false;
     spawnGuard = 180;
-    enemies = pickRegularSpawns(grid, def.regulars).map(spawnRegular);
+    enemies = pickRegularSpawns(grid, def.regulars, mixForLevel(def.id)).map(spawnRegular);
     resetPickups();
     mode = "play";
     inputArmed = true;
@@ -626,7 +666,7 @@ export function mountFps(
     keys.delete("ControlRight");
     pushHud();
     sfx.start();
-    armMusic("game");
+    armMusic(sfx.fpsMusicForLevel(def.id));
     requestLock();
   };
 
@@ -715,7 +755,7 @@ export function mountFps(
         if (level >= LEVELS.length) {
           finish(true);
         } else {
-          banner = `LEVEL ${level + 1}`;
+          banner = levelById(level + 1).name;
           bannerT = 90;
           pendingAdvance = level + 1;
           sfx.levelClear();
@@ -800,7 +840,7 @@ export function mountFps(
     e.preventDefault();
     if (down) keys.add(e.code);
     else keys.delete(e.code);
-    if (down && !musicArmed) armMusic(mode === "play" ? "game" : "title");
+    if (down && !musicArmed) armMusic(mode === "play" ? sfx.fpsMusicForLevel(level) : "title");
     if (
       down &&
       (e.code === "Enter" || e.code === "Space") &&
@@ -847,7 +887,7 @@ export function mountFps(
   const onClick = () => {
     canvas.focus();
     inputArmed = true;
-    if (!musicArmed) armMusic(mode === "play" ? "game" : "title");
+    if (!musicArmed) armMusic(mode === "play" ? sfx.fpsMusicForLevel(level) : "title");
     if (mode === "win" || mode === "over" || mode === "title") {
       continuePlay();
       requestLock();
@@ -869,7 +909,7 @@ export function mountFps(
   const onMouseDown = (e: MouseEvent) => {
     canvas.focus();
     inputArmed = true;
-    if (!musicArmed) armMusic(mode === "play" ? "game" : "title");
+    if (!musicArmed) armMusic(mode === "play" ? sfx.fpsMusicForLevel(level) : "title");
     if (e.button === 2) {
       e.preventDefault();
       if (mode === "play" && !pointerLocked) requestLock();
@@ -898,7 +938,7 @@ export function mountFps(
   const onDocPointerDown = (e: PointerEvent) => {
     const t = e.target;
     if (t instanceof Node && fpsSection.contains(t)) {
-      if (!musicArmed) armMusic(mode === "play" ? "game" : "title");
+      if (!musicArmed) armMusic(mode === "play" ? sfx.fpsMusicForLevel(level) : "title");
       return;
     }
     inputArmed = false;
@@ -954,17 +994,36 @@ export function mountFps(
   const floorImg = floorCtx.createImageData(FLOOR_W, FLOOR_H);
   const floorPix = floorImg.data;
 
+  const CEIL_W = 320;
+  const CEIL_H = 80;
+  const ceilBuf = document.createElement("canvas");
+  ceilBuf.width = CEIL_W;
+  ceilBuf.height = CEIL_H;
+  const ceilCtx = ceilBuf.getContext("2d", { willReadFrequently: true })!;
+  const ceilImg = ceilCtx.createImageData(CEIL_W, CEIL_H);
+  const ceilPix = ceilImg.data;
+
   const themeAt = (): FloorTheme => levelTheme;
 
-  const sampleFloor = (tile: FloorSample, u: number, v: number, shade: number, di: number) => {
+  const sampleFloor = (
+    dest: Uint8ClampedArray,
+    tile: FloorSample,
+    u: number,
+    v: number,
+    shade: number,
+    di: number
+  ) => {
     const mask = tile.size - 1;
     const tx = (u * tile.size) & mask;
     const ty = (v * tile.size) & mask;
     const si = (ty * tile.size + tx) * 4;
-    floorPix[di] = tile.data[si] * shade;
-    floorPix[di + 1] = tile.data[si + 1] * shade;
-    floorPix[di + 2] = tile.data[si + 2] * shade;
-    floorPix[di + 3] = 255;
+    const tint = LEVEL_TINT[themeAt()];
+    const fog = LEVEL_FOG[themeAt()];
+    const fogMix = Math.max(0, 1 - shade) * 0.85;
+    dest[di] = tile.data[si] * shade * tint.r * (1 - fogMix) + fog.r * fogMix;
+    dest[di + 1] = tile.data[si + 1] * shade * tint.g * (1 - fogMix) + fog.g * fogMix;
+    dest[di + 2] = tile.data[si + 2] * shade * tint.b * (1 - fogMix) + fog.b * fogMix;
+    dest[di + 3] = 255;
   };
 
   const renderFloor = () => {
@@ -989,12 +1048,41 @@ export function mountFps(
         if (u < 0) u += 1;
         if (v < 0) v += 1;
         const tile = floorTiles[themeAt()];
-        sampleFloor(tile, u, v, dim, (y * FLOOR_W + x) * 4);
+        sampleFloor(floorPix, tile, u, v, dim, (y * FLOOR_W + x) * 4);
         floorX += stepX;
         floorY += stepY;
       }
     }
     floorCtx.putImageData(floorImg, 0, 0);
+  };
+
+  const renderCeiling = () => {
+    const dirX = Math.cos(pa);
+    const dirY = Math.sin(pa);
+    const planeScale = Math.tan(FOV / 2);
+    const planeX = Math.cos(pa + Math.PI / 2) * planeScale;
+    const planeY = Math.sin(pa + Math.PI / 2) * planeScale;
+    const posZ = CEIL_H / 2;
+    for (let y = 0; y < CEIL_H; y++) {
+      const rowDist = posZ / (CEIL_H - y - 0.5);
+      const stepX = (rowDist * (dirX + planeX - (dirX - planeX))) / CEIL_W;
+      const stepY = (rowDist * (dirY + planeY - (dirY - planeY))) / CEIL_W;
+      let floorX = px + rowDist * (dirX - planeX);
+      let floorY = py + rowDist * (dirY - planeY);
+      const dim = Math.max(0.2, 0.62 - rowDist / MAX_DEPTH);
+      for (let x = 0; x < CEIL_W; x++) {
+        let u = floorX * FLOOR_SCALE;
+        let v = floorY * FLOOR_SCALE;
+        u -= Math.floor(u);
+        v -= Math.floor(v);
+        if (u < 0) u += 1;
+        if (v < 0) v += 1;
+        sampleFloor(ceilPix, floorTiles[themeAt()], u, v, dim, (y * CEIL_W + x) * 4);
+        floorX += stepX;
+        floorY += stepY;
+      }
+    }
+    ceilCtx.putImageData(ceilImg, 0, 0);
   };
 
   /** Classic Wolfenstein DDA + canvas column strips (no ImageData gaps). */
@@ -1003,11 +1091,18 @@ export function mountFps(
     const h = WORLD_H;
     const half = (h / 2) | 0;
     const zBuffer = new Float32Array(w);
+    const viewTheme = themeAt();
+    const fog = LEVEL_FOG[viewTheme];
 
     offCtx.imageSmoothingEnabled = false;
-    const skyShift = ((pa / (Math.PI * 2)) * w + w * 8) % w;
-    offCtx.drawImage(skyCanvas, 0, 0, w, half, -skyShift, 0, w, half);
-    offCtx.drawImage(skyCanvas, 0, 0, w, half, w - skyShift, 0, w, half);
+    if (viewTheme === "outdoor") {
+      const skyShift = ((pa / (Math.PI * 2)) * w + w * 8) % w;
+      offCtx.drawImage(skyCanvas, 0, 0, w, half, -skyShift, 0, w, half);
+      offCtx.drawImage(skyCanvas, 0, 0, w, half, w - skyShift, 0, w, half);
+    } else {
+      renderCeiling();
+      offCtx.drawImage(ceilBuf, 0, 0, CEIL_W, CEIL_H, 0, 0, w, half);
+    }
     renderFloor();
     offCtx.drawImage(floorBuf, 0, 0, FLOOR_W, FLOOR_H, 0, half, w, h - half);
 
@@ -1082,7 +1177,6 @@ export function mountFps(
       if (side === 0 && rayDirX > 0) wallX = 1 - wallX;
       if (side === 1 && rayDirY < 0) wallX = 1 - wallX;
 
-      const viewTheme = themeAt();
       const tex =
         viewTheme === "indoor"
           ? wallTex[2]
@@ -1093,12 +1187,15 @@ export function mountFps(
 
       offCtx.drawImage(tex, texX, 0, 1, tex.height, col, drawStart, 1, drawEnd - drawStart);
 
-      const shade = Math.min(0.7, perpWallDist / MAX_DEPTH) + (side === 1 ? 0.06 : 0);
+      const shade = Math.min(fog.max, perpWallDist / MAX_DEPTH) + (side === 1 ? 0.08 : 0);
       if (shade > 0.02) {
-        offCtx.fillStyle = `rgba(0,0,10,${shade})`;
+        offCtx.fillStyle = `rgba(${fog.r},${fog.g},${fog.b},${shade})`;
         offCtx.fillRect(col, drawStart, 1, drawEnd - drawStart);
       }
     }
+
+    offCtx.fillStyle = `rgba(${fog.r},${fog.g},${fog.b},${fog.wash})`;
+    offCtx.fillRect(0, 0, w, h);
 
     return zBuffer;
   };
@@ -1134,7 +1231,7 @@ export function mountFps(
       const clipStartX = Math.max(0, drawStartX);
       const clipEndX = Math.min(w, drawStartX + spriteW);
       if (clipEndX <= clipStartX) continue;
-      const dark = Math.max(0.35, 1 - dist / MAX_DEPTH);
+      const bright = Math.max(0.22, 1 - dist / MAX_DEPTH);
 
       let hidden = 0;
       for (let stripe = clipStartX; stripe < clipEndX; stripe++) {
@@ -1144,9 +1241,9 @@ export function mountFps(
       const occluded = hidden > 0;
 
       offCtx.save();
-      offCtx.globalAlpha = dark;
+      offCtx.globalAlpha = 1;
       offCtx.globalCompositeOperation = "source-over";
-      if (sp.flash) offCtx.globalAlpha = Math.min(1, dark + 0.28);
+      offCtx.filter = `brightness(${sp.flash ? Math.min(1, bright + 0.22) : bright})`;
 
       if (sp.smooth && !occluded) {
         offCtx.imageSmoothingEnabled = true;
@@ -1171,6 +1268,7 @@ export function mountFps(
           offCtx.drawImage(tex, texX, 0, 1, tex.height, stripe, drawStartY, 1, spriteH);
         }
       }
+      offCtx.filter = "none";
       if (sp.tint) {
         offCtx.globalCompositeOperation = "overlay";
         offCtx.globalAlpha = 0.45;
@@ -1231,9 +1329,14 @@ export function mountFps(
         nx += Math.cos(pa + Math.PI / 2) * spd;
         ny += Math.sin(pa + Math.PI / 2) * spd;
       }
+      const walking = nx !== px || ny !== py;
       if (!isBlocked(grid, nx, py)) px = nx;
       if (!isBlocked(grid, px, ny)) py = ny;
-      if (FOOTSTEP_SFX && (nx !== px || ny !== py) && tick % 18 === 0) {
+      if (walking) bobPhase += dt * (sprint ? 14 : 10);
+      else bobPhase += (0 - bobPhase) * Math.min(1, dt * 6);
+      bobX = Math.cos(bobPhase * 0.5) * (walking ? 1.2 : 0);
+      bobY = Math.sin(bobPhase) * (walking ? 3.2 : 0);
+      if (FOOTSTEP_SFX && walking && tick % 18 === 0) {
         /* dirt step stays off */
       }
       tryPickup();
@@ -1373,6 +1476,8 @@ export function mountFps(
     if (mode === "title") {
       paintTitlePoster(offCtx, RENDER_W, RENDER_H, tick, titleArt);
     } else {
+      offCtx.save();
+      offCtx.translate(bobX | 0, bobY | 0);
       const zBuffer = renderWorld(offCtx);
       const sprites: SpriteDraw[] = [];
 
@@ -1396,11 +1501,16 @@ export function mountFps(
         });
         if (e.muzzle > 0) {
           const ang = Math.atan2(py - e.y, px - e.x);
+          const maxM = e.boss ? 10 : 7;
+          const flashTex =
+            muzzleAnim.length > 0
+              ? fireFrameAt(muzzleAnim, 1 - e.muzzle / maxM)
+              : muzzleTex;
           sprites.push({
             dist: Math.hypot(e.x - px, e.y - py) - 0.05,
             x: e.x + Math.cos(ang) * 0.32,
             y: e.y + Math.sin(ang) * 0.32,
-            tex: muzzleTex,
+            tex: flashTex,
             flash: true,
             scale: e.boss ? 0.55 : 0.38,
           });
@@ -1422,8 +1532,8 @@ export function mountFps(
       const kick = fireFrame > 0 ? Math.min(14, fireFrame * 1.4) : 0;
       const fireStrip = gunFire[weapon];
       const hdGun = gunHd[weapon];
-      const gx = ((RENDER_W * 0.44) | 0);
-      const gy = WORLD_H - VIEW_GUN_H + 8 + kick;
+      const gx = ((RENDER_W * 0.44 + bobX * 0.4) | 0);
+      const gy = WORLD_H - VIEW_GUN_H + 8 + kick + ((bobY * 0.6) | 0);
       offCtx.imageSmoothingEnabled = false;
       if (fireStrip && fireStrip.length > 0) {
         const maxF = Math.max(1, WEAPONS[weapon].fireFrames);
@@ -1447,6 +1557,11 @@ export function mountFps(
       }
       const barrelX = gx + 18;
       const barrelY = gy + 72;
+      if (fireFrame > 0 && muzzleAnim.length > 0) {
+        const maxF = Math.max(1, WEAPONS[weapon].fireFrames);
+        const flash = fireFrameAt(muzzleAnim, 1 - fireFrame / maxF);
+        offCtx.drawImage(flash, barrelX - 22, barrelY - 28, 52, 40);
+      }
       if (fireFrame > 0) {
         const hot = Math.min(1, fireFrame / 6);
         offCtx.fillStyle = `rgba(255,230,120,${0.35 * hot})`;
@@ -1486,6 +1601,7 @@ export function mountFps(
           offCtx.stroke();
         }
       }
+      offCtx.restore();
 
       if (hurtFlash > 0) {
         offCtx.fillStyle = `rgba(224,32,32,${hurtFlash * 0.025})`;
@@ -1526,11 +1642,7 @@ export function mountFps(
       offCtx.stroke();
 
       if (bannerT > 0 && banner) {
-        offCtx.fillStyle = "rgba(10,0,20,0.75)";
-        offCtx.fillRect(80, WORLD_H / 2 - 24, RENDER_W - 160, 28);
-        offCtx.fillStyle = "#ffcc00";
-        offCtx.font = '8px "Press Start 2P", monospace';
-        offCtx.fillText(banner.slice(0, 22), 92, WORLD_H / 2 - 6);
+        drawBannerPlaque(offCtx, banner);
       }
 
       drawWolfBar(offCtx, WORLD_H, {

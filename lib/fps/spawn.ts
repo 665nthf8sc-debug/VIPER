@@ -7,7 +7,14 @@ import {
 } from "@/lib/fps/map";
 import type { EnemyKind, RegularKind } from "@/lib/fps/sprites";
 
-export const MIX: RegularKind[] = ["peely", "viper", "stormstep", "chief"];
+export const MIX: RegularKind[] = ["peely", "viper", "stormstep", "chief", "arc", "bush"];
+
+/** Beach leans bush, Neon leans arc, Foundry is mixed. */
+export function mixForLevel(id: number): RegularKind[] {
+  if (id === 1) return ["bush", "bush", "peely", "viper", "bush", "chief", "stormstep"];
+  if (id === 2) return ["arc", "arc", "stormstep", "viper", "arc", "peely", "chief"];
+  return ["arc", "bush", "chief", "peely", "stormstep", "viper"];
+}
 
 export const SPAWN_WALL_R = 0.4;
 export const SPAWN_PLAYER_R = 2.6;
@@ -110,9 +117,14 @@ export function collectOpenCells(grid: number[][]) {
   return cells;
 }
 
-export function pickRegularSpawns(grid: number[][], count: number): SpawnPoint[] {
+export function pickRegularSpawns(
+  grid: number[][],
+  count: number,
+  mix: RegularKind[] = MIX
+): SpawnPoint[] {
+  const roster = mix.length ? mix : MIX;
   const preferred = ENEMY_SPAWNS.map((s, i) => ({
-    kind: MIX[i % MIX.length],
+    kind: roster[i % roster.length],
     x: s.x,
     y: s.y,
   }));
@@ -137,7 +149,7 @@ export function pickRegularSpawns(grid: number[][], count: number): SpawnPoint[]
   if (out.length < count) {
     for (const cell of shuffle(collectOpenCells(grid))) {
       if (out.length >= count) break;
-      tryPlace(MIX[out.length % MIX.length], cell.x, cell.y);
+      tryPlace(roster[out.length % roster.length], cell.x, cell.y);
     }
   }
   return out;

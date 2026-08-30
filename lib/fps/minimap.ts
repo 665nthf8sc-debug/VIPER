@@ -11,6 +11,8 @@ export const ENEMY_RADAR: Partial<Record<EnemyKind, { letter: string; color: str
   chief: { letter: "C", color: "#d4af37" },
   peely: { letter: "P", color: "#ffcc00" },
   stormstep: { letter: "S", color: "#3cdcff" },
+  arc: { letter: "A", color: "#c45aff" },
+  bush: { letter: "B", color: "#48c45c" },
   jonesy: { letter: "J", color: "#7ec8f8" },
   fox: { letter: "F", color: "#ff6a00" },
 };

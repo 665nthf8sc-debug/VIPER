@@ -1,6 +1,6 @@
 import { canvasFromMap, paintMap } from "@/lib/fps/pixel";
 
-export type RegularKind = "peely" | "chief" | "viper" | "stormstep";
+export type RegularKind = "peely" | "chief" | "viper" | "stormstep" | "arc" | "bush";
 export type BossKind = "bossPeely" | "bossStorm" | "bossChief";
 export type EnemyKind = RegularKind | "jonesy" | "fox" | BossKind;
 
@@ -12,6 +12,8 @@ export function regularFor(kind: EnemyKind): RegularKind {
   if (kind === "bossPeely" || kind === "peely") return "peely";
   if (kind === "bossChief" || kind === "chief") return "chief";
   if (kind === "bossStorm" || kind === "stormstep" || kind === "jonesy") return "stormstep";
+  if (kind === "arc") return "arc";
+  if (kind === "bush") return "bush";
   return "viper";
 }
 export type PickupKind = "pump" | "scar" | "exotic" | "med" | "shield" | "llama" | "chest" | "ammo";
@@ -111,6 +113,50 @@ export function buildEnemySprite(rawKind: EnemyKind) {
       "...oooo......oooo.......",
       "...oCCo......oCCo.......",
       "...oCCo......oCCo.......",
+    ];
+  } else if (kind === "arc") {
+    palette = { ".": "", o: INK, M: "#c45aff", m: "#6a18a8", K: "#1a1028", S: "#f8f0d8", C: "#3cdcff" };
+    rows = [
+      "........oooooooo........",
+      "......ooMMMMMMoo........",
+      ".....oMMCCCCMMoo........",
+      "....oMMSSSSSSMMo........",
+      "....oMMSmmSSmmMMo.......",
+      "....oMMMMMMMMMMo........",
+      ".....oMMMMMMMo..........",
+      "......oooooooo..........",
+      "....oooooooooooo........",
+      "...ooKKKKKKKKKKoo.......",
+      "..ooKKKMMMMKKKKoo.......",
+      "..oKKKKMMMMKKKKKo.......",
+      "..oKKKKKKKKKKKKKo.......",
+      "..oKKKKo....oKKKKo......",
+      "...oKKo......oKKo.......",
+      "...oooo......oooo.......",
+      "...oMMo......oMMo.......",
+      "...oMMo......oMMo.......",
+    ];
+  } else if (kind === "bush") {
+    palette = { ".": "", o: INK, G: "#2a8a28", g: "#145014", L: "#48c45c", S: "#c4a070", b: "#3a2010" };
+    rows = [
+      "........oooooooo........",
+      "......ooGLGLGLoo........",
+      ".....oGLGgGgGLGo........",
+      "....oGLgSSSSSLgGo.......",
+      "....oGLSbbSSbbLGo.......",
+      "....oGLGGGGGGGLo........",
+      ".....oGLGLGLGo..........",
+      "......oooooooo..........",
+      "....oooooooooooo........",
+      "...ooGLGLGLGLGLoo.......",
+      "..ooGLGLggggGLGLoo......",
+      "..oGLGLGGGGGLGLGo.......",
+      "..oGLGLGLGLGLGLGo.......",
+      "..oGLGLo....oGLGLo......",
+      "...oGGo......oGGo.......",
+      "...oooo......oooo.......",
+      "...oGgo......oGgo.......",
+      "...oGgo......oGgo.......",
     ];
   } else if (kind === "jonesy") {
     palette = { ".": "", o: INK, H: "#6a5030", S: "#f8f0d8", B: "#3d7cff", Y: "#ffcc00", W: "#d0e4ff" };
@@ -338,6 +384,8 @@ export const ENEMY_NAMES: Record<EnemyKind, string> = {
   chief: "CHIEF",
   viper: "VIPER",
   stormstep: "STORMSTEP",
+  arc: "ARC",
+  bush: "BUSH",
   jonesy: "JONESY",
   fox: "RIVAL FOX",
   bossPeely: "KING PEELY",
@@ -357,8 +405,6 @@ export const PICKUP_LABEL: Record<PickupKind, string> = {
 };
 
 /** Map FPS rival / boss kinds onto 8-angle sheets. */
-export function angleKindFor(
-  kind: EnemyKind
-): "viper" | "chief" | "peely" | "stormstep" {
+export function angleKindFor(kind: EnemyKind): RegularKind {
   return regularFor(kind);
 }
