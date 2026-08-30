@@ -1,11 +1,12 @@
 import { About } from "@/components/about";
+import { BattlePass } from "@/components/battle-pass";
 import { CrtOverlay } from "@/components/crt-overlay";
-import { Gallery } from "@/components/gallery";
 import { Hero } from "@/components/hero";
-import { MeteorGame } from "@/components/meteor-game";
+import { Locker } from "@/components/locker";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 import { Timeline } from "@/components/timeline";
+import { ViperDrop } from "@/components/viper-drop";
 import { YoutubeTv } from "@/components/youtube-tv";
 
 export default function Home() {
@@ -16,9 +17,10 @@ export default function Home() {
       <main className="flex flex-1 flex-col">
         <Hero />
         <YoutubeTv />
-        <MeteorGame />
+        <BattlePass />
+        <ViperDrop />
         <Timeline />
-        <Gallery />
+        <Locker />
         <About />
       </main>
       <SiteFooter />

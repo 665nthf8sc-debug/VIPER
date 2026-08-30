@@ -5,21 +5,18 @@ import { useEffect, useState } from "react";
 
 const LINES = [
   "PLAYER 1: VIPER3384",
-  "CLASS: FOX / BUILDER / CHAOS",
-  "HOME WORLD: CHAPTER 1",
-  "FAVORITE POI: TILTED TOWERS",
+  "CLASS: FOX / DROPPER / CHAOS",
+  "HOME WORLD: THE ISLAND",
+  "FAVORITE POI: WHICHEVER HAS LOOT",
   "CHANNEL: @COOLFOX3384",
   "",
-  "This cart was found behind a dusty CRT,",
-  "labeled in marker: DO NOT LAND TILTED.",
-  "Somebody landed anyway.",
-  "",
-  "If you grew up dropping into those towers,",
-  "hearing the meteor siren, and screaming",
-  "at a pump shotgun... this memorial is for you.",
+  "This cart is a VIPER drop.",
+  "Ride the bus. Walk the map. Jump the spray.",
+  "Bank XP on the pass. Pull Chief from the locker.",
   "",
   "No guilds. No quests to fill out.",
-  "Just a fox, a skyline, and a rock in the sky.",
+  "Just a fox, a battle bus, and five POIs",
+  "stitched together like a lost NES world map.",
 ];
 
 export function About() {

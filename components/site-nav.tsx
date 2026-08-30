@@ -5,33 +5,54 @@ import { PixelIcon } from "@/components/pixel-panel";
 import { Button } from "@/components/ui/button";
 import { sfx } from "@/lib/sfx";
 import { CHANNEL_HANDLE } from "@/lib/youtube";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const LINKS = [
   { href: "#hero", label: "START" },
   { href: "#tv", label: "TV" },
+  { href: "#pass", label: "PASS" },
   { href: "#game", label: "GAME" },
   { href: "#lore", label: "LORE" },
-  { href: "#gallery", label: "PAK" },
+  { href: "#locker", label: "LOCKER" },
   { href: "#about", label: "ABOUT" },
 ];
 
 export function SiteNav() {
   const [open, setOpen] = useState(false);
+  const [full, setFull] = useState(false);
+
+  useEffect(() => {
+    const onFs = () => setFull(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onFs);
+    return () => document.removeEventListener("fullscreenchange", onFs);
+  }, []);
+
+  const toggleFull = async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await document.documentElement.requestFullscreen();
+      }
+      sfx.select();
+    } catch {
+      sfx.hit();
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-[#0a0014]/95">
       <div className="section-wrap flex items-center justify-between gap-3 py-3">
         <a
           href="#hero"
-          className="font-press flex items-center gap-2 text-[10px] text-[#ffcc00] sm:text-xs"
+          className="font-press flex items-center gap-2 text-[10px] text-[#00e800] sm:text-xs"
           onClick={() => sfx.select()}
         >
-          <PixelIcon name="meteor" className="size-5" />
+          <PixelIcon name="viper" className="size-5" />
           <span className="hidden sm:inline">VIPER3384</span>
           <span className="sm:hidden">VIPER</span>
         </a>
-        <nav className="hidden items-center gap-1 md:flex">
+        <nav className="hidden items-center gap-1 lg:flex">
           {LINKS.map((link) => (
             <a
               key={link.href}
@@ -44,6 +65,14 @@ export function SiteNav() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
+          <Button
+            variant="arcade"
+            size="sm"
+            className="h-8 px-2"
+            onClick={() => void toggleFull()}
+          >
+            {full ? "EXIT" : "FULL"}
+          </Button>
           <Button
             variant="arcade"
             size="sm"
@@ -67,7 +96,7 @@ export function SiteNav() {
           <Button
             variant="arcade"
             size="sm"
-            className="h-8 px-2 md:hidden"
+            className="h-8 px-2 lg:hidden"
             onClick={() => setOpen((v) => !v)}
           >
             {open ? "CLOSE" : "MENU"}
@@ -75,7 +104,7 @@ export function SiteNav() {
         </div>
       </div>
       {open ? (
-        <nav className="border-t-4 border-[#ff6a00] bg-[#12001f] md:hidden">
+        <nav className="border-t-4 border-[#00e800] bg-[#12001f] lg:hidden">
           <div className="section-wrap grid grid-cols-2 gap-2 py-3">
             {LINKS.map((link) => (
               <a
@@ -85,7 +114,7 @@ export function SiteNav() {
                   sfx.select();
                   setOpen(false);
                 }}
-                className="font-press pixel-bevel bg-[#1a0033] px-3 py-3 text-center text-[10px] text-[#ffcc00]"
+                className="font-press pixel-bevel bg-[#1a0033] px-3 py-3 text-center text-[10px] text-[#00e800]"
               >
                 {link.label}
               </a>

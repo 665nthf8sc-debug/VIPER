@@ -1,35 +1,35 @@
 "use client";
 
 import { CountdownClock } from "@/components/countdown";
-import { MeteorSky } from "@/components/meteor-sky";
 import { PixelIcon } from "@/components/pixel-panel";
 import { Button } from "@/components/ui/button";
+import { ViperSky } from "@/components/viper-sky";
 import { sfx } from "@/lib/sfx";
 
 export function Hero() {
   return (
     <section id="hero" className="relative isolate overflow-hidden">
-      <MeteorSky className="absolute inset-0 h-full w-full pixelated" />
+      <ViperSky className="absolute inset-0 h-full w-full pixelated" />
       <div className="relative section-wrap flex min-h-[88vh] flex-col items-center justify-center gap-8 py-16 text-center">
-        <p className="font-press blink-slow text-[10px] text-[#ffcc00]">
-          ▼ PLAYER 1 READY
+        <p className="font-press blink-slow text-[10px] text-[#00e800]">
+          ▼ BATTLE BUS INBOUND
         </p>
         <div>
           <p className="font-press mb-3 text-[10px] text-[#c9a0ff] sm:text-xs">
-            NES-1985  •  CART: CH.1
+            NES-1985  •  CART: VIPER
           </p>
-          <h1 className="font-press text-xl leading-relaxed text-[#ffcc00] drop-shadow-[4px_4px_0_#3d0d00] sm:text-3xl md:text-5xl md:leading-relaxed">
-            TILTED TOWERS
-            <br />
-            MEMORIAL
-          </h1>
-          <p className="font-press mt-4 text-xs text-[#ff6a00] sm:text-sm">
+          <h1 className="font-press text-xl leading-relaxed text-[#00e800] drop-shadow-[4px_4px_0_#003300] sm:text-3xl md:text-5xl md:leading-relaxed">
             VIPER3384
+            <br />
+            DROP ZONE
+          </h1>
+          <p className="font-press mt-4 text-xs text-[#ffcc00] sm:text-sm">
+            FORTNITE  •  8-BIT
           </p>
         </div>
         <p className="font-vt max-w-xl text-xl text-[#f8f0d8] sm:text-2xl">
-          A lost 8-bit cartridge that somehow knew the towers would fall.
-          Dodge meteors. Fight the squad. Count down to the next season.
+          Ride the bus. Farm the pass. Jump the spray. Walk off the edge of the
+          screen and land in a new POI. This cart is all VIPER.
         </p>
         <CountdownClock />
         <div className="flex flex-wrap items-center justify-center gap-3">
@@ -39,7 +39,7 @@ export function Hero() {
             nativeButton={false}
             render={<a href="#game" onClick={() => sfx.coin()} />}
           >
-            INSERT COIN
+            DROP IN
           </Button>
           <Button
             variant="arcade"
@@ -49,6 +49,14 @@ export function Hero() {
           >
             <PixelIcon name="youtube" className="size-4" />
             WATCH TV
+          </Button>
+          <Button
+            variant="arcade"
+            className="h-12 px-5 text-[11px]"
+            nativeButton={false}
+            render={<a href="#pass" onClick={() => sfx.select()} />}
+          >
+            BATTLE PASS
           </Button>
         </div>
         <p className="blink font-press text-[10px] text-[#f8f0d8]">

@@ -94,6 +94,30 @@ class ChipSynth {
   select() {
     this.tone(740, 0.06, "square", 0.04);
   }
+
+  jump() {
+    this.tone(420, 0.08, "square", 0.04, 720);
+  }
+
+  drop() {
+    this.tone(180, 0.22, "sawtooth", 0.05, 90);
+    setTimeout(() => this.tone(140, 0.12, "square", 0.04), 120);
+  }
+
+  bus() {
+    this.tone(196, 0.1, "square", 0.04);
+    setTimeout(() => this.tone(247, 0.1, "square", 0.04), 90);
+    setTimeout(() => this.tone(330, 0.18, "square", 0.05), 180);
+  }
+
+  xp() {
+    this.tone(660, 0.07, "square", 0.045);
+    setTimeout(() => this.tone(880, 0.1, "square", 0.04), 70);
+  }
+
+  warp() {
+    this.tone(520, 0.08, "square", 0.04, 880);
+  }
 }
 
 export const sfx = new ChipSynth();

@@ -1,8 +1,6 @@
-# TILTED TOWERS MEMORIAL
+# VIPER3384 DROP ZONE
 
-An 8-bit NES-style nostalgia hub for **VIPER3384** (`@coolfox3384`). Dark purple CRT nights, orange meteors, Tilted Towers crumbling in pixel chunks, and a tiny arcade cabinet for high scores.
-
-Meant to feel like a lost 1985 cartridge that somehow predicted Fortnite Chapter 1.
+An 8-bit NES-style Fortnite hub for **VIPER3384** (`@coolfox3384`). Ride the battle bus, farm a Battle Pass, jump bullets, walk POI to POI, and pull skins from Chief's locker.
 
 GitHub: [665nthf8sc-debug/VIPER](https://github.com/665nthf8sc-debug/VIPER)  
 Pages: [https://665nthf8sc-debug.github.io/VIPER/](https://665nthf8sc-debug.github.io/VIPER/)
@@ -29,19 +27,20 @@ This repo deploys with GitHub Actions on push to `main`. After the first push:
 2. Wait for the **Deploy GitHub Pages** workflow
 3. Open `https://665nthf8sc-debug.github.io/VIPER/`
 
-On Pages there is no Node server, so the hall of fame uses `localStorage`. Locally (and on Vercel) scores still go through `/api/scores` into SQLite.
+On Pages there is no Node server, so the hall of fame uses `localStorage`. Locally (and on Vercel) scores still go through `/api/scores` into SQLite. Battle Pass XP and skins always live in `localStorage`.
 
 ## What's on the cart
 
-- **Hero** — pixel title, blinking RPG prompt, live countdown to the next season on October 1 (Chapter 7 Season 4), meteor sky
-- **Tilted TV** — CRT bezel around `@coolfox3384` videos and a subscribe button
-- **Meteor Strike** — dodge rocks, shoot other droppers; GAME OVER reads `ELIMINATED`
+- **Hero** — VIPER drop zone, battle bus sky, countdown to the next season on October 1
+- **VIPER TV** — CRT bezel around `@coolfox3384` videos. First watch of each tape banks **+50 Battle Pass XP**
+- **Battle Pass** — eight skins, XP bar, equip from the track
+- **VIPER DROP** — Fortnite-style 8-bit match: battle bus, skydiving, guns, jump to dodge bullets, walk off-screen into Tilted / Retail / Salty / Pleasant / Loot Lake
+- **Fullscreen** — `FULL` in the nav for the whole site, `FULLSCREEN` on the cabinet for the game
+- **Chief's locker** — Master Chief armory that replaced the Memory Pak. Unlock **CHIEF MK.VI** at 500 XP
 - **Hall of Fame** — 3-letter arcade initials
-- **Quest log** — Chapter 1 timeline in RPG dialog boxes
-- **Memory Pak** — before/after Tilted with a pixel wipe
-- **Player 1** — 8-bit fox avatar and credits crawl
+- **Quest log** — Chapter 1 timeline
 
-Touch: on phones, use the **LEFT / RIGHT** pads under the game.
+Controls: **A/D** or arrows move, **Space / W / Up** jump, **Z / X / FIRE** shoot. On phones: **◀ JUMP FIRE ▶**.
 
 ## Stack
 

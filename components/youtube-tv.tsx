@@ -2,6 +2,7 @@
 
 import { PixelIcon, PixelPanel, RpgDialog } from "@/components/pixel-panel";
 import { Button } from "@/components/ui/button";
+import { grantWatchXp } from "@/lib/pass";
 import { sfx } from "@/lib/sfx";
 import {
   CHANNEL_HANDLE,
@@ -14,8 +15,21 @@ import { useState } from "react";
 
 export function YoutubeTv() {
   const [active, setActive] = useState<string>(FEATURED_VIDEOS[0].id);
+  const [xpNote, setXpNote] = useState("");
   const current =
     FEATURED_VIDEOS.find((v) => v.id === active) ?? FEATURED_VIDEOS[0];
+
+  const playTape = (id: string) => {
+    sfx.select();
+    setActive(id);
+    const reward = grantWatchXp(id);
+    if (reward.gained > 0) {
+      sfx.xp();
+      setXpNote(`+${reward.gained} BATTLE PASS XP`);
+    } else {
+      setXpNote("ALREADY BANKED THIS TAPE");
+    }
+  };
 
   return (
     <section id="tv" className="section-wrap py-16 sm:py-20">
@@ -24,8 +38,8 @@ export function YoutubeTv() {
           <div>
             <div className="tv-bezel p-3 sm:p-4">
               <div className="mb-2 flex items-center justify-between gap-2 px-1">
-                <span className="font-press text-[8px] text-[#ffcc00] sm:text-[10px]">
-                  CH-04  TILTED TV
+                <span className="font-press text-[8px] text-[#00e800] sm:text-[10px]">
+                  CH-04  VIPER TV
                 </span>
                 <span className="font-press blink text-[8px] text-[#00e800] sm:text-[10px]">
                   ● LIVE
@@ -61,12 +75,28 @@ export function YoutubeTv() {
             <p className="font-vt mt-3 text-lg text-[#c9a0ff]">
               Now playing: {current.title}
             </p>
+            {xpNote ? (
+              <p className="font-press mt-1 text-[10px] text-[#00e800]">
+                {xpNote}
+              </p>
+            ) : (
+              <p className="font-press mt-1 text-[10px] text-[#ffcc00]">
+                FIRST WATCH = +50 XP
+              </p>
+            )}
+            <Button
+              variant="arcade"
+              className="mt-3 h-10 px-4 text-[10px]"
+              onClick={() => playTape(active)}
+            >
+              BANK WATCH XP
+            </Button>
           </div>
 
           <div className="flex flex-col gap-4">
             <RpgDialog speaker={CHANNEL_NAME}>
-              Drop into {CHANNEL_HANDLE}. Fortnite clips, sprites, and whatever
-              chaos the next storm circle brings.
+              Drop into {CHANNEL_HANDLE}. Watch a tape, bank Battle Pass XP,
+              then take that skin onto the island.
             </RpgDialog>
             <Button
               variant="pixel"
@@ -97,10 +127,7 @@ export function YoutubeTv() {
                 <button
                   key={video.id}
                   type="button"
-                  onClick={() => {
-                    sfx.select();
-                    setActive(video.id);
-                  }}
+                  onClick={() => playTape(video.id)}
                   className={`pixel-border overflow-hidden bg-[#05000a] text-left ${
                     active === video.id ? "ring-4 ring-[#ffcc00]" : ""
                   }`}

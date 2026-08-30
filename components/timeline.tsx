@@ -19,7 +19,7 @@ const EVENTS = [
     year: "FEB 2018",
     title: "A STAR FALLS",
     map: "S3",
-    text: "A rock hangs in the sky like a bad omen. Retail cracks. Night after night the meteor grows. Tilted looks up and pretends not to notice.",
+    text: "A rock hangs in the sky. VIPER clocks it, then lands anyway. The lesson is not the omen. The lesson is the drop.",
   },
   {
     year: "MAY 2018",
@@ -49,7 +49,7 @@ const EVENTS = [
     year: "OCT 2019",
     title: "THE END",
     map: "SX",
-    text: "Black holes eat the map. Chapter 1 shuts off like a NES that lost power. Somewhere a meteor is still falling in slow motion.",
+    text: "Black holes eat the map. Chapter 1 shuts off like a NES that lost power. The bus is still flying somewhere in the static.",
   },
 ];
 
@@ -84,8 +84,8 @@ export function Timeline() {
     <section id="lore" className="section-wrap py-16 sm:py-20">
       <PixelPanel title="CHAPTER 1  •  QUEST LOG">
         <p className="font-vt mb-6 text-xl text-[#c9a0ff] sm:text-2xl">
-          Talk to the villagers. Read the signs. This is the story the meteor
-          left behind.
+          Talk to the villagers. Read the signs. This is how the island taught
+          VIPER to drop.
         </p>
         <ol className="space-y-5">
           {EVENTS.map((event) => (

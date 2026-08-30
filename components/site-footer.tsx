@@ -8,9 +8,9 @@ export function SiteFooter() {
         <p className="font-press text-[8px] leading-6 text-[#c9a0ff] sm:text-[10px]">
           © 1985 VIPER3384
           <br />
-          TILTED TOWERS MEMORIAL
+          DROP ZONE  •  BATTLE PASS 3384
           <br />
-          NOT AFFILIATED WITH EPIC GAMES
+          NOT AFFILIATED WITH EPIC GAMES OR HALO
         </p>
         <a
           href="#hero"

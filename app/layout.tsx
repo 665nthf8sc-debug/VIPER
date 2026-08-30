@@ -15,9 +15,9 @@ const vt = VT323({
 });
 
 export const metadata: Metadata = {
-  title: "TILTED TOWERS MEMORIAL — VIPER3384",
+  title: "VIPER3384 DROP ZONE",
   description:
-    "An 8-bit memorial for Tilted Towers. Watch VIPER3384, dodge the meteor, and enter the arcade hall of fame.",
+    "VIPER3384's 8-bit Fortnite hub. Ride the battle bus, farm the Battle Pass, jump bullets, and swap skins in Chief's locker.",
   icons: { icon: "/favicon.svg" },
 };
 

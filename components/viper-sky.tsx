@@ -2,17 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-type Spark = {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  size: number;
-  life: number;
-  color: string;
-};
-
-export function MeteorSky({ className }: { className?: string }) {
+export function ViperSky({ className }: { className?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -23,7 +13,6 @@ export function MeteorSky({ className }: { className?: string }) {
 
     let raf = 0;
     let running = true;
-    const meteors: Spark[] = [];
     const stars: Array<{ x: number; y: number; s: number; p: number }> = [];
 
     const resize = () => {
@@ -31,10 +20,10 @@ export function MeteorSky({ className }: { className?: string }) {
       canvas.width = Math.max(160, Math.floor(rect.width / 3));
       canvas.height = Math.max(90, Math.floor(rect.height / 3));
       stars.length = 0;
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < 42; i++) {
         stars.push({
           x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
+          y: Math.random() * canvas.height * 0.7,
           s: Math.random() > 0.7 ? 2 : 1,
           p: Math.random() * Math.PI * 2,
         });
@@ -45,31 +34,17 @@ export function MeteorSky({ className }: { className?: string }) {
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
 
-    const spawn = () => {
-      meteors.push({
-        x: Math.random() * canvas.width * 1.2,
-        y: -6,
-        vx: -0.4 - Math.random() * 0.5,
-        vy: 1.1 + Math.random() * 1.4,
-        size: 2 + Math.floor(Math.random() * 3),
-        life: 1,
-        color: Math.random() > 0.5 ? "#ff6a00" : "#ffcc00",
-      });
-    };
-
     let tick = 0;
     const loop = () => {
       if (!running) return;
       const w = canvas.width;
       const h = canvas.height;
       ctx.imageSmoothingEnabled = false;
-      ctx.fillStyle = "#0a0014";
-      ctx.fillRect(0, 0, w, h);
 
       const grd = ctx.createLinearGradient(0, 0, 0, h);
-      grd.addColorStop(0, "#1a0033");
-      grd.addColorStop(0.6, "#120024");
-      grd.addColorStop(1, "#2a0810");
+      grd.addColorStop(0, "#061410");
+      grd.addColorStop(0.45, "#120024");
+      grd.addColorStop(1, "#1a3a18");
       ctx.fillStyle = grd;
       ctx.fillRect(0, 0, w, h);
 
@@ -80,35 +55,34 @@ export function MeteorSky({ className }: { className?: string }) {
         ctx.fillRect(star.x, star.y, star.s, star.s);
       }
 
-      if (tick % 18 === 0) spawn();
+      const busX = ((tick * 0.6) % (w + 80)) - 50;
+      const busY = Math.floor(h * 0.22);
+      ctx.fillStyle = "#ffcc00";
+      ctx.fillRect(busX + 8, busY - 10, 22, 8);
+      ctx.fillStyle = "#3d7cff";
+      ctx.fillRect(busX, busY, 32, 10);
+      ctx.fillStyle = "#9ad4ff";
+      ctx.fillRect(busX + 4, busY + 3, 6, 4);
+      ctx.fillRect(busX + 13, busY + 3, 6, 4);
+      ctx.fillStyle = "#f8f0d8";
+      ctx.fillRect(busX + 12, busY + 10, 2, 4);
 
-      for (let i = meteors.length - 1; i >= 0; i--) {
-        const m = meteors[i];
-        m.x += m.vx;
-        m.y += m.vy;
-        for (let t = 0; t < 6; t++) {
-          ctx.fillStyle = t < 2 ? "#ffcc00" : t < 4 ? "#ff6a00" : "#b33d00";
-          ctx.fillRect(m.x + t * 0.9, m.y - t * 1.6, m.size, m.size);
-        }
-        ctx.fillStyle = "#fff4c2";
-        ctx.fillRect(m.x, m.y, m.size + 1, m.size);
-        if (m.y > h + 10 || m.x < -10) meteors.splice(i, 1);
-      }
+      ctx.fillStyle = "rgba(0, 80, 40, 0.35)";
+      ctx.fillRect(0, h * 0.55, w, h * 0.45);
 
-      // silhouette of Tilted
       ctx.fillStyle = "#080010";
       const base = h - 18;
       const towers = [
-        [w * 0.12, 28, 14],
-        [w * 0.22, 46, 16],
-        [w * 0.36, 70, 22],
-        [w * 0.52, 58, 18],
-        [w * 0.68, 36, 14],
-        [w * 0.8, 24, 12],
+        [w * 0.1, 24, 12],
+        [w * 0.2, 40, 16],
+        [w * 0.34, 64, 20],
+        [w * 0.5, 48, 16],
+        [w * 0.66, 32, 14],
+        [w * 0.8, 22, 12],
       ];
       for (const [x, tall, wide] of towers) {
         ctx.fillRect(x, base - tall, wide, tall);
-        ctx.fillStyle = "#1a0033";
+        ctx.fillStyle = "#143018";
         for (let wy = base - tall + 4; wy < base - 4; wy += 5) {
           for (let wx = x + 2; wx < x + wide - 2; wx += 4) {
             if ((wx + wy) % 7 !== 0) ctx.fillRect(wx, wy, 2, 2);
@@ -117,6 +91,9 @@ export function MeteorSky({ className }: { className?: string }) {
         ctx.fillStyle = "#080010";
       }
       ctx.fillRect(0, base, w, h - base);
+
+      ctx.fillStyle = "#00e800";
+      ctx.fillRect(Math.floor(w * 0.08), base - 6, w * 0.18, 3);
 
       raf = requestAnimationFrame(loop);
     };

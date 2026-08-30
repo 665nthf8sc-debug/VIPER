@@ -61,7 +61,7 @@ export function PixelIcon({
   name,
   className,
 }: {
-  name: "youtube" | "meteor" | "heart" | "tower" | "game" | "map";
+  name: "youtube" | "viper" | "heart" | "tower" | "game" | "map" | "bus";
   className?: string;
 }) {
   const tiles: Record<string, string[]> = {
@@ -75,7 +75,7 @@ export function PixelIcon({
       "00000000",
       "00000000",
     ],
-    meteor: [
+    viper: [
       "00011000",
       "00122100",
       "01233210",
@@ -83,6 +83,16 @@ export function PixelIcon({
       "01233210",
       "00122100",
       "00011000",
+      "00011000",
+    ],
+    bus: [
+      "00111100",
+      "01122110",
+      "11111111",
+      "13333331",
+      "11111111",
+      "01011010",
+      "00000000",
       "00000000",
     ],
     heart: [
@@ -129,9 +139,9 @@ export function PixelIcon({
 
   const palette: Record<string, string> = {
     "0": "transparent",
-    "1": name === "youtube" ? "#e02020" : name === "heart" ? "#e02020" : "#f8f0d8",
-    "2": name === "youtube" ? "#f8f0d8" : "#ff6a00",
-    "3": "#ffcc00",
+    "1": name === "youtube" ? "#e02020" : name === "heart" ? "#e02020" : name === "viper" ? "#00e800" : "#f8f0d8",
+    "2": name === "youtube" ? "#f8f0d8" : name === "viper" ? "#ffcc00" : "#ff6a00",
+    "3": name === "viper" ? "#003300" : "#ffcc00",
   };
 
   return (
