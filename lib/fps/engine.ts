@@ -1,5 +1,6 @@
 import {
-  buildFloorStrip,
+  buildFloorCanvas,
+  buildSkyCanvas,
   buildWallTextures,
   type WallTexId,
 } from "@/lib/fps/textures";
@@ -7,7 +8,6 @@ import {
   buildEnemySprite,
   buildPickupSprite,
   buildWeaponView,
-  ENEMY_NAMES,
   PICKUP_LABEL,
   type EnemyKind,
   type PickupKind,
@@ -57,8 +57,8 @@ type Pickup = {
   bob: number;
 };
 
-const RENDER_W = 480;
-const RENDER_H = 270;
+const RENDER_W = 640;
+const RENDER_H = 360;
 const FOV = Math.PI / 2.8;
 const MAX_DEPTH = 22;
 const MOVE_SPEED = 3.4;
@@ -90,7 +90,8 @@ export function mountFps(
 
   const grid = buildMapGrid();
   const wallTex = buildWallTextures();
-  const floorTex = buildFloorStrip(256);
+  const skyCanvas = buildSkyCanvas(RENDER_W, RENDER_H);
+  const floorCanvas = buildFloorCanvas(RENDER_W, RENDER_H);
   const enemyTex = {
     peely: buildEnemySprite("peely"),
     chief: buildEnemySprite("chief"),
@@ -294,6 +295,7 @@ export function mountFps(
 
   const resize = () => {
     const rect = canvas.getBoundingClientRect();
+    if (rect.width < 2 || rect.height < 2) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.floor(rect.width * dpr);
     canvas.height = Math.floor(rect.height * dpr);
@@ -355,36 +357,51 @@ export function mountFps(
   canvas.addEventListener("mousedown", onMouseDown);
   window.addEventListener("mouseup", onMouseUp);
 
-  const castRays = (buf: ImageData) => {
+  type SpriteDraw = {
+    dist: number;
+    x: number;
+    y: number;
+    tex: HTMLCanvasElement;
+    flash: boolean;
+  };
+
+  /** Classic Wolfenstein DDA + canvas column strips (no ImageData gaps). */
+  const renderWorld = (offCtx: CanvasRenderingContext2D) => {
     const w = RENDER_W;
     const h = RENDER_H;
-    const halfH = h / 2;
+    const half = (h / 2) | 0;
     const zBuffer = new Float32Array(w);
+
+    offCtx.imageSmoothingEnabled = false;
+    offCtx.drawImage(skyCanvas, 0, 0, w, half, 0, 0, w, half);
+    offCtx.drawImage(floorCanvas, 0, 0, w, half, 0, half, w, h - half);
+
+    const planeX = Math.cos(pa + Math.PI / 2);
+    const planeY = Math.sin(pa + Math.PI / 2);
 
     for (let col = 0; col < w; col++) {
       const camX = (2 * col) / w - 1;
-      const rayAng = pa + Math.atan(camX * Math.tan(FOV / 2));
-      const sin = Math.sin(rayAng);
-      const cos = Math.cos(rayAng);
+      const rayDirX = Math.cos(pa) + planeX * camX * Math.tan(FOV / 2);
+      const rayDirY = Math.sin(pa) + planeY * camX * Math.tan(FOV / 2);
 
       let mapX = Math.floor(px);
       let mapY = Math.floor(py);
-      const deltaDistX = Math.abs(1 / (cos || 1e-6));
-      const deltaDistY = Math.abs(1 / (sin || 1e-6));
+      const deltaDistX = Math.abs(1 / (rayDirX || 1e-8));
+      const deltaDistY = Math.abs(1 / (rayDirY || 1e-8));
 
       let stepX = 0;
       let stepY = 0;
       let sideDistX = 0;
       let sideDistY = 0;
 
-      if (cos < 0) {
+      if (rayDirX < 0) {
         stepX = -1;
         sideDistX = (px - mapX) * deltaDistX;
       } else {
         stepX = 1;
         sideDistX = (mapX + 1 - px) * deltaDistX;
       }
-      if (sin < 0) {
+      if (rayDirY < 0) {
         stepY = -1;
         sideDistY = (py - mapY) * deltaDistY;
       } else {
@@ -394,9 +411,8 @@ export function mountFps(
 
       let hit = 0;
       let side = 0;
-      let dist = 0;
 
-      for (let step = 0; step < 64; step++) {
+      for (let step = 0; step < 48; step++) {
         if (sideDistX < sideDistY) {
           sideDistX += deltaDistX;
           mapX += stepX;
@@ -410,79 +426,45 @@ export function mountFps(
         if (hit > 0) break;
       }
 
-      if (side === 0) dist = (mapX - px + (1 - stepX) / 2) / (cos || 1e-6);
-      else dist = (mapY - py + (1 - stepY) / 2) / (sin || 1e-6);
-      dist = Math.max(0.001, Math.min(MAX_DEPTH, dist));
-      zBuffer[col] = dist;
-
-      const lineH = Math.min(h, Math.floor(h / dist));
-      const y0 = Math.max(0, halfH - lineH / 2);
-      const y1 = Math.min(h, halfH + lineH / 2);
-
-      const ceilGrad = 1 - col / w;
-      for (let y = 0; y < y0; y++) {
-        const idx = (y * w + col) * 4;
-        const t = y / halfH;
-        buf.data[idx] = 26 + t * 40 + ceilGrad * 20;
-        buf.data[idx + 1] = 80 + t * 90 + ceilGrad * 30;
-        buf.data[idx + 2] = 136 + t * 60;
-        buf.data[idx + 3] = 255;
+      let perpWallDist: number;
+      if (side === 0) {
+        perpWallDist = (mapX - px + (1 - stepX) / 2) / (rayDirX || 1e-8);
+      } else {
+        perpWallDist = (mapY - py + (1 - stepY) / 2) / (rayDirY || 1e-8);
       }
+      perpWallDist = Math.abs(perpWallDist);
+      if (perpWallDist < 0.05) perpWallDist = 0.05;
+      zBuffer[col] = perpWallDist;
+
+      const lineH = Math.min(h, (h / perpWallDist) | 0);
+      const drawStart = Math.max(0, ((h - lineH) / 2) | 0);
+      const drawEnd = Math.min(h, drawStart + lineH);
 
       let wallX: number;
-      if (side === 0) wallX = py + dist * sin;
-      else wallX = px + dist * cos;
+      if (side === 0) wallX = py + perpWallDist * rayDirY;
+      else wallX = px + perpWallDist * rayDirX;
       wallX -= Math.floor(wallX);
-      const texId = hit as WallTexId;
+      if (side === 0 && rayDirX > 0) wallX = 1 - wallX;
+      if (side === 1 && rayDirY < 0) wallX = 1 - wallX;
+
+      const texId = (hit || 1) as WallTexId;
       const tex = wallTex[texId] ?? wallTex[1];
-      const u = side === 0 && cos > 0 ? 1 - wallX : wallX;
-      const shadeAmt = Math.min(0.72, dist / MAX_DEPTH) + (side === 1 ? 0.08 : 0);
+      const texX = Math.min(tex.width - 1, (wallX * tex.width) | 0);
 
-      for (let y = y0; y < y1; y++) {
-        const v = (y - y0) / Math.max(1, y1 - y0);
-        const ty = Math.floor(v * tex.height) % tex.height;
-        const tx = Math.floor(u * tex.width) % tex.width;
-        const tctx = tex.getContext("2d")!;
-        const d = tctx.getImageData(tx, ty, 1, 1).data;
-        const idx = (y * w + col) * 4;
-        const dark = 1 - shadeAmt;
-        buf.data[idx] = d[0] * dark;
-        buf.data[idx + 1] = d[1] * dark;
-        buf.data[idx + 2] = d[2] * dark;
-        buf.data[idx + 3] = 255;
-      }
+      offCtx.drawImage(tex, texX, 0, 1, tex.height, col, drawStart, 1, drawEnd - drawStart);
 
-      for (let y = y1; y < h; y++) {
-        const idx = (y * w + col) * 4;
-        const fy = y - y1;
-        const fh = h - y1;
-        const ft = fy / Math.max(1, fh);
-        const fctx = floorTex.getContext("2d")!;
-        const fty = Math.floor(ft * floorTex.height) % floorTex.height;
-        const ftx = Math.floor(((col / w) + dist * 0.02) * floorTex.width) % floorTex.width;
-        const fd = fctx.getImageData(ftx, fty, 1, 1).data;
-        const dark = 0.55 + ft * 0.35;
-        buf.data[idx] = fd[0] * dark * (1 - dist / MAX_DEPTH * 0.5);
-        buf.data[idx + 1] = fd[1] * dark * (1 - dist / MAX_DEPTH * 0.5);
-        buf.data[idx + 2] = fd[2] * dark * (1 - dist / MAX_DEPTH * 0.5);
-        buf.data[idx + 3] = 255;
+      const shade = Math.min(0.7, perpWallDist / MAX_DEPTH) + (side === 1 ? 0.06 : 0);
+      if (shade > 0.02) {
+        offCtx.fillStyle = `rgba(0,0,10,${shade})`;
+        offCtx.fillRect(col, drawStart, 1, drawEnd - drawStart);
       }
     }
 
     return zBuffer;
   };
 
-  type SpriteDraw = {
-    dist: number;
-    x: number;
-    y: number;
-    tex: HTMLCanvasElement;
-    flash: boolean;
-    label?: string;
-  };
-
   const drawSprites = (
-    buf: ImageData,
+    offCtx: CanvasRenderingContext2D,
     zBuffer: Float32Array,
     list: SpriteDraw[]
   ) => {
@@ -490,47 +472,48 @@ export function mountFps(
     const w = RENDER_W;
     const h = RENDER_H;
     const halfTan = Math.tan(FOV / 2);
+    offCtx.imageSmoothingEnabled = false;
+
     for (const sp of list) {
       const dx = sp.x - px;
       const dy = sp.y - py;
-      const dist = sp.dist;
+      const dist = Math.max(0.4, sp.dist);
       let rel = Math.atan2(dy, dx) - pa;
       while (rel > Math.PI) rel -= Math.PI * 2;
       while (rel < -Math.PI) rel += Math.PI * 2;
-      if (Math.abs(rel) > FOV * 0.55) continue;
+      if (Math.abs(rel) > FOV * 0.58) continue;
 
-      const spriteScreenX = Math.floor(w / 2 * (1 + Math.tan(rel) / halfTan));
-      const spriteH = Math.abs(Math.floor(h / dist));
+      const spriteScreenX = ((w / 2) * (1 + Math.tan(rel) / halfTan)) | 0;
+      const spriteH = Math.abs((h / dist) | 0);
       const spriteW = spriteH;
-      const drawY0 = Math.max(0, Math.floor(-spriteH / 2 + h / 2));
-      const drawY1 = Math.min(h, Math.floor(spriteH / 2 + h / 2));
-      const drawX0 = Math.max(0, Math.floor(-spriteW / 2 + spriteScreenX));
-      const drawX1 = Math.min(w, Math.floor(spriteW / 2 + spriteScreenX));
+      const drawStartY = Math.max(0, ((h - spriteH) / 2) | 0);
+      const drawEndY = Math.min(h, drawStartY + spriteH);
+      const drawStartX = Math.max(0, spriteScreenX - (spriteW >> 1));
+      const drawEndX = Math.min(w, spriteScreenX + (spriteW >> 1));
 
       const tex = sp.tex;
-      for (let stripe = drawX0; stripe < drawX1; stripe++) {
-        if (stripe < 0 || stripe >= w || dist >= zBuffer[stripe]) continue;
-        const texX = Math.floor(
-          ((stripe - drawX0) * tex.width) / Math.max(1, drawX1 - drawX0)
-        );
-        for (let y = drawY0; y < drawY1; y++) {
-          const d = y - drawY0;
-          const texY = Math.floor(
-            (d * tex.height) / Math.max(1, drawY1 - drawY0)
-          );
-          const tctx = tex.getContext("2d")!;
-          const pxData = tctx.getImageData(texX, texY, 1, 1).data;
-          if (pxData[3] < 8 && pxData[0] === 0 && pxData[1] === 0 && pxData[2] === 0) {
-            const lum = pxData[0] + pxData[1] + pxData[2];
-            if (lum < 4) continue;
-          }
-          const idx = (y * w + stripe) * 4;
-          const dark = Math.max(0.28, 1 - dist / MAX_DEPTH);
-          buf.data[idx] = Math.min(255, pxData[0] * dark + (sp.flash ? 60 : 0));
-          buf.data[idx + 1] = Math.min(255, pxData[1] * dark + (sp.flash ? 20 : 0));
-          buf.data[idx + 2] = Math.min(255, pxData[2] * dark);
-          buf.data[idx + 3] = 255;
+      const dark = Math.max(0.35, 1 - dist / MAX_DEPTH);
+
+      for (let stripe = drawStartX; stripe < drawEndX; stripe++) {
+        if (dist >= zBuffer[stripe]) continue;
+        const texX = (((stripe - drawStartX) * tex.width) / Math.max(1, drawEndX - drawStartX)) | 0;
+        offCtx.save();
+        offCtx.globalAlpha = dark;
+        if (sp.flash) {
+          offCtx.filter = "brightness(1.45) saturate(1.2)";
         }
+        offCtx.drawImage(
+          tex,
+          texX,
+          0,
+          1,
+          tex.height,
+          stripe,
+          drawStartY,
+          1,
+          drawEndY - drawStartY
+        );
+        offCtx.restore();
       }
     }
   };
@@ -538,7 +521,12 @@ export function mountFps(
   const off = document.createElement("canvas");
   off.width = RENDER_W;
   off.height = RENDER_H;
-  const offCtx = off.getContext("2d")!;
+  const offCtx = off.getContext("2d", { alpha: false })!;
+  offCtx.imageSmoothingEnabled = false;
+
+  let gunCanvas = buildWeaponView("pickaxe", 0);
+  let gunWeapon: WeaponId = "pickaxe";
+  let gunFrame = -1;
 
   let last = performance.now();
 
@@ -625,29 +613,22 @@ export function mountFps(
       if (tick % 12 === 0) pushHud();
     }
 
-    const buf = offCtx.createImageData(RENDER_W, RENDER_H);
-
     if (mode === "title") {
-      for (let i = 0; i < buf.data.length; i += 4) {
-        buf.data[i] = 10;
-        buf.data[i + 1] = 0;
-        buf.data[i + 2] = 20;
-        buf.data[i + 3] = 255;
-      }
-      offCtx.putImageData(buf, 0, 0);
+      offCtx.fillStyle = "#05000a";
+      offCtx.fillRect(0, 0, RENDER_W, RENDER_H);
       offCtx.fillStyle = "#00e800";
-      offCtx.font = '24px "Press Start 2P", monospace';
-      offCtx.fillText("VIPER FPS", 100, 90);
+      offCtx.font = '28px "Press Start 2P", monospace';
+      offCtx.fillText("VIPER FPS", 150, 100);
       offCtx.fillStyle = "#ffcc00";
-      offCtx.font = '10px "Press Start 2P", monospace';
-      offCtx.fillText("RAYCAST ISLAND", 140, 120);
-      offCtx.fillText("PEELY · CHIEF · JONESY", 88, 150);
+      offCtx.font = '11px "Press Start 2P", monospace';
+      offCtx.fillText("RAYCAST ISLAND", 200, 140);
+      offCtx.fillText("PEELY · CHIEF · JONESY", 130, 175);
       if (Math.floor(tick / 30) % 2 === 0) {
         offCtx.fillStyle = "#ff6a00";
-        offCtx.fillText("CLICK OR ENTER", 130, 200);
+        offCtx.fillText("CLICK OR ENTER", 190, 230);
       }
     } else {
-      const zBuffer = castRays(buf);
+      const zBuffer = renderWorld(offCtx);
       const sprites: SpriteDraw[] = [];
 
       for (const e of enemies) {
@@ -658,7 +639,6 @@ export function mountFps(
           y: e.y,
           tex: enemyTex[e.kind],
           flash: e.flash > 0,
-          label: ENEMY_NAMES[e.kind],
         });
       }
       for (const p of pickups) {
@@ -671,11 +651,14 @@ export function mountFps(
           flash: false,
         });
       }
-      drawSprites(buf, zBuffer, sprites);
-      offCtx.putImageData(buf, 0, 0);
+      drawSprites(offCtx, zBuffer, sprites);
 
-      const gun = buildWeaponView(weapon, fireFrame);
-      offCtx.drawImage(gun, 0, RENDER_H - 120, RENDER_W, 120);
+      if (weapon !== gunWeapon || fireFrame !== gunFrame) {
+        gunCanvas = buildWeaponView(weapon, fireFrame);
+        gunWeapon = weapon;
+        gunFrame = fireFrame;
+      }
+      offCtx.drawImage(gunCanvas, 0, RENDER_H - 140, RENDER_W, 140);
 
       if (hurtFlash > 0) {
         offCtx.fillStyle = `rgba(224,32,32,${hurtFlash * 0.06})`;
@@ -720,6 +703,7 @@ export function mountFps(
       }
     }
 
+    ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = "#05000a";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(off, 0, 0, canvas.width, canvas.height);
