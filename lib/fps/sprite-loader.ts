@@ -132,7 +132,7 @@ function sliceCell(
   const cell = document.createElement("canvas");
   cell.width = Math.max(1, sw);
   cell.height = Math.max(1, sh);
-  const ctx = cell.getContext("2d")!;
+  const ctx = ctx2d(cell);
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(source, sx, sy, sw, sh, 0, 0, sw, sh);
   return cell;
