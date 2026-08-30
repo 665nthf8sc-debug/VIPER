@@ -63,11 +63,13 @@ type MusicNode = {
 
 class SamplePlayer {
   private ctx: AudioContext | null = null;
+  private offline: OfflineAudioContext | null = null;
   private master: GainNode | null = null;
   private sfxBus: GainNode | null = null;
   private musicBus: GainNode | null = null;
   private buffers = new Map<string, AudioBuffer>();
   private preloadStarted = false;
+  private gestureBound = false;
   private musicMode: FpsMusicMode = "off";
   private musicNodes: MusicNode[] = [];
   private musicTimer: number | null = null;
@@ -93,11 +95,35 @@ class SamplePlayer {
     return this.ctx;
   }
 
+  private decoder() {
+    if (this.ctx) return this.ctx;
+    if (!this.offline) this.offline = new OfflineAudioContext(2, 1, 44100);
+    return this.offline;
+  }
+
+  private gestureActive() {
+    const nav = navigator as Navigator & {
+      userActivation?: { isActive: boolean; hasBeenActive: boolean };
+    };
+    return Boolean(nav.userActivation?.isActive || nav.userActivation?.hasBeenActive);
+  }
+
+  private bindGesture() {
+    if (this.gestureBound || typeof window === "undefined") return;
+    this.gestureBound = true;
+    const arm = () => this.unlock();
+    window.addEventListener("pointerdown", arm, { capture: true, once: true });
+    window.addEventListener("keydown", arm, { capture: true, once: true });
+  }
+
   unlock() {
     if (typeof window === "undefined") return;
+    this.bindGesture();
+    this.kickPreload();
+    if (!this.ctx && !this.gestureActive()) return;
     const ctx = this.audio();
     if (ctx.state === "suspended") void ctx.resume();
-    this.kickPreload();
+    this.maybeStartPendingMusic();
   }
 
   setMuted(next: boolean) {
@@ -124,11 +150,7 @@ class SamplePlayer {
     jobs.push(this.loadBuffer(MUSIC_URL.title, "music:title"));
     jobs.push(this.loadBuffer(MUSIC_URL.game, "music:game"));
     await Promise.all(jobs);
-    if (this.musicMode === "title" || this.musicMode === "game") {
-      if (this.musicNodes.length === 0 && !this.muted) {
-        this.startMusic(this.musicMode, this.musicGen);
-      }
-    }
+    this.maybeStartPendingMusic();
   }
 
   private async loadBuffer(path: string, key: string) {
@@ -136,12 +158,19 @@ class SamplePlayer {
       const res = await fetch(publicAsset(path));
       if (!res.ok) return;
       const data = await res.arrayBuffer();
-      const ctx = this.audio();
-      const buf = await ctx.decodeAudioData(data.slice(0));
+      const buf = await this.decoder().decodeAudioData(data.slice(0));
       this.buffers.set(key, buf);
     } catch {
       /* missing / decode failure: skip */
     }
+  }
+
+  private maybeStartPendingMusic() {
+    if (this.muted) return;
+    if (this.musicMode !== "title" && this.musicMode !== "game") return;
+    if (this.musicNodes.length > 0 || this.musicTimer != null) return;
+    if (!this.ctx) return;
+    this.startMusic(this.musicMode, this.musicGen);
   }
 
   private oneshot(name: SfxName) {
