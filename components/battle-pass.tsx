@@ -14,7 +14,7 @@ import {
   type PassState,
 } from "@/lib/pass";
 import { sfx } from "@/lib/sfx";
-import { drawSprite, spriteRows } from "@/lib/sprites";
+import { drawSprite, spriteRows, type SpriteKind } from "@/lib/sprites";
 import { useEffect, useRef, useState } from "react";
 
 function SkinPreview({
@@ -22,7 +22,7 @@ function SkinPreview({
   sprite,
 }: {
   palette: Record<string, string>;
-  sprite: "fox" | "chief";
+  sprite: SpriteKind;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -50,6 +50,8 @@ export function BattlePass() {
     xp: 0,
     equipped: "fox",
     watched: [],
+    unlocked: [],
+    campaignStage: 0,
   });
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export function BattlePass() {
   }, []);
 
   const equipped = equippedSkin();
-  const upcoming = nextSkin(pass.xp);
+  const upcoming = nextSkin(pass);
   const cap = maxPassXp();
   const pct = Math.min(100, Math.round((pass.xp / cap) * 100));
   const toNext = upcoming ? Math.max(0, upcoming.xp - pass.xp) : 0;
@@ -80,7 +82,8 @@ export function BattlePass() {
               />
             </div>
             <p className="font-vt mt-2 text-lg text-[#c9a0ff]">
-              Play VIPER DROP or watch Channel 3384 to earn XP. Equipped:{" "}
+              Play VIPER DROP or watch Channel 3384 to earn XP. Clear Chapter 1
+              campaign for Jonesy and Peely. Equipped:{" "}
               <span className="text-[#ffcc00]">{equipped.name}</span>
               {upcoming
                 ? ` · ${toNext} XP to ${upcoming.name}`
@@ -94,7 +97,7 @@ export function BattlePass() {
 
         <div className="flex gap-3 overflow-x-auto pb-2">
           {SKINS.map((skin, i) => {
-            const unlocked = isUnlocked(skin, pass.xp);
+            const unlocked = isUnlocked(skin, pass);
             const active = pass.equipped === skin.id;
             return (
               <button
@@ -113,14 +116,18 @@ export function BattlePass() {
                 } ${unlocked ? "" : "opacity-70"}`}
               >
                 <p className="font-press text-[8px] text-[#3cdcff]">
-                  TIER {String(i + 1).padStart(2, "0")}
+                  {skin.campaign ? "EXCL" : `TIER ${String(i + 1).padStart(2, "0")}`}
                 </p>
                 <SkinPreview palette={skin.palette} sprite={skin.sprite} />
                 <p className="font-press mt-2 text-[9px] text-[#ffcc00]">
                   {skin.name}
                 </p>
                 <p className="font-vt text-base text-[#c9a0ff]">
-                  {unlocked ? "UNLOCKED" : `${skin.xp} XP`}
+                  {unlocked
+                    ? "UNLOCKED"
+                    : skin.campaign
+                      ? "CAMPAIGN"
+                      : `${skin.xp} XP`}
                 </p>
                 <span className="font-press mt-1 block text-[8px] text-[#00e800]">
                   {active ? "EQUIPPED" : unlocked ? "EQUIP" : "LOCKED"}

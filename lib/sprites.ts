@@ -74,10 +74,88 @@ export const CHIEF_B = [
   "....oo.....oo...",
 ];
 
-export type SpriteKind = "fox" | "chief";
+export const JONESY_A = [
+  "......oooo......",
+  ".....oHHHHHo....",
+  "....oHSSSSSHo...",
+  "....oSbSSbSo....",
+  "....oSSSSSSo....",
+  ".....oSSSSo.....",
+  "....oooooooo....",
+  "...ooBBBBBBoo...",
+  "..ooBBBBBBBBoo..",
+  "..oBBBBBBBBBBo..",
+  "..oBBBBBBBBBBo..",
+  "...oBBBo.oBBo...",
+  "...oSSo...oSSo..",
+  "...oooo...oooo..",
+  "....oo.....oo...",
+  "....oo.....oo...",
+];
+
+export const JONESY_B = [
+  "......oooo......",
+  ".....oHHHHHo....",
+  "....oHSSSSSHo...",
+  "....oSbSSbSo....",
+  "....oSSSSSSo....",
+  ".....oSSSSo.....",
+  "....oooooooo....",
+  "...ooBBBBBBoo...",
+  "..ooBBBBBBBBoo..",
+  "..oBBBBBBBBBBo..",
+  "..oBBBBBBBBBBo..",
+  "...oBBBo.oBBo...",
+  "....oSSo.oSSo...",
+  "....oooo.oooo...",
+  ".....oo...oo....",
+  "....oo.....oo...",
+];
+
+export const PEELY_A = [
+  "......oooo......",
+  ".....oYYYYo.....",
+  "....oYYYYYYo....",
+  "....oYbYYbYo....",
+  "....oYYYYYYo....",
+  ".....oYYYYo.....",
+  "....oooooooo....",
+  "...ooYYYYYYoo...",
+  "..ooYYYYYYYYYo..",
+  "..oYYYYYYYYYYo..",
+  "..oYYYYYYYYYYo..",
+  "...oYYYo.oYYo...",
+  "...oYYo...oYYo..",
+  "...oooo...oooo..",
+  "....oo.....oo...",
+  "....oo.....oo...",
+];
+
+export const PEELY_B = [
+  "......oooo......",
+  ".....oYYYYo.....",
+  "....oYYYYYYo....",
+  "....oYbYYbYo....",
+  "....oYYYYYYo....",
+  ".....oYYYYo.....",
+  "....oooooooo....",
+  "...ooYYYYYYoo...",
+  "..ooYYYYYYYYYo..",
+  "..oYYYYYYYYYYo..",
+  "..oYYYYYYYYYYo..",
+  "...oYYYo.oYYo...",
+  "....oYYo.oYYo...",
+  "....oooo.oooo...",
+  ".....oo...oo....",
+  "....oo.....oo...",
+];
+
+export type SpriteKind = "fox" | "chief" | "jonesy" | "peely";
 
 export function spriteRows(kind: SpriteKind, frame: number) {
   if (kind === "chief") return frame ? CHIEF_B : CHIEF_A;
+  if (kind === "jonesy") return frame ? JONESY_B : JONESY_A;
+  if (kind === "peely") return frame ? PEELY_B : PEELY_A;
   return frame ? FOX_B : FOX_A;
 }
 

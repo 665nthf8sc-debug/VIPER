@@ -34,13 +34,17 @@ On Pages there is no Node server, so the hall of fame uses `localStorage`. Local
 - **Hero** — VIPER drop zone, battle bus sky, countdown to the next season on October 1
 - **VIPER TV** — CRT bezel around `@coolfox3384` videos. First watch of each tape banks **+50 Battle Pass XP**
 - **Battle Pass** — eight skins, XP bar, equip from the track
-- **VIPER DROP** — Fortnite-style 8-bit match: battle bus, skydiving, guns, jump to dodge bullets, walk off-screen into Tilted / Retail / Salty / Pleasant / Loot Lake
-- **Fullscreen** — `FULL` in the nav for the whole site, `FULLSCREEN` on the cabinet for the game
-- **Chief's locker** — Master Chief armory that replaced the Memory Pak. Unlock **CHIEF MK.VI** at 500 XP
+- **VIPER DROP** — 8-bit Fortnite: battle bus, health + shields, loot, jump, POIs
+- **Squads** — Solo / Duo / Trio. Fill with bots or a local invite code (another tab on this PC). Couch P2 uses arrows + K
+- **Knocked** — In duo/trio you get downed. A teammate standing on you for 5 seconds revives you
+- **Campaign** — Chapter 1, eight drops. Unlock **Jonesy** at Tilted and **Peely** after The Cube
+- **Bots** — Rivals shoot each other. Squad bots follow, fight, and revive
+- **Fullscreen** — `FULL` in the nav, `FULLSCREEN` on the cabinet
+- **Chief's locker** — Armory 117 plus campaign exclusives
 - **Hall of Fame** — 3-letter arcade initials
 - **Quest log** — Chapter 1 timeline
 
-Controls: **A/D** or arrows move, **Space / W / Up** jump, **Z / X / FIRE** shoot. On phones: **◀ JUMP FIRE ▶**.
+Controls: **P1** A/D move, W/Space jump, Z/X shoot. **P2** arrows + K. **P3** J/L I M. Phone: **◀ JUMP FIRE ▶**.
 
 ## Stack
 

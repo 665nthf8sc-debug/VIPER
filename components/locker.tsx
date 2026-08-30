@@ -10,7 +10,7 @@ import {
   type PassState,
 } from "@/lib/pass";
 import { sfx } from "@/lib/sfx";
-import { drawSprite, spriteRows } from "@/lib/sprites";
+import { drawSprite, spriteRows, type SpriteKind } from "@/lib/sprites";
 import { useEffect, useRef, useState } from "react";
 
 function MiniSkin({
@@ -18,7 +18,7 @@ function MiniSkin({
   sprite,
 }: {
   palette: Record<string, string>;
-  sprite: "fox" | "chief";
+  sprite: SpriteKind;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -46,6 +46,8 @@ export function Locker() {
     xp: 0,
     equipped: "fox",
     watched: [],
+    unlocked: [],
+    campaignStage: 0,
   });
 
   useEffect(() => {
@@ -56,7 +58,7 @@ export function Locker() {
   }, []);
 
   const chief = SKINS.find((s) => s.id === "chief")!;
-  const chiefReady = isUnlocked(chief, pass.xp);
+  const chiefReady = isUnlocked(chief, pass);
 
   return (
     <section id="locker" className="section-wrap py-16 sm:py-20">
@@ -112,12 +114,12 @@ export function Locker() {
 
           <div>
             <p className="font-vt mb-4 text-xl text-[#c9d46a]">
-              Every Battle Pass skin lives in this locker. Unlock with XP, then
-              tap Equip. The next drop uses whatever you leave hanging here.
+              Every Battle Pass skin lives in this locker. Unlock with XP, win
+              Chapter 1 for Jonesy and Peely, then tap Equip.
             </p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {SKINS.map((skin) => {
-                const unlocked = isUnlocked(skin, pass.xp);
+                const unlocked = isUnlocked(skin, pass);
                 const active = pass.equipped === skin.id;
                 return (
                   <button

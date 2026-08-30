@@ -118,6 +118,21 @@ class ChipSynth {
   warp() {
     this.tone(520, 0.08, "square", 0.04, 880);
   }
+
+  knock() {
+    this.tone(140, 0.22, "square", 0.06, 70);
+  }
+
+  revive() {
+    this.tone(392, 0.1, "square", 0.05);
+    setTimeout(() => this.tone(523, 0.12, "square", 0.05), 90);
+    setTimeout(() => this.tone(784, 0.16, "square", 0.05), 180);
+  }
+
+  pickup() {
+    this.tone(880, 0.06, "square", 0.04);
+    setTimeout(() => this.tone(1174, 0.08, "square", 0.04), 50);
+  }
 }
 
 export const sfx = new ChipSynth();
