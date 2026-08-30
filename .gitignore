@@ -42,3 +42,6 @@ next-env.d.ts
 
 # local arcade database
 /data/*.db
+
+# wav masters from audio compose scripts (commit OGGs under public/audio only)
+/scripts/output/
