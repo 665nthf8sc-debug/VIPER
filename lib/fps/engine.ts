@@ -1,11 +1,19 @@
 import {
+  applyHdWalls,
   buildFloorCanvas,
+  buildFloorFromTile,
   buildSkyCanvas,
+  buildSkyFromImage,
   buildWallTextures,
   type WallTexId,
 } from "@/lib/fps/textures";
-import { loadHdEnemySprites } from "@/lib/fps/sprite-loader";
 import {
+  angleFrame,
+  loadFpsArt,
+  type AngleKind,
+} from "@/lib/fps/sprite-loader";
+import {
+  angleKindFor,
   buildEnemySprite,
   buildPickupSprite,
   buildWeaponView,
@@ -48,6 +56,7 @@ type Enemy = {
   flash: number;
   vx: number;
   vy: number;
+  facing: number;
 };
 
 type Pickup = {
@@ -91,24 +100,69 @@ export function mountFps(
 
   const grid = buildMapGrid();
   const wallTex = buildWallTextures();
-  const skyCanvas = buildSkyCanvas(RENDER_W, RENDER_H);
-  const floorCanvas = buildFloorCanvas(RENDER_W, RENDER_H);
-  let enemyTex = {
+  let skyCanvas = buildSkyCanvas(RENDER_W, RENDER_H);
+  let floorCanvas = buildFloorCanvas(RENDER_W, RENDER_H);
+  const enemyFlat: Record<EnemyKind, HTMLCanvasElement> = {
     peely: buildEnemySprite("peely"),
     chief: buildEnemySprite("chief"),
+    viper: buildEnemySprite("viper"),
+    stormstep: buildEnemySprite("stormstep"),
     jonesy: buildEnemySprite("jonesy"),
     fox: buildEnemySprite("fox"),
   };
-  void loadHdEnemySprites(enemyTex).then((loaded) => {
-    enemyTex = loaded;
-  });
-  const pickupTex = {
+  let enemyAngles: Partial<Record<AngleKind, HTMLCanvasElement[]>> = {};
+  const pickupTex: Record<PickupKind, HTMLCanvasElement> = {
     pump: buildPickupSprite("pump"),
     scar: buildPickupSprite("scar"),
     exotic: buildPickupSprite("exotic"),
     med: buildPickupSprite("med"),
     shield: buildPickupSprite("shield"),
     llama: buildPickupSprite("llama"),
+    chest: buildPickupSprite("chest"),
+  };
+  const gunHd: Partial<Record<WeaponId, HTMLCanvasElement>> = {};
+  void loadFpsArt({
+    chief: enemyFlat.chief,
+    peely: enemyFlat.peely,
+    jonesy: enemyFlat.jonesy,
+    fox: enemyFlat.fox,
+  }).then((art) => {
+    enemyAngles = art.angles;
+    if (art.angles.chief?.[0]) enemyFlat.chief = art.angles.chief[0];
+    if (art.angles.peely?.[0]) enemyFlat.peely = art.angles.peely[0];
+    if (art.angles.viper?.[0]) {
+      enemyFlat.viper = art.angles.viper[0];
+      enemyFlat.fox = art.angles.viper[0];
+    }
+    if (art.angles.stormstep?.[0]) {
+      enemyFlat.stormstep = art.angles.stormstep[0];
+      enemyFlat.jonesy = art.angles.stormstep[0];
+    }
+    const wpn = art.items.weapons;
+    if (wpn?.[0]) pickupTex.scar = wpn[0];
+    if (wpn?.[1]) pickupTex.pump = wpn[1];
+    if (wpn?.[3]) pickupTex.exotic = wpn[3];
+    if (wpn?.[7]) gunHd.pickaxe = wpn[7];
+    if (wpn?.[1]) gunHd.pump = wpn[1];
+    if (wpn?.[0]) gunHd.scar = wpn[0];
+    if (wpn?.[3]) gunHd.exotic = wpn[3];
+    if (art.items.heals?.[0]) pickupTex.med = art.items.heals[0];
+    if (art.items.shields?.[0]) pickupTex.shield = art.items.shields[0];
+    if (art.items.chests?.[6]) pickupTex.llama = art.items.chests[6];
+    if (art.items.chests?.[0]) pickupTex.chest = art.items.chests[0];
+    applyHdWalls(wallTex, art.env.interiors, art.env.surfaces);
+    if (art.env.sky) skyCanvas = buildSkyFromImage(art.env.sky, RENDER_W, RENDER_H);
+    const grass = art.env.surfaces[2];
+    if (grass) floorCanvas = buildFloorFromTile(grass, RENDER_W, RENDER_H);
+  });
+
+  const enemyTexFor = (e: Enemy) => {
+    const sheet = enemyAngles[angleKindFor(e.kind)];
+    if (sheet && sheet.length === 8) {
+      const idx = angleFrame(e.facing, px, py, e.x, e.y);
+      return sheet[idx] ?? sheet[0];
+    }
+    return enemyFlat[e.kind];
   };
 
   let mode: FpsMode = "title";
@@ -129,16 +183,23 @@ export function mountFps(
   let raf = 0;
   let tick = 0;
 
-  let enemies: Enemy[] = ENEMY_SPAWNS.map((s) => ({
-    kind: s.kind,
-    x: s.x,
-    y: s.y,
-    hp: s.kind === "chief" ? 120 : 90,
-    alive: true,
-    flash: 0,
-    vx: (Math.random() - 0.5) * 0.6,
-    vy: (Math.random() - 0.5) * 0.6,
-  }));
+  const spawnEnemy = (s: (typeof ENEMY_SPAWNS)[number]): Enemy => {
+    const vx = (Math.random() - 0.5) * 0.6;
+    const vy = (Math.random() - 0.5) * 0.6;
+    return {
+      kind: s.kind,
+      x: s.x,
+      y: s.y,
+      hp: s.kind === "chief" ? 120 : 90,
+      alive: true,
+      flash: 0,
+      vx,
+      vy,
+      facing: Math.atan2(vy, vx),
+    };
+  };
+
+  let enemies: Enemy[] = ENEMY_SPAWNS.map(spawnEnemy);
 
   let pickups: Pickup[] = PICKUP_SPAWNS.map((s) => ({
     kind: s.kind,
@@ -182,16 +243,7 @@ export function mountFps(
     banner = "LOOT THE ISLAND";
     bannerT = 120;
     hurtFlash = 0;
-    enemies = ENEMY_SPAWNS.map((s) => ({
-      kind: s.kind,
-      x: s.x,
-      y: s.y,
-      hp: s.kind === "chief" ? 120 : 90,
-      alive: true,
-      flash: 0,
-      vx: (Math.random() - 0.5) * 0.6,
-      vy: (Math.random() - 0.5) * 0.6,
-    }));
+    enemies = ENEMY_SPAWNS.map(spawnEnemy);
     pickups = PICKUP_SPAWNS.map((s) => ({
       kind: s.kind,
       x: s.x,
@@ -245,6 +297,15 @@ export function mountFps(
         weapon = "scar";
         p.taken = true;
         banner = "LLAMA LOOT";
+        bannerT = 90;
+        sfx.coin();
+      } else if (p.kind === "chest") {
+        shield = Math.min(100, shield + 15);
+        hp = Math.min(100, hp + 20);
+        owned.add("pump");
+        if (weapon === "pickaxe") weapon = "pump";
+        p.taken = true;
+        banner = "CHEST LOOT";
         bannerT = 90;
         sfx.coin();
       }
@@ -377,7 +438,9 @@ export function mountFps(
     const zBuffer = new Float32Array(w);
 
     offCtx.imageSmoothingEnabled = false;
-    offCtx.drawImage(skyCanvas, 0, 0, w, half, 0, 0, w, half);
+    const skyShift = ((pa / (Math.PI * 2)) * w + w * 8) % w;
+    offCtx.drawImage(skyCanvas, 0, 0, w, half, -skyShift, 0, w, half);
+    offCtx.drawImage(skyCanvas, 0, 0, w, half, w - skyShift, 0, w, half);
     offCtx.drawImage(floorCanvas, 0, 0, w, half, 0, half, w, h - half);
 
     const planeX = Math.cos(pa + Math.PI / 2);
@@ -589,14 +652,17 @@ export function mountFps(
         const d = Math.hypot(e.x - px, e.y - py);
         if (d < 8) {
           const ang = Math.atan2(py - e.y, px - e.x);
+          e.facing = ang;
           e.x += Math.cos(ang) * dt * (e.kind === "chief" ? 1.5 : 1.1);
           e.y += Math.sin(ang) * dt * (e.kind === "chief" ? 1.5 : 1.1);
         } else {
           e.x += e.vx * dt;
           e.y += e.vy * dt;
+          if (Math.abs(e.vx) + Math.abs(e.vy) > 0.01) e.facing = Math.atan2(e.vy, e.vx);
           if (wallAt(grid, e.x, e.y) > 0) {
             e.vx *= -1;
             e.vy *= -1;
+            e.facing = Math.atan2(e.vy, e.vx);
           }
         }
         if (d < 0.55 && tick % 30 === 0) {
@@ -630,7 +696,7 @@ export function mountFps(
       offCtx.fillStyle = "#ffcc00";
       offCtx.font = '11px "Press Start 2P", monospace';
       offCtx.fillText("RAYCAST ISLAND", 200, 140);
-      offCtx.fillText("PEELY · CHIEF · JONESY", 130, 175);
+      offCtx.fillText("VIPER · PEELY · CHIEF", 150, 175);
       if (Math.floor(tick / 30) % 2 === 0) {
         offCtx.fillStyle = "#ff6a00";
         offCtx.fillText("CLICK OR ENTER", 190, 230);
@@ -645,7 +711,7 @@ export function mountFps(
           dist: Math.hypot(e.x - px, e.y - py),
           x: e.x,
           y: e.y,
-          tex: enemyTex[e.kind],
+          tex: enemyTexFor(e),
           flash: e.flash > 0,
         });
       }
@@ -661,12 +727,24 @@ export function mountFps(
       }
       drawSprites(offCtx, zBuffer, sprites);
 
-      if (weapon !== gunWeapon || fireFrame !== gunFrame) {
-        gunCanvas = buildWeaponView(weapon, fireFrame);
-        gunWeapon = weapon;
-        gunFrame = fireFrame;
+      const hdGun = gunHd[weapon];
+      if (hdGun) {
+        const kick = fireFrame > 0 ? fireFrame * 3 : 0;
+        const gw = 200;
+        const gh = 140;
+        offCtx.drawImage(hdGun, RENDER_W - gw - 16, RENDER_H - gh - 8 + kick, gw, gh);
+        if (fireFrame > 0) {
+          offCtx.fillStyle = "rgba(255,200,80,0.45)";
+          offCtx.fillRect(RENDER_W - 48, RENDER_H - 88 + kick, 28, 16);
+        }
+      } else {
+        if (weapon !== gunWeapon || fireFrame !== gunFrame) {
+          gunCanvas = buildWeaponView(weapon, fireFrame);
+          gunWeapon = weapon;
+          gunFrame = fireFrame;
+        }
+        offCtx.drawImage(gunCanvas, 0, RENDER_H - 140, RENDER_W, 140);
       }
-      offCtx.drawImage(gunCanvas, 0, RENDER_H - 140, RENDER_W, 140);
 
       if (hurtFlash > 0) {
         offCtx.fillStyle = `rgba(224,32,32,${hurtFlash * 0.06})`;

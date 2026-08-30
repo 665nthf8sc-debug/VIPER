@@ -140,7 +140,7 @@ const HEDGE_ROWS = [
   "GgGgGgGgGgGgGgGgG",
 ];
 
-export type WallTexId = 1 | 2 | 3 | 4 | 5;
+export type WallTexId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export function buildWallTextures() {
   const px = 8;
@@ -150,7 +150,58 @@ export function buildWallTextures() {
     3: canvasFromMap(METAL_ROWS, METAL_PAL, px),
     4: canvasFromMap(HEDGE_ROWS, HEDGE_PAL, px),
     5: canvasFromMap(STONE_ROWS, STONE_PAL, px),
+    6: canvasFromMap(METAL_ROWS, METAL_PAL, px),
+    7: canvasFromMap(STONE_ROWS, STONE_PAL, px),
+    8: canvasFromMap(WOOD_ROWS, WOOD_PAL, px),
   } satisfies Record<WallTexId, HTMLCanvasElement>;
+}
+
+/** Overlay HD interior/surface tiles onto procedural walls. */
+export function applyHdWalls(
+  walls: Record<WallTexId, HTMLCanvasElement>,
+  interiors: HTMLCanvasElement[],
+  surfaces: HTMLCanvasElement[]
+) {
+  const map: Array<[WallTexId, HTMLCanvasElement | undefined]> = [
+    [1, interiors[0] ?? surfaces[6]],
+    [2, interiors[1] ?? surfaces[0]],
+    [3, interiors[6] ?? surfaces[3]],
+    [4, interiors[7] ?? surfaces[2]],
+    [5, interiors[2] ?? surfaces[7]],
+    [6, interiors[4] ?? interiors[3]],
+    [7, interiors[5] ?? surfaces[4]],
+    [8, interiors[3] ?? surfaces[5]],
+  ];
+  for (const [id, tile] of map) {
+    if (tile) walls[id] = tile;
+  }
+  return walls;
+}
+
+export function buildSkyFromImage(img: HTMLCanvasElement, w: number, h: number) {
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(img, 0, 0, w, h);
+  return canvas;
+}
+
+export function buildFloorFromTile(tile: HTMLCanvasElement, w: number, h: number) {
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingEnabled = false;
+  const tw = Math.max(1, tile.width);
+  const th = Math.max(1, tile.height);
+  for (let y = 0; y < h; y += th) {
+    for (let x = 0; x < w; x += tw) {
+      ctx.drawImage(tile, x, y, tw, th);
+    }
+  }
+  return canvas;
 }
 
 /** Full-frame island sky with clouds — drawn once, reused every frame. */

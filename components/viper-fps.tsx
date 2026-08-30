@@ -1,5 +1,6 @@
 "use client";
 
+import { FpsItemIcon } from "@/components/fps-item-icon";
 import { PixelIcon, PixelPanel } from "@/components/pixel-panel";
 import { Button } from "@/components/ui/button";
 import { mountFps, type FpsHud } from "@/lib/fps/engine";
@@ -67,9 +68,10 @@ export function ViperFps() {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
           <div>
             <p className="font-vt mb-3 text-xl text-[#f8f0d8]">
-              Wolfenstein-style raycasting on a Fortnite island. High-res pixel
-              brick, wood, hedges, and stone. Hunt Peely, Chief, Jonesy, and
-              rival foxes. Loot pump, SCAR, exotic, medkits, and llamas.
+              Wolfenstein-style raycasting on a Fortnite island. HD 8-angle
+              VIPER, Peely, Chief, and Stormstep billboards. Interior and
+              surface tiles with a storm sky. Loot pump, SCAR, exotic, medkits,
+              chests, and llamas.
             </p>
             <div
               ref={stageRef}
@@ -128,7 +130,8 @@ export function ViperFps() {
                       hud.weapon === id ? "ring-4 ring-[#ffcc00]" : ""
                     } ${owned ? "bg-[#1a0033]" : "bg-[#05000a] opacity-50"}`}
                   >
-                    <p className="font-press text-[8px] text-[#ffcc00]">{label}</p>
+                    <FpsItemIcon id={id} dim={!owned} />
+                    <p className="font-press mt-1 text-[8px] text-[#ffcc00]">{label}</p>
                     <p className="font-vt text-base text-[#c9a0ff]">
                       {owned ? (hud.weapon === id ? "ACTIVE" : "FOUND") : "FIND ON MAP"}
                     </p>
@@ -139,13 +142,15 @@ export function ViperFps() {
             <div className="pixel-bevel mt-4 bg-[#05000a] p-4">
               <p className="font-press text-[8px] text-[#ff6a00]">RIVALS</p>
               <p className="font-vt mt-2 text-lg text-[#f8f0d8]">
-                Peely, Master Chief, Jonesy, and VIPER fox bots patrol the
-                outpost. Clear the island for a Victory Royale.
+                VIPER, Peely, Chief, and Stormstep patrol the outpost. Walk
+                around them to see all eight angles. Clear the island for a
+                Victory Royale.
               </p>
               <p className="font-press mt-3 text-[8px] text-[#00e800]">ISLAND TILES</p>
               <p className="font-vt mt-2 text-lg text-[#c9a0ff]">
-                Tilted brick, wood builds, metal shacks, hedge paths, stone
-                tower — all raycast with distance shading and grass floors.
+                Cabin, villa, neon club, bunker, and cobble tiles from the
+                environment sheets — raycast with distance shading and a storm
+                sky.
               </p>
             </div>
           </div>
