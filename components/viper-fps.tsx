@@ -51,6 +51,7 @@ export function ViperFps() {
   const start = () => {
     sfx.setMuted(muted);
     apiRef.current?.start();
+    apiRef.current?.lockPointer();
     sfx.coin();
     const focusView = () => canvasRef.current?.focus();
     focusView();
@@ -126,9 +127,9 @@ export function ViperFps() {
                 {muted ? "SFX OFF" : "SFX ON"}
               </Button>
               <p className="font-vt text-lg text-[#c9a0ff]">
-                WASD move · arrows/Q/C look · Space/click shoot · walk over
-                loot (or E) · 1–4 or [ ] / wheel cycle · R reload · Shift
-                sprint. Mouse is optional: drag or M / right-click to look.
+                Click the view to lock the mouse (Esc unlocks). WASD move ·
+                mouse or arrows/Q/C look · click/Space shoot · walk over loot
+                (or E) · 1–4 or [ ] / wheel cycle · R reload · Shift sprint.
               </p>
             </div>
             {hud.banner ? (
@@ -143,7 +144,8 @@ export function ViperFps() {
             <div className="pixel-bevel bg-[#05000a] p-4">
               <p className="font-press text-[8px] text-[#3cdcff]">STATUS</p>
               <p className="font-vt mt-2 text-2xl text-[#00e800]">
-                {Math.ceil(hud.hp)} HP · {Math.ceil(hud.shield)} SHIELD
+                {Math.max(0, Math.ceil(hud.hp))} HP ·{" "}
+                {Math.max(0, Math.ceil(hud.shield))} SHIELD
               </p>
               <p className="font-vt mt-1 text-xl text-[#ffcc00]">
                 {hud.weapon.replace("_", " ").toUpperCase()} · {hud.ammo} · ELIMS {hud.elims}

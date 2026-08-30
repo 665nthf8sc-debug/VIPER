@@ -148,7 +148,7 @@ export const PICKUP_SPAWNS: Array<{
   { kind: "llama", x: 16.5, y: 22.5 },
   { kind: "chest", x: 12.5, y: 25.5 },
   { kind: "med", x: 20.5, y: 25.5 },
-  { kind: "chest", x: 5.5, y: 10.5 },
+  { kind: "chest", x: 6.5, y: 9.5 },
   { kind: "shield", x: 27.5, y: 22.5 },
   { kind: "ammo", x: 14.5, y: 14.5 },
   { kind: "pump", x: 15.5, y: 18.5 },
