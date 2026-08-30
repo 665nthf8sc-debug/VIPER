@@ -1,12 +1,26 @@
 import { canvasFromMap, paintMap } from "@/lib/fps/pixel";
 
-export type EnemyKind = "peely" | "chief" | "viper" | "stormstep" | "jonesy" | "fox";
+export type RegularKind = "peely" | "chief" | "viper" | "stormstep";
+export type BossKind = "bossPeely" | "bossStorm" | "bossChief";
+export type EnemyKind = RegularKind | "jonesy" | "fox" | BossKind;
+
+export function isBossKind(kind: EnemyKind): kind is BossKind {
+  return kind === "bossPeely" || kind === "bossStorm" || kind === "bossChief";
+}
+
+export function regularFor(kind: EnemyKind): RegularKind {
+  if (kind === "bossPeely" || kind === "peely") return "peely";
+  if (kind === "bossChief" || kind === "chief") return "chief";
+  if (kind === "bossStorm" || kind === "stormstep" || kind === "jonesy") return "stormstep";
+  return "viper";
+}
 export type PickupKind = "pump" | "scar" | "exotic" | "med" | "shield" | "llama" | "chest" | "ammo";
 
 const INK = "#140008";
 
-export function buildEnemySprite(kind: EnemyKind) {
+export function buildEnemySprite(rawKind: EnemyKind) {
   const px = 4;
+  const kind = regularFor(rawKind);
   let rows: string[];
   let palette: Record<string, string>;
 
@@ -283,6 +297,9 @@ export const ENEMY_NAMES: Record<EnemyKind, string> = {
   stormstep: "STORMSTEP",
   jonesy: "JONESY",
   fox: "RIVAL FOX",
+  bossPeely: "KING PEELY",
+  bossStorm: "STORM OVERLORD",
+  bossChief: "IRON CHIEF",
 };
 
 export const PICKUP_LABEL: Record<PickupKind, string> = {
@@ -296,12 +313,9 @@ export const PICKUP_LABEL: Record<PickupKind, string> = {
   ammo: "AMMO BOX",
 };
 
-/** Map FPS rival kinds onto 8-angle sheets. */
+/** Map FPS rival / boss kinds onto 8-angle sheets. */
 export function angleKindFor(
   kind: EnemyKind
 ): "viper" | "chief" | "peely" | "stormstep" {
-  if (kind === "chief") return "chief";
-  if (kind === "peely") return "peely";
-  if (kind === "stormstep" || kind === "jonesy") return "stormstep";
-  return "viper";
+  return regularFor(kind);
 }

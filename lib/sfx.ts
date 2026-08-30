@@ -410,6 +410,14 @@ class SamplePlayer {
     this.haltMusic(MUSIC_STOP_FADE);
     this.musicMode = "off";
   }
+
+  bossSting() {
+    this.start();
+  }
+
+  levelClear() {
+    this.xp();
+  }
 }
 
 export const sfx = new SamplePlayer();
