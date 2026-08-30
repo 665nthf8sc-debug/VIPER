@@ -635,7 +635,7 @@ export function mountFps(
       let rel = Math.atan2(dy, dx) - pa;
       while (rel > Math.PI) rel -= Math.PI * 2;
       while (rel < -Math.PI) rel += Math.PI * 2;
-      if (Math.abs(rel) > FOV * 0.58) continue;
+      if (Math.abs(rel) > FOV * 0.72) continue;
 
       const tex = sp.tex;
       const aspect = tex.width / Math.max(1, tex.height);
@@ -728,6 +728,7 @@ export function mountFps(
       }
       if (!isBlocked(grid, nx, py)) px = nx;
       if (!isBlocked(grid, px, ny)) py = ny;
+      tryPickup();
 
       const keyFire =
         keys.has("Space") || keys.has("ControlLeft") || keys.has("ControlRight");
@@ -747,17 +748,19 @@ export function mountFps(
         if (d < 8) {
           const ang = Math.atan2(py - e.y, px - e.x);
           e.facing = ang;
-          e.x += Math.cos(ang) * dt * (e.kind === "chief" ? 1.5 : 1.1);
-          e.y += Math.sin(ang) * dt * (e.kind === "chief" ? 1.5 : 1.1);
+          const step = dt * (e.kind === "chief" ? 1.5 : 1.1);
+          const nx = e.x + Math.cos(ang) * step;
+          const ny = e.y + Math.sin(ang) * step;
+          if (!isBlocked(grid, nx, e.y, 0.18)) e.x = nx;
+          if (!isBlocked(grid, e.x, ny, 0.18)) e.y = ny;
         } else {
-          e.x += e.vx * dt;
-          e.y += e.vy * dt;
+          const nx = e.x + e.vx * dt;
+          const ny = e.y + e.vy * dt;
+          if (!isBlocked(grid, nx, e.y, 0.18)) e.x = nx;
+          else e.vx *= -1;
+          if (!isBlocked(grid, e.x, ny, 0.18)) e.y = ny;
+          else e.vy *= -1;
           if (Math.abs(e.vx) + Math.abs(e.vy) > 0.01) e.facing = Math.atan2(e.vy, e.vx);
-          if (wallAt(grid, e.x, e.y) > 0) {
-            e.vx *= -1;
-            e.vy *= -1;
-            e.facing = Math.atan2(e.vy, e.vx);
-          }
         }
         if (d < 0.55 && tick % 30 === 0) {
           let dmg = 12;
