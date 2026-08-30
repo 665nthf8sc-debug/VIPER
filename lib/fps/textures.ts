@@ -225,7 +225,7 @@ export function buildSkyFromImage(img: HTMLCanvasElement, w: number, h: number) 
   ctx.imageSmoothingEnabled = true;
   ctx.drawImage(img, 0, 0, w, h);
   // Always fix at output size — downscale can reopen a wrap that was seamless in the source.
-  return makeSkySeamless(canvas, Math.max(28, (w * 0.06) | 0));
+  return makeSkySeamless(canvas, Math.max(40, (w * 0.08) | 0));
 }
 
 export function buildFloorFromTile(tile: HTMLCanvasElement, w: number, h: number) {
