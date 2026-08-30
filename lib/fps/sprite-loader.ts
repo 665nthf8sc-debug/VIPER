@@ -24,7 +24,7 @@ function ctx2d(canvas: HTMLCanvasElement) {
 
 export function knockChroma(
   source: HTMLCanvasElement,
-  mode: "magenta" | "gray" | "both" = "both"
+  mode: "magenta" | "gray" | "both" = "magenta"
 ) {
   const ctx = ctx2d(source);
   const frame = ctx.getImageData(0, 0, source.width, source.height);
@@ -74,15 +74,20 @@ export function cropToAlpha(source: HTMLCanvasElement) {
   return out;
 }
 
-/** Keep billboard crisp but cap source size for raycast column draws. */
-export function normalizeSpriteSize(source: HTMLCanvasElement, maxHeight = 384) {
+/** Cap source size. Character sheets use bilinear so painted art stays smooth. */
+export function normalizeSpriteSize(
+  source: HTMLCanvasElement,
+  maxHeight = 384,
+  smooth = false
+) {
   if (source.height <= maxHeight) return source;
   const scale = maxHeight / source.height;
   const out = document.createElement("canvas");
   out.width = Math.max(1, (source.width * scale) | 0);
   out.height = maxHeight;
   const ctx = out.getContext("2d")!;
-  ctx.imageSmoothingEnabled = false;
+  ctx.imageSmoothingEnabled = smooth;
+  if (smooth) ctx.imageSmoothingQuality = "high";
   ctx.drawImage(source, 0, 0, out.width, out.height);
   return out;
 }
@@ -106,11 +111,11 @@ export function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-/** Load PNG, knock out magenta (and gray studio), crop to character. */
+/** Load PNG, knock out magenta only (never gray armor), crop to character. */
 export function processSpriteImage(img: HTMLImageElement) {
   const tmp = canvasFromImage(img);
-  knockChroma(tmp, "both");
-  return normalizeSpriteSize(cropToAlpha(tmp));
+  knockChroma(tmp, "magenta");
+  return normalizeSpriteSize(cropToAlpha(tmp), 384, true);
 }
 
 export function loadSprite(url: string): Promise<HTMLCanvasElement> {
@@ -138,14 +143,19 @@ function sliceCell(
   return cell;
 }
 
-/** Slice a horizontal 8-angle turnaround into 8 cropped frames. */
+/**
+ * Slice a horizontal 8-angle turnaround into 8 equal cells.
+ * Sheets are 1536×1024, 192px cells, order:
+ * front, front-right, right, back-right, back, back-left, left, front-left.
+ * Magenta key only — olive/black armor must survive.
+ */
 export function sliceAngleStrip(source: HTMLCanvasElement, frames = 8) {
   const fw = Math.floor(source.width / frames);
   const out: HTMLCanvasElement[] = [];
   for (let i = 0; i < frames; i++) {
     const cell = sliceCell(source, i * fw, 0, fw, source.height);
     knockChroma(cell, "magenta");
-    out.push(normalizeSpriteSize(cropToAlpha(cell)));
+    out.push(normalizeSpriteSize(cropToAlpha(cell), 512, true));
   }
   return out;
 }
@@ -420,13 +430,66 @@ export function loadFrontPortrait(kind: AngleKind): Promise<HTMLCanvasElement | 
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(img, 0, 0, fw, img.height, 0, 0, fw, img.height);
       knockChroma(cell, "magenta");
-      return normalizeSpriteSize(cropToAlpha(cell), 256);
+      return normalizeSpriteSize(cropToAlpha(cell), 256, true);
     } catch {
       return null;
     }
   })();
   frontCache.set(kind, pending);
   return pending;
+}
+
+export type BossAngleKind = "bossPeely" | "bossStorm" | "bossChief";
+
+const BOSS_FILES: Record<BossAngleKind, string> = {
+  bossPeely: "/fps/sprites/boss-peely-king.png",
+  bossStorm: "/fps/sprites/boss-storm-overlord.png",
+  bossChief: "/fps/sprites/boss-iron-chief.png",
+};
+
+const LEVEL_SKY_FILES: Record<1 | 2 | 3, string> = {
+  1: "/fps/sprites/sky-level1-island.png",
+  2: "/fps/sprites/sky-level2-storm.png",
+  3: "/fps/sprites/sky-level3-foundry.png",
+};
+
+const optionalFail = new Set<string>();
+
+/** Load an optional PNG; failed paths retry later (files may land on the branch). */
+export async function loadOptionalCanvas(path: string) {
+  if (optionalFail.has(path)) optionalFail.delete(path);
+  try {
+    return canvasFromImage(await loadImage(fpsAsset(path)));
+  } catch {
+    optionalFail.add(path);
+    return null;
+  }
+}
+
+export async function loadBossSheets(): Promise<Partial<Record<BossAngleKind, HTMLCanvasElement[]>>> {
+  const out: Partial<Record<BossAngleKind, HTMLCanvasElement[]>> = {};
+  await Promise.all(
+    (Object.keys(BOSS_FILES) as BossAngleKind[]).map(async (kind) => {
+      try {
+        const sheet = await loadKeyedSheet(BOSS_FILES[kind]);
+        out[kind] = sliceAngleStrip(sheet);
+      } catch {
+        /* stand-in regular sheet */
+      }
+    })
+  );
+  return out;
+}
+
+export async function loadLevelSkyImages(): Promise<Partial<Record<1 | 2 | 3, HTMLCanvasElement>>> {
+  const out: Partial<Record<1 | 2 | 3, HTMLCanvasElement>> = {};
+  await Promise.all(
+    ([1, 2, 3] as const).map(async (id) => {
+      const img = await loadOptionalCanvas(LEVEL_SKY_FILES[id]);
+      if (img) out[id] = img;
+    })
+  );
+  return out;
 }
 
 export function canvasToUrl(canvas: HTMLCanvasElement) {
