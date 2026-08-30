@@ -38,6 +38,11 @@ import {
   weaponFromPickup,
   type WeaponId,
 } from "@/lib/fps/weapons";
+import {
+  hasLineOfSight,
+  hitscanTarget,
+  wallDistance,
+} from "@/lib/fps/hitscan";
 import { sfx } from "@/lib/sfx";
 
 export type FpsMode = "title" | "play" | "win" | "over";
@@ -90,6 +95,8 @@ const ROT_SPEED = 2.4;
 const VIEW_GUN_W = 100;
 const VIEW_GUN_H = 70;
 const PICKUP_SCALE = 0.5;
+const PICKUP_REACH = 1.6;
+const MELEE_REACH = 0.7;
 const FLOOR_W = 640;
 const FLOOR_H = 180;
 const FLOOR_SCALE = 2.6;
@@ -226,6 +233,9 @@ export function mountFps(
   let banner = "";
   let bannerT = 0;
   let hurtFlash = 0;
+  let hurtFrom = 0;
+  let shotTrace = 0;
+  let shotHit = false;
   let running = true;
   let raf = 0;
   let tick = 0;
@@ -322,8 +332,8 @@ export function mountFps(
   const pushHud = () => {
     onHud({
       mode,
-      hp,
-      shield,
+      hp: Math.max(0, hp),
+      shield: Math.max(0, shield),
       weapon,
       ammo: weaponAmmo(),
       elims,
@@ -390,6 +400,16 @@ export function mountFps(
     pushHud();
   };
 
+  const requestLock = () => {
+    if (document.pointerLockElement === canvas) return;
+    try {
+      const req = canvas.requestPointerLock();
+      if (req && typeof req.catch === "function") void req.catch(() => {});
+    } catch {
+      /* drag-look remains as fallback */
+    }
+  };
+
   const reset = () => {
     bootArt();
     px = SPAWN.x;
@@ -406,6 +426,9 @@ export function mountFps(
     banner = "LOOT THE ISLAND";
     bannerT = 120;
     hurtFlash = 0;
+    hurtFrom = 0;
+    shotTrace = 0;
+    shotHit = false;
     spawnGuard = 180;
     enemies = ENEMY_SPAWNS.map(spawnEnemy);
     pickups = PICKUP_SPAWNS.map((s) => ({
@@ -426,6 +449,7 @@ export function mountFps(
     pushHud();
     sfx.start();
     armMusic("game");
+    requestLock();
   };
 
   const finish = (win: boolean) => {
@@ -442,7 +466,7 @@ export function mountFps(
     for (const p of pickups) {
       if (p.taken) continue;
       const d = Math.hypot(p.x - px, p.y - py);
-      if (d > 1.1) continue;
+      if (d > PICKUP_REACH) continue;
       if (p.kind === "pump" || p.kind === "scar" || p.kind === "exotic") {
         const w = weaponFromPickup(p.kind);
         const fresh = grantGun(w);
@@ -494,6 +518,8 @@ export function mountFps(
     }
   };
 
+  const cellBlocked = (cx: number, cy: number) => wallAt(grid, cx, cy) > 0;
+
   const damageEnemy = (e: Enemy, dmg: number) => {
     e.hp -= dmg;
     e.flash = 8;
@@ -505,6 +531,21 @@ export function mountFps(
     } else {
       sfx.hit();
     }
+  };
+
+  const applyPlayerDamage = (amount: number, fromAng: number) => {
+    let dmg = amount;
+    if (shield > 0) {
+      const soak = Math.min(shield, dmg);
+      shield = Math.max(0, shield - soak);
+      dmg -= soak;
+    }
+    hp = Math.max(0, hp - dmg);
+    hurtFlash = 10;
+    hurtFrom = fromAng;
+    sfx.playerHurt();
+    pushHud();
+    if (hp <= 0) finish(false);
   };
 
   const shoot = () => {
@@ -524,30 +565,19 @@ export function mountFps(
     }
     cool = w.cool;
     fireFrame = 6;
+    shotTrace = 5;
+    shotHit = false;
     sfx.playWeapon(weapon);
     pushHud();
 
     for (let p = 0; p < w.pellets; p++) {
       const ang = pa + (Math.random() - 0.5) * w.spread;
-      let best: Enemy | null = null;
-      let bestDist = w.range;
-      for (const e of enemies) {
-        if (!e.alive) continue;
-        const dx = e.x - px;
-        const dy = e.y - py;
-        const dist = Math.hypot(dx, dy);
-        if (dist > w.range) continue;
-        const ea = Math.atan2(dy, dx);
-        let da = ea - ang;
-        while (da > Math.PI) da -= Math.PI * 2;
-        while (da < -Math.PI) da += Math.PI * 2;
-        const aim = Math.abs(da) < 0.28 + (w.range - dist) * 0.02;
-        if (aim && dist < bestDist) {
-          best = e;
-          bestDist = dist;
-        }
+      const wallDist = wallDistance(cellBlocked, px, py, ang, MAX_DEPTH);
+      const hit = hitscanTarget(px, py, ang, w.range, wallDist, enemies);
+      if (hit) {
+        shotHit = true;
+        damageEnemy(enemies[hit.index], w.dmg);
       }
-      if (best) damageEnemy(best, w.dmg);
     }
   };
 
@@ -578,7 +608,7 @@ export function mountFps(
     }
     if (down && e.code === "KeyM" && mode === "play") {
       if (pointerLocked) document.exitPointerLock();
-      else void canvas.requestPointerLock();
+      else requestLock();
       return;
     }
     if (down && e.code === "KeyE" && mode === "play") tryPickup();
@@ -614,12 +644,17 @@ export function mountFps(
 
   const onClick = () => {
     canvas.focus();
+    inputArmed = true;
     if (!musicArmed) armMusic(mode === "play" ? "game" : "title");
     if (mode === "win" || mode === "over" || mode === "title") {
       reset();
+      requestLock();
       return;
     }
-    if (mode === "play") shoot();
+    if (mode === "play") {
+      requestLock();
+      shoot();
+    }
   };
   canvas.addEventListener("click", onClick);
 
@@ -631,16 +666,18 @@ export function mountFps(
 
   const onMouseDown = (e: MouseEvent) => {
     canvas.focus();
+    inputArmed = true;
     if (!musicArmed) armMusic(mode === "play" ? "game" : "title");
     if (e.button === 2) {
       e.preventDefault();
-      if (mode === "play" && !pointerLocked) void canvas.requestPointerLock();
+      if (mode === "play" && !pointerLocked) requestLock();
       dragging = true;
       return;
     }
     if (e.button === 0) {
       firing = true;
-      dragging = true;
+      dragging = !pointerLocked;
+      if (mode === "play") requestLock();
     }
   };
   const onMouseUp = (e: MouseEvent) => {
@@ -968,13 +1005,16 @@ export function mountFps(
       if (fireFrame > 0) fireFrame -= 1;
       if (bannerT > 0) bannerT -= 1;
       if (hurtFlash > 0) hurtFlash -= 1;
+      if (shotTrace > 0) shotTrace -= 1;
       if (spawnGuard > 0) spawnGuard -= 1;
 
+      let meleeAttacker: Enemy | null = null;
+      let meleeDist = MELEE_REACH;
       for (const e of enemies) {
         if (!e.alive) continue;
         if (e.flash > 0) e.flash -= 1;
         const d = Math.hypot(e.x - px, e.y - py);
-        if (d < 8) {
+        if (d < 8 && d > 0.58) {
           const ang = Math.atan2(py - e.y, px - e.x);
           e.facing = ang;
           const step = dt * (e.kind === "chief" ? 1.5 : 1.1);
@@ -982,7 +1022,7 @@ export function mountFps(
           const ny = e.y + Math.sin(ang) * step;
           if (!isBlocked(grid, nx, e.y, 0.18)) e.x = nx;
           if (!isBlocked(grid, e.x, ny, 0.18)) e.y = ny;
-        } else {
+        } else if (d >= 8) {
           const nx = e.x + e.vx * dt;
           const ny = e.y + e.vy * dt;
           if (!isBlocked(grid, nx, e.y, 0.18)) e.x = nx;
@@ -991,18 +1031,41 @@ export function mountFps(
           else e.vy *= -1;
           if (Math.abs(e.vx) + Math.abs(e.vy) > 0.01) e.facing = Math.atan2(e.vy, e.vx);
         }
-        if (d < 0.55 && tick % 30 === 0 && spawnGuard <= 0) {
-          let dmg = 12;
-          if (shield > 0) {
-            const soak = Math.min(shield, dmg);
-            shield -= soak;
-            dmg -= soak;
-          }
-          hp -= dmg;
-          hurtFlash = 10;
-          sfx.playerHurt();
-          if (hp <= 0) finish(false);
-          pushHud();
+        if (
+          spawnGuard <= 0 &&
+          d < meleeDist &&
+          hasLineOfSight(cellBlocked, e.x, e.y, px, py)
+        ) {
+          meleeAttacker = e;
+          meleeDist = d;
+        }
+      }
+      if (meleeAttacker && tick % 36 === 0) {
+        applyPlayerDamage(
+          12,
+          Math.atan2(meleeAttacker.y - py, meleeAttacker.x - px)
+        );
+      }
+
+      for (let i = 0; i < enemies.length; i++) {
+        const a = enemies[i];
+        if (!a.alive) continue;
+        for (let j = i + 1; j < enemies.length; j++) {
+          const b = enemies[j];
+          if (!b.alive) continue;
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const sep = Math.hypot(dx, dy);
+          if (sep >= 0.55 || sep < 0.01) continue;
+          const push = ((0.55 - sep) / sep) * 0.5;
+          const ax = a.x - dx * push;
+          const ay = a.y - dy * push;
+          const bx = b.x + dx * push;
+          const by = b.y + dy * push;
+          if (!isBlocked(grid, ax, a.y, 0.18)) a.x = ax;
+          if (!isBlocked(grid, a.x, ay, 0.18)) a.y = ay;
+          if (!isBlocked(grid, bx, b.y, 0.18)) b.x = bx;
+          if (!isBlocked(grid, b.x, by, 0.18)) b.y = by;
         }
       }
 
@@ -1049,10 +1112,6 @@ export function mountFps(
       const gy = RENDER_H - VIEW_GUN_H - 8 + kick;
       if (hdGun) {
         offCtx.drawImage(hdGun, gx, gy, VIEW_GUN_W, VIEW_GUN_H);
-        if (fireFrame > 0) {
-          offCtx.fillStyle = "rgba(255,200,80,0.45)";
-          offCtx.fillRect(RENDER_W - 36, RENDER_H - 48 + kick, 14, 8);
-        }
       } else {
         if (weapon !== gunWeapon || fireFrame !== gunFrame) {
           gunCanvas = buildWeaponView(weapon, fireFrame);
@@ -1061,17 +1120,61 @@ export function mountFps(
         }
         offCtx.drawImage(gunCanvas, gx, gy, VIEW_GUN_W, VIEW_GUN_H);
       }
+      if (fireFrame > 0) {
+        offCtx.fillStyle = `rgba(255,210,90,${0.28 + fireFrame * 0.08})`;
+        offCtx.fillRect(RENDER_W - 40, RENDER_H - 52 + kick, 18, 10);
+        offCtx.fillStyle = `rgba(255,255,200,${fireFrame * 0.1})`;
+        offCtx.fillRect(RENDER_W - 34, RENDER_H - 56 + kick, 8, 6);
+      }
+      if (shotTrace > 0) {
+        offCtx.strokeStyle = shotHit
+          ? `rgba(255,220,80,${0.25 + shotTrace * 0.12})`
+          : `rgba(255,255,255,${0.12 + shotTrace * 0.06})`;
+        offCtx.lineWidth = 1;
+        offCtx.beginPath();
+        offCtx.moveTo(RENDER_W - 32, RENDER_H - 46 + kick);
+        offCtx.lineTo(RENDER_W / 2 + (shotHit ? 0 : 2), RENDER_H / 2);
+        offCtx.stroke();
+        if (shotHit) {
+          const cx = RENDER_W / 2;
+          const cy = RENDER_H / 2;
+          offCtx.strokeStyle = "#ffcc00";
+          offCtx.beginPath();
+          offCtx.moveTo(cx - 7, cy - 7);
+          offCtx.lineTo(cx - 2, cy - 2);
+          offCtx.moveTo(cx + 7, cy - 7);
+          offCtx.lineTo(cx + 2, cy - 2);
+          offCtx.moveTo(cx - 7, cy + 7);
+          offCtx.lineTo(cx - 2, cy + 2);
+          offCtx.moveTo(cx + 7, cy + 7);
+          offCtx.lineTo(cx + 2, cy + 2);
+          offCtx.stroke();
+        }
+      }
 
       if (hurtFlash > 0) {
-        offCtx.fillStyle = `rgba(224,32,32,${hurtFlash * 0.06})`;
+        offCtx.fillStyle = `rgba(224,32,32,${hurtFlash * 0.025})`;
         offCtx.fillRect(0, 0, RENDER_W, RENDER_H);
+        let rel = hurtFrom - pa;
+        while (rel > Math.PI) rel -= Math.PI * 2;
+        while (rel < -Math.PI) rel += Math.PI * 2;
+        const edge = `rgba(255,48,32,${hurtFlash * 0.09})`;
+        offCtx.fillStyle = edge;
+        if (rel > 0.45) offCtx.fillRect(RENDER_W - 16, 0, 16, RENDER_H);
+        else if (rel < -0.45) offCtx.fillRect(0, 0, 16, RENDER_H);
+        else if (Math.abs(rel) > 2.1) {
+          offCtx.fillRect(0, 0, RENDER_W, 16);
+          offCtx.fillStyle = "#ffcc00";
+          offCtx.font = '8px "Press Start 2P", monospace';
+          offCtx.fillText("HIT BEHIND", RENDER_W / 2 - 52, 28);
+        } else offCtx.fillRect(0, RENDER_H - 16, RENDER_W, 16);
       }
 
       offCtx.fillStyle = "#00e800";
       offCtx.font = '8px "Press Start 2P", monospace';
-      offCtx.fillText(`${Math.ceil(hp)} HP`, 12, 18);
+      offCtx.fillText(`${Math.max(0, Math.ceil(hp))} HP`, 12, 18);
       offCtx.fillStyle = "#3cdcff";
-      offCtx.fillText(`${Math.ceil(shield)} SHD`, 12, 32);
+      offCtx.fillText(`${Math.max(0, Math.ceil(shield))} SHD`, 12, 32);
       offCtx.fillStyle = "#ffcc00";
       offCtx.fillText(WEAPONS[weapon].name, 12, 46);
       offCtx.fillStyle = "#f8f0d8";
@@ -1122,6 +1225,7 @@ export function mountFps(
 
   return {
     start: reset,
+    lockPointer: requestLock,
     stop() {
       running = false;
       cancelAnimationFrame(raf);
