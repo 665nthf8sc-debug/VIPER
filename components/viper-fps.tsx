@@ -46,8 +46,12 @@ export function ViperFps() {
 
   const start = () => {
     apiRef.current?.start();
-    canvasRef.current?.focus();
     sfx.coin();
+    const focusView = () => canvasRef.current?.focus();
+    focusView();
+    queueMicrotask(focusView);
+    requestAnimationFrame(focusView);
+    window.setTimeout(focusView, 0);
   };
 
   const toggleFull = async () => {
@@ -85,7 +89,14 @@ export function ViperFps() {
               />
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Button variant="pixel" className="h-11 px-4" onClick={start}>
+              <Button
+                variant="pixel"
+                className="h-11 px-4"
+                onClick={(e) => {
+                  e.currentTarget.blur();
+                  start();
+                }}
+              >
                 {hud.mode === "win" || hud.mode === "over"
                   ? "DROP AGAIN"
                   : "ENTER ISLAND"}
