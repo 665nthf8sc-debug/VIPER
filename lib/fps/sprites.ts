@@ -1,7 +1,7 @@
 import { canvasFromMap, paintMap } from "@/lib/fps/pixel";
 
 export type EnemyKind = "peely" | "chief" | "viper" | "stormstep" | "jonesy" | "fox";
-export type PickupKind = "pump" | "scar" | "exotic" | "med" | "shield" | "llama" | "chest";
+export type PickupKind = "pump" | "scar" | "exotic" | "med" | "shield" | "llama" | "chest" | "ammo";
 
 const INK = "#140008";
 
@@ -196,6 +196,16 @@ export function buildPickupSprite(kind: PickupKind) {
     ctx.fillStyle = "#f8f0d8";
     ctx.fillRect(20, 14, 8, 20);
     ctx.fillRect(16, 20, 16, 8);
+  } else if (kind === "ammo") {
+    ctx.fillStyle = "#3a5a28";
+    ctx.fillRect(10, 14, 28, 22);
+    ctx.fillStyle = "#6a8a38";
+    ctx.fillRect(10, 14, 28, 6);
+    ctx.fillStyle = "#ffcc00";
+    ctx.fillRect(12, 28, 8, 3);
+    ctx.fillRect(22, 28, 8, 3);
+    ctx.fillStyle = "#c4a06a";
+    ctx.fillRect(16, 18, 16, 8);
   } else {
     ctx.fillStyle = "#3cdcff";
     ctx.fillRect(14, 10, 20, 28);
@@ -207,8 +217,8 @@ export function buildPickupSprite(kind: PickupKind) {
 }
 
 export function buildWeaponView(id: "pickaxe" | "pump" | "scar" | "exotic", frame: number) {
-  const w = 320;
-  const h = 200;
+  const w = 160;
+  const h = 100;
   const canvas = document.createElement("canvas");
   canvas.width = w;
   canvas.height = h;
@@ -218,49 +228,49 @@ export function buildWeaponView(id: "pickaxe" | "pump" | "scar" | "exotic", fram
 
   if (id === "pickaxe") {
     ctx.fillStyle = "#8a7040";
-    ctx.fillRect(120, 80 + kick, 80, 12);
+    ctx.fillRect(36, 48 + kick, 48, 8);
     ctx.fillStyle = "#c4a06a";
-    ctx.fillRect(190, 60 + kick, 60, 40);
+    ctx.fillRect(76, 34 + kick, 36, 24);
     ctx.fillStyle = "#ffcc00";
-    ctx.fillRect(200, 70 + kick, 40, 20);
+    ctx.fillRect(82, 40 + kick, 24, 12);
   } else if (id === "pump") {
     ctx.fillStyle = "#2a2a38";
-    ctx.fillRect(80, 110 + kick, 160, 24);
+    ctx.fillRect(16, 58 + kick, 96, 14);
     ctx.fillStyle = "#505058";
-    ctx.fillRect(100, 90 + kick, 120, 28);
+    ctx.fillRect(28, 46 + kick, 72, 16);
     ctx.fillStyle = "#a060ff";
-    ctx.fillRect(110, 94 + kick, 80, 16);
+    ctx.fillRect(34, 48 + kick, 48, 10);
     ctx.fillStyle = "#ffcc00";
-    ctx.fillRect(200, 98 + kick, 16, 8);
+    ctx.fillRect(88, 50 + kick, 10, 5);
     if (frame > 0) {
       ctx.fillStyle = "rgba(255,200,80,0.6)";
-      ctx.fillRect(240, 96 + kick, 40, 20);
+      ctx.fillRect(118, 48 + kick, 22, 12);
     }
   } else if (id === "scar") {
     ctx.fillStyle = "#1a1a28";
-    ctx.fillRect(70, 112 + kick, 180, 20);
+    ctx.fillRect(12, 60 + kick, 108, 12);
     ctx.fillStyle = "#6a6a78";
-    ctx.fillRect(90, 92 + kick, 140, 26);
+    ctx.fillRect(24, 48 + kick, 84, 16);
     ctx.fillStyle = "#3a3a48";
-    ctx.fillRect(100, 96 + kick, 100, 14);
+    ctx.fillRect(30, 50 + kick, 60, 8);
     ctx.fillStyle = "#ffcc00";
-    ctx.fillRect(210, 100 + kick, 12, 6);
+    ctx.fillRect(100, 52 + kick, 8, 4);
     if (frame > 0) {
       ctx.fillStyle = "#ffcc00";
-      ctx.fillRect(230, 98 + kick, 24, 8);
+      ctx.fillRect(118, 50 + kick, 14, 5);
     }
   } else {
     ctx.fillStyle = "#1a1a28";
-    ctx.fillRect(70, 112 + kick, 180, 20);
+    ctx.fillRect(12, 60 + kick, 108, 12);
     ctx.fillStyle = "#ffcc00";
-    ctx.fillRect(90, 88 + kick, 140, 30);
+    ctx.fillRect(24, 44 + kick, 84, 18);
     ctx.fillStyle = "#ff6a00";
-    ctx.fillRect(100, 96 + kick, 40, 12);
+    ctx.fillRect(30, 50 + kick, 24, 8);
     ctx.fillStyle = "#f8f0d8";
-    ctx.fillRect(150, 100 + kick, 60, 8);
+    ctx.fillRect(62, 52 + kick, 36, 5);
     if (frame > 0) {
       ctx.fillStyle = "rgba(255,220,100,0.75)";
-      ctx.fillRect(240, 94 + kick, 36, 16);
+      ctx.fillRect(118, 48 + kick, 20, 10);
     }
   }
   return canvas;
@@ -283,6 +293,7 @@ export const PICKUP_LABEL: Record<PickupKind, string> = {
   shield: "MINI SHIELD",
   llama: "LOOT LLAMA",
   chest: "LOOT CHEST",
+  ammo: "AMMO BOX",
 };
 
 /** Map FPS rival kinds onto 8-angle sheets. */

@@ -10,6 +10,11 @@ export type WeaponDef = {
   pellets: number;
   auto: boolean;
   slot: number;
+  magSize: number;
+  reserveMax: number;
+  startMag: number;
+  startReserve: number;
+  pickupReserve: number;
 };
 
 export const WEAPONS: Record<WeaponId, WeaponDef> = {
@@ -23,6 +28,11 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
     pellets: 1,
     auto: false,
     slot: 0,
+    magSize: 0,
+    reserveMax: 0,
+    startMag: 0,
+    startReserve: 0,
+    pickupReserve: 0,
   },
   pump: {
     id: "pump",
@@ -34,6 +44,11 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
     pellets: 8,
     auto: false,
     slot: 1,
+    magSize: 5,
+    reserveMax: 40,
+    startMag: 5,
+    startReserve: 15,
+    pickupReserve: 10,
   },
   scar: {
     id: "scar",
@@ -45,6 +60,11 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
     pellets: 1,
     auto: true,
     slot: 2,
+    magSize: 30,
+    reserveMax: 210,
+    startMag: 30,
+    startReserve: 90,
+    pickupReserve: 30,
   },
   exotic: {
     id: "exotic",
@@ -56,11 +76,20 @@ export const WEAPONS: Record<WeaponId, WeaponDef> = {
     pellets: 1,
     auto: true,
     slot: 3,
+    magSize: 25,
+    reserveMax: 175,
+    startMag: 25,
+    startReserve: 75,
+    pickupReserve: 25,
   },
 };
 
-export function weaponFromPickup(
-  kind: "pump" | "scar" | "exotic"
-): WeaponId {
+export const WEAPON_ORDER: WeaponId[] = ["pickaxe", "pump", "scar", "exotic"];
+
+export function weaponFromPickup(kind: "pump" | "scar" | "exotic") {
   return kind;
+}
+
+export function formatAmmo(mag: number, reserve: number) {
+  return `${mag}/${reserve}`;
 }

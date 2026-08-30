@@ -18,6 +18,9 @@ const EMPTY: FpsHud = {
   hasPump: false,
   hasScar: false,
   hasExotic: false,
+  pumpAmmo: "—",
+  scarAmmo: "—",
+  exoticAmmo: "—",
 };
 
 export function ViperFps() {
@@ -26,6 +29,7 @@ export function ViperFps() {
   const apiRef = useRef<ReturnType<typeof mountFps> | null>(null);
   const [hud, setHud] = useState<FpsHud>(EMPTY);
   const [full, setFull] = useState(false);
+  const [muted, setMuted] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -45,6 +49,7 @@ export function ViperFps() {
   }, []);
 
   const start = () => {
+    sfx.setMuted(muted);
     apiRef.current?.start();
     sfx.coin();
     const focusView = () => canvasRef.current?.focus();
@@ -73,9 +78,9 @@ export function ViperFps() {
           <div>
             <p className="font-vt mb-3 text-xl text-[#f8f0d8]">
               Wolfenstein-style raycasting on a Fortnite island. HD 8-angle
-              VIPER, Peely, Chief, and Stormstep billboards. Interior and
-              surface tiles with a storm sky. Loot pump, SCAR, exotic, medkits,
-              chests, and llamas.
+              VIPER, Peely, Chief, and Stormstep billboards. Paired outdoor,
+              indoor, and industrial tiles with a storm sky. Loot pump, SCAR,
+              exotic, ammo boxes, medkits, chests, and llamas.
             </p>
             <div
               ref={stageRef}
@@ -104,10 +109,26 @@ export function ViperFps() {
               <Button variant="arcade" className="h-11 px-3" onClick={() => void toggleFull()}>
                 {full ? "EXIT FULL" : "FULLSCREEN"}
               </Button>
+              <Button
+                variant="arcade"
+                className="h-11 px-3"
+                onClick={() => {
+                  setMuted((m) => {
+                    const next = !m;
+                    sfx.setMuted(next);
+                    if (!next) {
+                      sfx.playFpsMusic(hud.mode === "play" || hud.mode === "win" || hud.mode === "over" ? "game" : "title");
+                    }
+                    return next;
+                  });
+                }}
+              >
+                {muted ? "SFX OFF" : "SFX ON"}
+              </Button>
               <p className="font-vt text-lg text-[#c9a0ff]">
-                WASD move · arrows/Q/C look · Space shoot · walk over loot
-                (or E) · 1–4 weapons · Shift sprint. Mouse is optional: click
-                to shoot, drag or M / right-click to look.
+                WASD move · arrows/Q/C look · Space/click shoot · walk over
+                loot (or E) · 1–4 or [ ] / wheel cycle · R reload · Shift
+                sprint. Mouse is optional: drag or M / right-click to look.
               </p>
             </div>
             {hud.banner ? (
@@ -125,17 +146,17 @@ export function ViperFps() {
                 {Math.ceil(hud.hp)} HP · {Math.ceil(hud.shield)} SHIELD
               </p>
               <p className="font-vt mt-1 text-xl text-[#ffcc00]">
-                {hud.weapon.replace("_", " ").toUpperCase()} · ELIMS {hud.elims}
+                {hud.weapon.replace("_", " ").toUpperCase()} · {hud.ammo} · ELIMS {hud.elims}
               </p>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 {(
                   [
-                    ["pickaxe", "PICKAXE", true],
-                    ["pump", "PUMP", hud.hasPump],
-                    ["scar", "SCAR", hud.hasScar],
-                    ["exotic", "EXOTIC", hud.hasExotic],
+                    ["pickaxe", "PICKAXE", true, "MELEE"],
+                    ["pump", "PUMP", hud.hasPump, hud.pumpAmmo],
+                    ["scar", "SCAR", hud.hasScar, hud.scarAmmo],
+                    ["exotic", "EXOTIC", hud.hasExotic, hud.exoticAmmo],
                   ] as const
-                ).map(([id, label, owned]) => (
+                ).map(([id, label, owned, ammo]) => (
                   <div
                     key={id}
                     className={`pixel-border p-2 ${
@@ -145,7 +166,9 @@ export function ViperFps() {
                     <FpsItemIcon id={id} dim={!owned} />
                     <p className="font-press mt-1 text-[8px] text-[#ffcc00]">{label}</p>
                     <p className="font-vt text-base text-[#c9a0ff]">
-                      {owned ? (hud.weapon === id ? "ACTIVE" : "FOUND") : "FIND ON MAP"}
+                      {owned
+                        ? `${hud.weapon === id ? "ACTIVE" : "OWNED"} · ${ammo}`
+                        : "FIND ON MAP"}
                     </p>
                   </div>
                 ))}
@@ -160,9 +183,9 @@ export function ViperFps() {
               </p>
               <p className="font-press mt-3 text-[8px] text-[#00e800]">ISLAND TILES</p>
               <p className="font-vt mt-2 text-lg text-[#c9a0ff]">
-                Cabin, villa, neon club, bunker, and cobble tiles from the
-                environment sheets — raycast with distance shading and a storm
-                sky.
+                Outdoor stucco + grass, indoor villa wood, and industrial
+                metal stay paired — no mixed walls in one vista, no grass
+                indoors. Storm sky wraps. Mag / reserve ammo on every gun.
               </p>
             </div>
           </div>
