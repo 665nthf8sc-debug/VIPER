@@ -45,3 +45,4 @@ next-env.d.ts
 
 # wav masters from audio compose scripts (commit OGGs under public/audio only)
 /scripts/output/
+scripts/__pycache__/
