@@ -12,32 +12,32 @@ const RAW = `
 4..2222................2222....4
 4..2..2....3333........2..2....4
 4..2..2....3..3........2..2....4
-4..2222....3..3........2222....4
-4..........3333................4
+4..22.2....3..3........2.22....4
+4..........33.3................4
 4..............................4
 4....4444..........5555555.....4
 4....4..4..........5.....5.....4
 4....4..4..........5..5..5.....4
-4....4444..........5.....5.....4
-4..................5555555.....4
+4....44.4..........5.....5.....4
+4..................5555.55.....4
 4..............................4
 4..1111........................4
 4..1..1..........2222222.......4
-4..1..1..........2.....2.......4
-4..1111..........2..2..2.......4
+4..1..1................2.......4
+4..11.1..........2..2..2.......4
 4................2.....2.......4
-4................2222222.......4
+4................222.222.......4
 4..............................4
 4........3333..................4
 4........3..3....4444..........4
-4........3333....4..4..........4
-4................4444..........4
+4........33.3....4..4..........4
+4................44.4..........4
 4..............................4
 4....55555.....................4
 4....5...5....1111111..........4
 4....5.5.5....1.....1..........4
 4....5...5....1.....1..........4
-4....55555....1111111..........4
+4....55.55....111.111..........4
 44444444444444444444444444444444
 `.trim();
 
@@ -55,7 +55,16 @@ export function buildMapGrid() {
   return grid;
 }
 
-/** Classify empty cells: enclosed rooms inherit the surrounding wall theme. */
+function isDoorway(grid: number[][], x: number, y: number) {
+  if (grid[y][x] > 0) return false;
+  const n = y > 0 ? grid[y - 1][x] : 1;
+  const s = y < MAP_H - 1 ? grid[y + 1][x] : 1;
+  const w = x > 0 ? grid[y][x - 1] : 1;
+  const e = x < MAP_W - 1 ? grid[y][x + 1] : 1;
+  return (n > 0 && s > 0) || (e > 0 && w > 0);
+}
+
+/** Classify empty cells: rooms keep their theme even after a doorway is cut. */
 export function buildFloorThemes(grid: number[][]): FloorTheme[][] {
   const themes: FloorTheme[][] = Array.from({ length: MAP_H }, () =>
     Array<FloorTheme>(MAP_W).fill("outdoor")
@@ -70,7 +79,7 @@ export function buildFloorThemes(grid: number[][]): FloorTheme[][] {
 
   for (let y = 0; y < MAP_H; y++) {
     for (let x = 0; x < MAP_W; x++) {
-      if (grid[y][x] > 0 || vis[y][x]) continue;
+      if (grid[y][x] > 0 || vis[y][x] || isDoorway(grid, x, y)) continue;
       const cells: Array<[number, number]> = [];
       const wallHits = new Map<number, number>();
       const q: Array<[number, number]> = [[x, y]];
@@ -85,6 +94,8 @@ export function buildFloorThemes(grid: number[][]): FloorTheme[][] {
           const cell = grid[ny][nx];
           if (cell > 0) {
             wallHits.set(cell, (wallHits.get(cell) ?? 0) + 1);
+          } else if (isDoorway(grid, nx, ny)) {
+            /* doorway stays outdoor and does not merge rooms */
           } else if (!vis[ny][nx]) {
             vis[ny][nx] = true;
             q.push([nx, ny]);
@@ -140,6 +151,8 @@ export const PICKUP_SPAWNS: Array<{
   { kind: "chest", x: 5.5, y: 10.5 },
   { kind: "shield", x: 27.5, y: 22.5 },
   { kind: "ammo", x: 14.5, y: 14.5 },
+  { kind: "pump", x: 15.5, y: 18.5 },
+  { kind: "scar", x: 18.5, y: 16.5 },
   { kind: "ammo", x: 19.5, y: 6.5 },
   { kind: "ammo", x: 8.5, y: 20.5 },
   { kind: "ammo", x: 26.5, y: 12.5 },

@@ -91,8 +91,9 @@ const ROT_SPEED = 2.4;
 const VIEW_GUN_W = 100;
 const VIEW_GUN_H = 70;
 const PICKUP_SCALE = 0.5;
-const FLOOR_W = 320;
+const FLOOR_W = 640;
 const FLOOR_H = 180;
+const FLOOR_SCALE = 1.35;
 type GunId = "pump" | "scar" | "exotic";
 
 function wallAt(grid: number[][], x: number, y: number) {
@@ -184,9 +185,7 @@ export function mountFps(
     if (art.items.chests?.[3]) pickupTex.ammo = art.items.chests[3];
     applyHdWalls(wallTex, art.env.interiors, art.env.surfaces, art.env.walls);
     if (art.env.sky) {
-      skyCanvas = buildSkyFromImage(art.env.sky, RENDER_W, RENDER_H, {
-        seamless: !art.env.skySeamless,
-      });
+      skyCanvas = buildSkyFromImage(art.env.sky, RENDER_W, RENDER_H);
     }
     floorTiles = buildThemeFloors(art.env.surfaces, art.env.interiors, art.env.floors);
     titleArt = art.env.title;
@@ -232,6 +231,7 @@ export function mountFps(
   let raf = 0;
   let tick = 0;
   let musicArmed = false;
+  let spawnGuard = 0;
 
   const spawnEnemy = (s: (typeof ENEMY_SPAWNS)[number]): Enemy => {
     const vx = (Math.random() - 0.5) * 0.6;
@@ -407,6 +407,7 @@ export function mountFps(
     banner = "LOOT THE ISLAND";
     bannerT = 120;
     hurtFlash = 0;
+    spawnGuard = 180;
     enemies = ENEMY_SPAWNS.map(spawnEnemy);
     pickups = PICKUP_SPAWNS.map((s) => ({
       kind: s.kind,
@@ -724,10 +725,12 @@ export function mountFps(
       let floorY = py + rowDist * (dirY - planeY);
       const dim = Math.max(0.32, 1 - rowDist / MAX_DEPTH);
       for (let x = 0; x < FLOOR_W; x++) {
-        const cellX = Math.floor(floorX);
-        const cellY = Math.floor(floorY);
-        const u = floorX - cellX;
-        const v = floorY - cellY;
+        let u = floorX * FLOOR_SCALE;
+        let v = floorY * FLOOR_SCALE;
+        u -= Math.floor(u);
+        v -= Math.floor(v);
+        if (u < 0) u += 1;
+        if (v < 0) v += 1;
         const tile = floorTiles[themeAt(floorX, floorY)];
         sampleFloor(tile, u, v, dim, (y * FLOOR_W + x) * 4);
         floorX += stepX;
@@ -961,6 +964,7 @@ export function mountFps(
       if (fireFrame > 0) fireFrame -= 1;
       if (bannerT > 0) bannerT -= 1;
       if (hurtFlash > 0) hurtFlash -= 1;
+      if (spawnGuard > 0) spawnGuard -= 1;
 
       for (const e of enemies) {
         if (!e.alive) continue;
@@ -983,7 +987,7 @@ export function mountFps(
           else e.vy *= -1;
           if (Math.abs(e.vx) + Math.abs(e.vy) > 0.01) e.facing = Math.atan2(e.vy, e.vx);
         }
-        if (d < 0.55 && tick % 30 === 0) {
+        if (d < 0.55 && tick % 30 === 0 && spawnGuard <= 0) {
           let dmg = 12;
           if (shield > 0) {
             const soak = Math.min(shield, dmg);

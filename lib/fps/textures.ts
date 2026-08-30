@@ -217,20 +217,15 @@ export function makeSkySeamless(img: HTMLCanvasElement, blendPx = 32) {
   return canvas;
 }
 
-export function buildSkyFromImage(
-  img: HTMLCanvasElement,
-  w: number,
-  h: number,
-  opts: { seamless?: boolean } = {}
-) {
-  const source = opts.seamless === false ? img : makeSkySeamless(img);
+export function buildSkyFromImage(img: HTMLCanvasElement, w: number, h: number) {
   const canvas = document.createElement("canvas");
   canvas.width = w;
   canvas.height = h;
-  const ctx = canvas.getContext("2d")!;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
   ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(source, 0, 0, w, h);
-  return canvas;
+  ctx.drawImage(img, 0, 0, w, h);
+  // Always fix at output size — downscale can reopen a wrap that was seamless in the source.
+  return makeSkySeamless(canvas, Math.max(28, (w * 0.06) | 0));
 }
 
 export function buildFloorFromTile(tile: HTMLCanvasElement, w: number, h: number) {
@@ -314,19 +309,26 @@ export function buildThemeFloors(
   interiors: HTMLCanvasElement[],
   overrides: ThemeTiles = {}
 ): Record<FloorTheme, FloorSample> {
-  const outdoorSrc =
+  const outdoorSrc = makeTileSeamless(
     overrides.outdoor ??
-    (surfaces[2] ? deriveUniformTile(surfaces[2], 64) : buildFloorCanvas(64, 64));
-  const indoorSrc =
-    overrides.indoor ??
-    makeTileSeamless(surfaces[0] ?? interiors[1] ?? buildFloorCanvas(64, 64), 64);
-  const industrialSrc =
+      (surfaces[2] ? deriveUniformTile(surfaces[2], 128) : buildFloorCanvas(128, 128)),
+    128
+  );
+  const indoorSrc = makeTileSeamless(
+    overrides.indoor ?? surfaces[0] ?? interiors[1] ?? buildFloorCanvas(128, 128),
+    128
+  );
+  const industrialSrc = makeTileSeamless(
     overrides.industrial ??
-    makeTileSeamless(surfaces[3] ?? interiors[6] ?? canvasFromMap(METAL_ROWS, METAL_PAL, 4), 64);
+      surfaces[3] ??
+      interiors[6] ??
+      canvasFromMap(METAL_ROWS, METAL_PAL, 4),
+    128
+  );
   return {
-    outdoor: sampleFloorTile(scaleTex(outdoorSrc, 128), 64),
-    indoor: sampleFloorTile(scaleTex(indoorSrc, 128), 64),
-    industrial: sampleFloorTile(scaleTex(industrialSrc, 128), 64),
+    outdoor: sampleFloorTile(outdoorSrc, 128),
+    indoor: sampleFloorTile(indoorSrc, 128),
+    industrial: sampleFloorTile(industrialSrc, 128),
   };
 }
 
