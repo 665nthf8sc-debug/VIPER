@@ -10,7 +10,7 @@ export const MYSTERY_SHORT = {
   id: "",
   title: "Secrets of Tilted",
   teaser:
-    "VIPER is posting a short about this map and the secrets. The meteor knows. The vault waits.",
+    "VIPER is posting a short about this Creative map and the secrets. Tilted. The meteor. The vault.",
 };
 
 export const FEATURED_VIDEOS = [

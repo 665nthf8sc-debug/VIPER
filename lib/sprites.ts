@@ -366,36 +366,68 @@ export function spriteRows(kind: SpriteKind, frame: number) {
   return frame ? FOX_B : FOX_A;
 }
 
+export function idlePose(tick: number) {
+  return {
+    ox: 0,
+    oy: Math.sin(tick / 18) * 1,
+    flip: false,
+    frame: 0 as 0 | 1,
+  };
+}
+
 export function emotePose(id: EmoteId, tick: number) {
-  const t = tick / 6;
+  const t = tick / 3;
   if (id === "floss") {
     return {
-      ox: Math.sin(t) * 3,
-      oy: 0,
-      flip: Math.sin(t * 1.4) > 0,
-      frame: tick % 16 < 8 ? 0 : 1,
+      ox: Math.sin(t * 2.6) * 16,
+      oy: Math.abs(Math.sin(t * 5.2)) * 10,
+      flip: Math.sin(t * 2.6) > 0,
+      frame: tick % 6 < 3 ? 0 : 1,
     };
   }
   if (id === "griddy") {
     return {
-      ox: Math.sin(t * 1.6) * 7,
-      oy: Math.abs(Math.sin(t * 3)) * 3,
-      flip: Math.sin(t * 1.6) > 0,
-      frame: tick % 10 < 5 ? 0 : 1,
+      ox: Math.sin(t * 2.2) * 20,
+      oy: Math.abs(Math.sin(t * 6)) * 12,
+      flip: Math.sin(t * 1.4) > 0,
+      frame: tick % 4 < 2 ? 0 : 1,
     };
   }
   if (id === "take-l") {
-    return { ox: 0, oy: Math.sin(t) * 1.5, flip: false, frame: 1 };
+    return {
+      ox: Math.sin(t) * 10,
+      oy: Math.abs(Math.sin(t * 3.2)) * 12,
+      flip: Math.floor(tick / 7) % 2 === 0,
+      frame: 1,
+    };
   }
   if (id === "hiss") {
-    return { ox: Math.sin(t * 8) * 1.2, oy: 0, flip: false, frame: 0 };
+    return {
+      ox: Math.sin(t * 14) * 8,
+      oy: Math.abs(Math.sin(t * 9)) * 10,
+      flip: false,
+      frame: tick % 8 < 4 ? 0 : 1,
+    };
   }
   return {
-    ox: 0,
-    oy: Math.sin(t) * 2,
-    flip: false,
-    frame: tick % 24 < 12 ? 0 : 1,
+    ox: Math.sin(t * 1.6) * 12,
+    oy: Math.abs(Math.sin(t * 3.4)) * 10,
+    flip: Math.sin(t * 0.8) > 0,
+    frame: tick % 8 < 4 ? 0 : 1,
   };
+}
+
+export function drawEmoteName(
+  ctx: CanvasRenderingContext2D,
+  name: string,
+  x: number,
+  y: number
+) {
+  ctx.fillStyle = "#140008";
+  ctx.fillRect(x - 2, y - 10, name.length * 8 + 4, 12);
+  ctx.fillStyle = "#ffcc00";
+  ctx.font = '8px "Press Start 2P", monospace';
+  ctx.fillText(name, x, y);
 }
 
 export function drawSidekick(

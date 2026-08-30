@@ -34,12 +34,12 @@ On Pages there is no Node server, so the hall of fame uses `localStorage`. Local
 - **Hero** — VIPER drop zone, battle bus sky, countdown to the next season on October 1
 - **VIPER TV** — Watch a tape for **+8 XP** (once). Like a tape for **+12 XP**. Subscribe, then claim the **Channel 3384** exclusive skin.
 - **Battle Pass** — Slow grind. A match caps around **35 XP**. Tiers go through Bad Kit, Kit, Sonic, Phantom, Chief, and Mythic. You cannot finish the pass in one game.
-- **Lobby** — Pre-game pad: swap skins, emotes (Floss, Griddy), and pets, then wait for friends with an invite code.
+- **Lobby** — Pre-game pad: swap skins, click a dance (it actually plays), pets, then wait for friends with an invite code. B or 1–5 also emotes on the cart.
 - **Achievements** — Wins unlock Floss and the **VIPER** skin. 10 elims unlock Griddy. Island finds unlock cat/dog sidekicks.
 - **Locker** — Skins, emotes, pets, finds from in-game loot, and achievements.
-- **Tilted + Meteor** — VIPER's map: Tilted Towers with a giant meteor, 1 HP, exotics, secrets, spawn island on death. Mystery short slot for the upcoming secrets video.
-- **Library** — two cabinets: 8-bit **VIPER DROP** and 3D **VIPER Royale**
-- **VIPER DROP** — 8-bit Fortnite: battle bus, health + shields, loot, jump, POIs
+- **Tilted + Meteor** — VIPER's Fortnite Creative map (Tilted Towers + giant meteor + secrets) with a chill plaza to hang and emote together. Mystery short slot for the upcoming secrets video. Not a second shooter.
+- **Library** — three cabinets: 8-bit **VIPER DROP**, the Creative **MAP**, and 3D **Island Drop**
+- **VIPER DROP** — 8-bit Fortnite: 12-player lobby, battle bus, health + shields, loot, jump, POIs. Wipe the lobby for a **Victory Royale**. No endless respawns.
 - **VIPER Royale / Island Drop** — third-person Battle Royale with smooth (not blocky) Fortnite-style models: Peely, Master Chief armor, a detailed Battle Bus, sunny sky, storm, pickaxe/AR/pump, builds, 10 bots, original drop soundtrack, Victory Royale. Free 360° mouse look. Uses your equipped locker skin. This 3D match does **not** use the 8-bit VIPER cabinet look.
 - **Squads** — Solo / Duo / Trio. Fill with bots or a local invite code (another tab on this PC). Couch P2 uses arrows + K
 - **Knocked** — In duo/trio you get downed. A teammate standing on you for 5 seconds revives you

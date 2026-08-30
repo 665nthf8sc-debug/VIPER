@@ -9,7 +9,7 @@ export function GameLibrary() {
     <section id="library" className="section-wrap py-16 sm:py-20">
       <PixelPanel title="VIPER LIBRARY  •  THREE CABINETS">
         <p className="font-vt mb-6 text-xl text-[#c9a0ff] sm:text-2xl">
-          Lobby, drop, or fight on VIPER&apos;s Tilted meteor map.
+          Lobby, drop, or hang on VIPER&apos;s Tilted meteor map.
         </p>
         <div className="grid gap-4 md:grid-cols-3">
           <a
@@ -36,10 +36,11 @@ export function GameLibrary() {
               TILTED + METEOR
             </h3>
             <p className="font-vt mt-3 text-xl text-[#f8f0d8]">
-              1 HP. Exotics. Secrets. Die and you go back to spawn island.
+              VIPER&apos;s Creative map: Tilted, a giant meteor, secrets. Chill
+              plaza to walk and emote. Short coming soon.
             </p>
             <Button variant="arcade" className="pointer-events-none mt-4 h-10">
-              PLAY MAP
+              OPEN MAP
             </Button>
           </a>
           <a

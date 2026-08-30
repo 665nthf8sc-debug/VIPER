@@ -379,9 +379,9 @@ export const SKINS: Skin[] = [
 ];
 
 export const EMOTES: EmoteDef[] = [
-  { id: "wave", name: "WAVE", blurb: "Default lobby hello." },
-  { id: "floss", name: "FLOSS", blurb: "Win a VIPER DROP to unlock." },
-  { id: "griddy", name: "GRIDDY", blurb: "Bank 10 career elims." },
+  { id: "wave", name: "WAVE", blurb: "Click or press B. The pad dances." },
+  { id: "floss", name: "FLOSS", blurb: "Click it. B also plays this." },
+  { id: "griddy", name: "GRIDDY", blurb: "Click it. Keys 1–5 pick dances." },
   { id: "take-l", name: "TAKE THE L", blurb: "Find the VIPER spray in a drop." },
   { id: "hiss", name: "VIPER HISS", blurb: "Unlock the VIPER skin." },
 ];
@@ -398,9 +398,9 @@ export const FINDS: FindDef[] = [
   { id: "pick-gold", name: "GOLD PICK", blurb: "Shiny harvest tool." },
   { id: "collar", name: "CAT COLLAR", blurb: "Unlocks the lobby cat." },
   { id: "treat", name: "DOG TREAT", blurb: "Unlocks the drop dog." },
-  { id: "meteor-shard", name: "METEOR SHARD", blurb: "Stand in the Tilted crater." },
-  { id: "secret-note", name: "VAULT NOTE", blurb: "Tilted basement secret." },
-  { id: "exotic-drum", name: "DRUM SHOTTY", blurb: "Exotic from Tilted roofs." },
+  { id: "meteor-shard", name: "METEOR SHARD", blurb: "Walk onto the meteor in the plaza." },
+  { id: "secret-note", name: "VAULT NOTE", blurb: "Tilted basement glow in the plaza." },
+  { id: "exotic-drum", name: "DRUM SHOTTY", blurb: "Roof cache on VIPER's Creative map." },
 ];
 
 export const ACHIEVEMENTS: AchievementDef[] = [
@@ -417,6 +417,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 ];
 
 export const PASS_EVENT = "viper-pass";
+export const DANCE_EVENT = "viper-dance";
+export const DANCE_FRAMES = 200;
 const KEY = "viper-pass-v2";
 const LEGACY = "viper-pass-v1";
 
@@ -445,7 +447,7 @@ export const EMPTY_PASS: PassState = {
   watched: [],
   liked: [],
   unlocked: [],
-  emotes: ["wave"],
+  emotes: ["wave", "floss", "griddy"],
   sidekicks: ["none"],
   finds: [],
   achievements: [],
@@ -509,6 +511,8 @@ export function loadPass(): PassState {
       unlocked,
       emotes: unique([
         "wave",
+        "floss",
+        "griddy",
         ...(Array.isArray(parsed.emotes)
           ? parsed.emotes.filter((id): id is EmoteId => typeof id === "string" && isEmoteId(id))
           : []),
@@ -706,6 +710,19 @@ export function equipEmote(id: EmoteId) {
   if (!state.emotes.includes(id)) return false;
   state.emote = id;
   persist(state);
+  return true;
+}
+
+/** Equip (if needed) and fire a visible dance burst so the pad actually moves. */
+export function playEmote(id?: EmoteId) {
+  const state = loadPass();
+  const chosen = id ?? state.emote;
+  if (!state.emotes.includes(chosen)) return false;
+  if (state.emote !== chosen) {
+    state.emote = chosen;
+    persist(state);
+  }
+  window.dispatchEvent(new CustomEvent(DANCE_EVENT, { detail: { id: chosen } }));
   return true;
 }
 

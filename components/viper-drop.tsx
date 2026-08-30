@@ -9,9 +9,14 @@ import { loadHallOfFame, saveHallOfFame } from "@/lib/client-scores";
 import {
   addFind,
   beatCampaignMission,
+  DANCE_EVENT,
+  DANCE_FRAMES,
+  EMOTES,
   equippedSkin,
   grantPlayXp,
+  isEmoteUnlocked,
   loadPass,
+  playEmote,
   recordDrop,
   recordElims,
   recordWin,
@@ -20,7 +25,16 @@ import {
 } from "@/lib/pass";
 import { POIS, type Poi } from "@/lib/pois";
 import { sfx } from "@/lib/sfx";
-import { drawBattleBus, drawGun, drawSidekick, drawSprite, emotePose, spriteRows } from "@/lib/sprites";
+import {
+  drawBattleBus,
+  drawEmoteName,
+  drawGun,
+  drawSidekick,
+  drawSprite,
+  emotePose,
+  idlePose,
+  spriteRows,
+} from "@/lib/sprites";
 import {
   EMPTY_PAD,
   makeInviteCode,
@@ -42,6 +56,7 @@ const H = 224;
 const BRICK = 4;
 const GROUND = 24;
 const MAX_RIVALS = 4;
+const MATCH_SIZE = 12;
 const GRAVITY = 0.22;
 const JUMP_V = -4.35;
 const HP_MAX = 100;
@@ -249,6 +264,7 @@ type Snap = {
   missionIndex: number;
   missionKills: number;
   playlist: Playlist;
+  playersLeft: number;
   squad: Fighter[];
   rivals: Fighter[];
   shots: Shot[];
@@ -408,6 +424,9 @@ export function ViperDrop() {
     let running = true;
     let tick = 0;
     let spawnRivalIn = 50;
+    let spawnedRivals = 0;
+    let matchQuota = MATCH_SIZE - 1;
+    let danceUntil = 0;
     let shake = 0;
     let hi = 0;
     let poiIndex = 0;
@@ -455,10 +474,18 @@ export function ViperDrop() {
       }
     };
 
+    const remainingRivals = () =>
+      Math.max(0, matchQuota - spawnedRivals) +
+      rivals.filter((r) => !r.dead).length;
+
+    const playersLeft = () => aliveSquad().length + remainingRivals();
+
     const spawnRival = () => {
       if (rivals.length >= MAX_RIVALS) return;
+      if (spawnedRivals >= matchQuota) return;
       const left = Math.random() > 0.5;
-      const id = 10 + rivals.length;
+      const id = 10 + spawnedRivals;
+      spawnedRivals += 1;
       rivals.push(
         makeFighter({
           x: left ? 8 : W - 24,
@@ -469,7 +496,7 @@ export function ViperDrop() {
           inv: 18,
           cool: 30,
           control: "bot",
-          palette: RIVAL_KITS[rivals.length % RIVAL_KITS.length],
+          palette: RIVAL_KITS[spawnedRivals % RIVAL_KITS.length],
         })
       );
     };
@@ -507,6 +534,11 @@ export function ViperDrop() {
       parts = [];
       spawnLoot();
       tick = 0;
+      spawnedRivals = 0;
+      matchQuota =
+        lobby.current.playlist === "campaign"
+          ? 99
+          : Math.max(1, MATCH_SIZE - squadSeats(lobby.current.squad));
       spawnRivalIn = 36;
       busX = -64;
       falling = false;
@@ -588,10 +620,13 @@ export function ViperDrop() {
     const changePoi = (dir: number) => {
       poiIndex = (poiIndex + dir + POIS.length) % POIS.length;
       bricks = makeCity(POIS[poiIndex]);
-      rivals = [];
       shots = [];
       spawnLoot();
-      spawnRival();
+      if (lobby.current.playlist === "campaign") {
+        rivals = [];
+        spawnedRivals = 0;
+        spawnRival();
+      }
       spawnRivalIn = 70;
       banner = POIS[poiIndex].name;
       bannerLife = 70;
@@ -680,7 +715,26 @@ export function ViperDrop() {
       return EMPTY_PAD;
     };
 
+    const startDance = (id?: (typeof EMOTES)[number]["id"]) => {
+      if (id && !isEmoteUnlocked(id, loadPass())) {
+        sfx.hit();
+        return;
+      }
+      if (playEmote(id)) {
+        danceUntil = tick + DANCE_FRAMES;
+        sfx.emote();
+      } else {
+        sfx.hit();
+      }
+    };
+
     const onKey = (e: KeyboardEvent, down: boolean) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
       const p1 = pads.current[0];
       const p2 = pads.current[1];
       const p3 = pads.current[2];
@@ -700,6 +754,17 @@ export function ViperDrop() {
         e.preventDefault();
         wantStart.current = true;
       }
+      if (down && e.code === "KeyB") {
+        e.preventDefault();
+        startDance();
+      }
+      if (down && /^Digit[1-5]$/.test(e.code) && modeRef.current === "title") {
+        const emote = EMOTES[Number(e.code.slice(5)) - 1];
+        if (emote) {
+          e.preventDefault();
+          startDance(emote.id);
+        }
+      }
       if (
         down &&
         (e.code.startsWith("Arrow") ||
@@ -711,6 +776,10 @@ export function ViperDrop() {
         if (modeRef.current === "play" || modeRef.current === "bus") e.preventDefault();
       }
     };
+    const onDance = () => {
+      danceUntil = tick + DANCE_FRAMES;
+    };
+    window.addEventListener(DANCE_EVENT, onDance);
     const down = (e: KeyboardEvent) => onKey(e, true);
     const up = (e: KeyboardEvent) => onKey(e, false);
     window.addEventListener("keydown", down);
@@ -799,17 +868,23 @@ export function ViperDrop() {
       const drawF = (f: Fighter) => {
         if (f.dead) return;
         if (f.inv > 0 && Math.floor(tick / 4) % 2 === 1) return;
+        const dancing = f.slot === 0 && f.team === 0 && tick < danceUntil;
+        const pad = dancing ? emotePose(loadPass().emote, tick) : null;
         drawSprite(
           ctx,
-          spriteRows(f.sprite, f.frame),
-          Math.floor(f.x),
-          Math.floor(f.y),
-          f.facing < 0,
+          spriteRows(f.sprite, pad ? pad.frame : f.frame),
+          Math.floor(f.x) + (pad ? pad.ox : 0),
+          Math.floor(f.y) + (pad ? pad.oy : 0),
+          pad ? pad.flip : f.facing < 0,
           f.palette
         );
-        if (!f.knocked) drawGun(ctx, f.x, f.y, f.facing, f.muzzle > 0);
+        if (!f.knocked && !dancing) drawGun(ctx, f.x, f.y, f.facing, f.muzzle > 0);
         if (f.slot === 0 && f.team === 0) {
           drawSidekick(ctx, loadPass().sidekick, f.x + 16, f.y + 8, tick);
+        }
+        if (dancing) {
+          const label = EMOTES.find((e) => e.id === loadPass().emote)?.name ?? "EMOTE";
+          drawEmoteName(ctx, label, Math.floor(f.x) - 8, Math.floor(f.y) - 12);
         }
         const bx = Math.floor(f.x);
         const by = Math.floor(f.y) - 5;
@@ -831,7 +906,8 @@ export function ViperDrop() {
     const paintHud = (
       poi: Poi,
       hero: Fighter | undefined,
-      missionTitle: string
+      missionTitle: string,
+      leftCount = 0
     ) => {
       ctx.fillStyle = "#00e800";
       ctx.font = '8px "Press Start 2P", monospace';
@@ -855,6 +931,9 @@ export function ViperDrop() {
       if (missionTitle) {
         ctx.fillStyle = "#ffcc00";
         ctx.fillText(missionTitle.slice(0, 14), 8, 34);
+      } else if (leftCount > 0 && modeRef.current === "play") {
+        ctx.fillStyle = "#ffcc00";
+        ctx.fillText(`LEFT ${leftCount}`, 8, 34);
       }
     };
 
@@ -903,7 +982,8 @@ export function ViperDrop() {
             snap.squad[lobby.current.seat] ?? snap.squad[0],
             snap.playlist === "campaign"
               ? MISSIONS[snap.missionIndex]?.season ?? ""
-              : ""
+              : "",
+            snap.playersLeft
           );
           if (snap.bannerLife > 0) {
             ctx.fillStyle = "rgba(10,0,20,0.55)";
@@ -978,7 +1058,7 @@ export function ViperDrop() {
             banner =
               lobby.current.playlist === "campaign"
                 ? MISSIONS[missionIndex].title
-                : POIS[poiIndex].name;
+                : `${MATCH_SIZE} IN THE LOBBY`;
             bannerLife = 80;
             sfx.start();
             spawnRival();
@@ -996,7 +1076,7 @@ export function ViperDrop() {
         spawnRivalIn -= 1;
         if (spawnRivalIn <= 0) {
           spawnRival();
-          spawnRivalIn = Math.max(110, 180 - Math.floor(scoreRef.current / 100));
+          spawnRivalIn = 80;
         }
 
         for (const mate of squadList) {
@@ -1161,6 +1241,7 @@ export function ViperDrop() {
             rivals = [];
             shots = [];
             spawnLoot();
+            spawnedRivals = 0;
             spawnRival();
             banner = next.title;
             bannerLife = 90;
@@ -1181,6 +1262,17 @@ export function ViperDrop() {
           const anyBleed = squadList.some((f) => f.knocked && !f.dead);
           if (!anyBleed) endMatch(false);
           if (squadList.every((f) => f.dead)) endMatch(false);
+        }
+
+        if (
+          lobby.current.playlist !== "campaign" &&
+          spawnedRivals >= matchQuota &&
+          rivals.length === 0 &&
+          aliveSquad().length > 0
+        ) {
+          banner = "VICTORY ROYALE";
+          bannerLife = 90;
+          endMatch(true);
         }
       }
 
@@ -1207,7 +1299,8 @@ export function ViperDrop() {
         squadList[0],
         lobby.current.playlist === "campaign"
           ? MISSIONS[missionIndex]?.season ?? ""
-          : ""
+          : "",
+        lobby.current.playlist === "campaign" ? 0 : playersLeft()
       );
       if (bannerLife > 0) {
         bannerLife -= 1;
@@ -1221,7 +1314,8 @@ export function ViperDrop() {
       if (modeRef.current === "title") {
         const pad = loadPass();
         const skin = equippedSkin();
-        const pose = emotePose(pad.emote, tick);
+        const dancing = tick < danceUntil;
+        const pose = dancing ? emotePose(pad.emote, tick) : idlePose(tick);
         ctx.fillStyle = "rgba(10,0,20,0.35)";
         ctx.fillRect(0, 0, W, H);
         ctx.fillStyle = "#c4a06a";
@@ -1235,6 +1329,10 @@ export function ViperDrop() {
           skin.palette
         );
         drawSidekick(ctx, pad.sidekick, 140, 146, tick);
+        if (dancing) {
+          const label = EMOTES.find((e) => e.id === pad.emote)?.name ?? "EMOTE";
+          drawEmoteName(ctx, label, 88, 118);
+        }
         ctx.fillStyle = "#00e800";
         ctx.font = '10px "Press Start 2P", monospace';
         ctx.fillText("VIPER DROP", 72, 48);
@@ -1242,6 +1340,8 @@ export function ViperDrop() {
         ctx.font = '8px "Press Start 2P", monospace';
         ctx.fillText("PRE-GAME LOBBY", 64, 72);
         ctx.fillText(skin.name.slice(0, 16), 72, 92);
+        ctx.fillStyle = "#3cdcff";
+        ctx.fillText(dancing ? "DANCING" : "B TO EMOTE", 80, 168);
         if (Math.floor(tick / 30) % 2 === 0) {
           ctx.fillStyle = "#ff6a00";
           ctx.fillText("PRESS ENTER", 76, 188);
@@ -1281,6 +1381,7 @@ export function ViperDrop() {
           missionIndex,
           missionKills,
           playlist: lobby.current.playlist,
+          playersLeft: playersLeft(),
           squad: squadList,
           rivals,
           shots,
@@ -1302,6 +1403,7 @@ export function ViperDrop() {
       cancelAnimationFrame(raf);
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
+      window.removeEventListener(DANCE_EVENT, onDance);
     };
   }, []);
 
@@ -1431,6 +1533,17 @@ export function ViperDrop() {
                 ▶
               </Button>
             </div>
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:hidden">
+              <Button
+                variant="pixel"
+                className="h-12 text-[10px]"
+                onClick={() => {
+                  if (playEmote()) sfx.emote();
+                }}
+              >
+                EMOTE
+              </Button>
+            </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <Button variant="pixel" className="h-11 px-4" onClick={startRun}>
                 {mode === "over" || mode === "win" ? "DROP IN AGAIN" : "DROP IN"}
@@ -1452,9 +1565,20 @@ export function ViperDrop() {
               >
                 {muted ? "SFX OFF" : "SFX ON"}
               </Button>
+              <Button
+                variant="arcade"
+                className="h-11 px-3"
+                onClick={() => {
+                  if (playEmote()) sfx.emote();
+                  else sfx.hit();
+                }}
+              >
+                EMOTE
+              </Button>
               <p className="font-vt text-lg text-[#c9a0ff]">
-                P1 A/D W Z. P2 arrows + K. P3 J/L I M. Stand on a knocked
-                teammate for 5s to revive. Blue loot is shield, green is health.
+                12 in the lobby. Wipe them for a Victory Royale. P1 A/D W Z.
+                P2 arrows + K. B or 1–5 to emote. Stand on a knocked teammate
+                for 5s to revive.
               </p>
             </div>
 
@@ -1530,7 +1654,12 @@ export function ViperDrop() {
                   </Button>
                 ))}
               </div>
-              <p className="font-press mb-2 text-[8px] text-[#3cdcff]">SQUAD</p>
+              {playlist === "br" ? (
+                <p className="font-vt mb-3 text-base text-[#ffcc00]">
+                  12 players including your squad. Last squad standing gets the
+                  Victory Royale. No endless respawns.
+                </p>
+              ) : null}
               <div className="mb-3 flex gap-2">
                 {(["solo", "duo", "trio"] as const).map((id) => (
                   <Button

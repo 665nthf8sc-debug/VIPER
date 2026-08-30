@@ -104,6 +104,11 @@ class ChipSynth {
     setTimeout(() => this.tone(140, 0.12, "square", 0.04), 120);
   }
 
+  pickup() {
+    this.tone(660, 0.06, "square", 0.045);
+    setTimeout(() => this.tone(990, 0.1, "square", 0.04), 50);
+  }
+
   bus() {
     this.tone(196, 0.1, "square", 0.04);
     setTimeout(() => this.tone(247, 0.1, "square", 0.04), 90);
@@ -129,9 +134,10 @@ class ChipSynth {
     setTimeout(() => this.tone(784, 0.16, "square", 0.05), 180);
   }
 
-  pickup() {
-    this.tone(880, 0.06, "square", 0.04);
-    setTimeout(() => this.tone(1174, 0.08, "square", 0.04), 50);
+  emote() {
+    this.tone(523, 0.08, "square", 0.05);
+    setTimeout(() => this.tone(659, 0.1, "square", 0.05), 70);
+    setTimeout(() => this.tone(784, 0.12, "square", 0.05), 140);
   }
 }
 

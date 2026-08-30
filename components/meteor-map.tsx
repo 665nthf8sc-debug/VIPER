@@ -2,55 +2,65 @@
 
 import { PixelIcon, PixelPanel } from "@/components/pixel-panel";
 import { Button } from "@/components/ui/button";
-import { addFind, equippedSkin } from "@/lib/pass";
+import {
+  addFind,
+  DANCE_EVENT,
+  DANCE_FRAMES,
+  EMOTES,
+  equippedSkin,
+  isEmoteUnlocked,
+  loadPass,
+  playEmote,
+} from "@/lib/pass";
 import { sfx } from "@/lib/sfx";
-import { drawGun, drawSprite, spriteRows } from "@/lib/sprites";
+import {
+  drawEmoteName,
+  drawSidekick,
+  drawSprite,
+  emotePose,
+  idlePose,
+  spriteRows,
+  type EmoteId,
+} from "@/lib/sprites";
 import { MYSTERY_SHORT } from "@/lib/youtube";
 import { useEffect, useRef, useState } from "react";
 
 const W = 256;
 const H = 224;
 const GROUND = 24;
+const GRAVITY = 0.22;
+const JUMP_V = -4.2;
 
-type Gun = "none" | "ar" | "pump" | "exotic" | "drum";
-type Fighter = {
+type Dancer = {
   x: number;
   y: number;
   vx: number;
   vy: number;
   facing: number;
   frame: number;
-  cool: number;
-  muzzle: number;
-  gun: Gun;
   slot: number;
-  deadWait: number;
-  airborne: boolean;
+  emote: EmoteId;
+  danceUntil: number;
+  bot: boolean;
 };
-
-type Pickup = { x: number; y: number; gun: Gun; secret?: "shard" | "note" | "drum" };
-
-const GUN_NAME: Record<Gun, string> = {
-  none: "FISTS",
-  ar: "AR",
-  pump: "PUMP",
-  exotic: "EXOTIC SCAR",
-  drum: "DRUM SHOTTY",
-};
-
-function gunColor(gun: Gun) {
-  if (gun === "exotic") return "#ffcc00";
-  if (gun === "drum") return "#c45a3a";
-  if (gun === "pump") return "#a060ff";
-  if (gun === "ar") return "#6a6a78";
-  return "#3a3a48";
-}
 
 export function MeteorMap() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [banner, setBanner] = useState("SPAWN ISLAND  •  SPACE TO DROP");
-  const [loadout, setLoadout] = useState("FISTS");
+  const padsRef = useRef([
+    { left: false, right: false, jump: false },
+    { left: false, right: false, jump: false },
+  ]);
+  const [banner, setBanner] = useState("CHILL PLAZA  •  B TO EMOTE");
+  const [status, setStatus] = useState("Walk around. Dance together.");
   const running = useRef(true);
+
+  const hold = (
+    slot: 0 | 1,
+    dir: "left" | "right" | "jump",
+    on: boolean
+  ) => {
+    padsRef.current[slot][dir] = on;
+  };
 
   useEffect(() => {
     running.current = true;
@@ -60,100 +70,102 @@ export function MeteorMap() {
     if (!ctx) return;
     ctx.imageSmoothingEnabled = false;
 
-    const skin = equippedSkin();
-    const pads = [
-      { left: false, right: false, jump: false, fire: false },
-      { left: false, right: false, jump: false, fire: false },
-    ];
-
-    const makePlayer = (slot: number, x: number): Fighter => ({
-      x,
-      y: 36,
-      vx: 0,
-      vy: 0,
-      facing: 1,
-      frame: 0,
-      cool: 0,
-      muzzle: 0,
-      gun: "none",
-      slot,
-      deadWait: 0,
-      airborne: false,
-    });
-
-    let p1 = makePlayer(0, 70);
-    let p2 = makePlayer(1, 110);
-    p2.facing = -1;
-    let shots: Array<{ x: number; y: number; vx: number; team: number }> = [];
-    let loot: Pickup[] = [];
-    let tick = 0;
-    let secretHold = 0;
-    let toast = "SPAWN ISLAND";
-    let toastLife = 90;
-    let seeded = false;
+    const pads = padsRef.current;
 
     const groundY = () => H - GROUND - 16;
-    const PAD_Y = 36;
 
-    const seedTilted = () => {
-      if (seeded) return;
-      seeded = true;
-      loot = [
-        { x: 28, y: groundY() + 8, gun: "ar" },
-        { x: 78, y: groundY() + 8, gun: "pump" },
-        { x: 168, y: groundY() + 8, gun: "exotic" },
-        { x: 210, y: 96, gun: "drum", secret: "drum" },
-        { x: 118, y: groundY() + 8, gun: "none", secret: "shard" },
-        { x: 12, y: groundY() + 8, gun: "none", secret: "note" },
-      ];
+    const makeDancer = (
+      slot: number,
+      x: number,
+      emote: EmoteId,
+      bot: boolean
+    ): Dancer => ({
+      x,
+      y: groundY(),
+      vx: 0,
+      vy: 0,
+      facing: slot === 1 ? -1 : 1,
+      frame: 0,
+      slot,
+      emote,
+      danceUntil: bot ? 999999 : 0,
+      bot,
+    });
+
+    const p1 = makeDancer(0, 64, loadPass().emote, false);
+    const p2 = makeDancer(1, 108, "floss", false);
+    const npcA = makeDancer(2, 28, "griddy", true);
+    const npcB = makeDancer(3, 188, "wave", true);
+    npcB.facing = -1;
+    const people = [p1, p2, npcA, npcB];
+    let tick = 0;
+    let toast = "HANG OUT";
+    let toastLife = 80;
+    let shardHold = 0;
+    let noteHold = 0;
+
+    const startDance = (who: Dancer, id?: EmoteId) => {
+      if (who.bot) {
+        who.danceUntil = tick + DANCE_FRAMES;
+        return;
+      }
+      if (id && !isEmoteUnlocked(id, loadPass())) {
+        sfx.hit();
+        return;
+      }
+      if (playEmote(id)) {
+        who.emote = id ?? loadPass().emote;
+        who.danceUntil = tick + DANCE_FRAMES;
+        sfx.emote();
+        toast = EMOTES.find((e) => e.id === who.emote)?.name ?? "EMOTE";
+        toastLife = 50;
+      } else {
+        sfx.hit();
+      }
     };
 
-    const toSpawn = (who: Fighter) => {
-      who.x = 70 + who.slot * 40;
-      who.y = PAD_Y;
-      who.vx = 0;
-      who.vy = 0;
-      who.gun = "none";
-      who.deadWait = 0;
-      who.airborne = false;
-      toast = "BACK TO SPAWN";
-      toastLife = 70;
-      sfx.warp();
+    const onDance = () => {
+      p1.emote = loadPass().emote;
+      p1.danceUntil = tick + DANCE_FRAMES;
     };
-
-    seedTilted();
-    toast = "SPAWN ISLAND";
-    toastLife = 90;
+    window.addEventListener(DANCE_EVENT, onDance);
 
     const onKey = (e: KeyboardEvent, down: boolean) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
       if (e.code === "KeyA") pads[0].left = down;
       if (e.code === "KeyD") pads[0].right = down;
       if (e.code === "KeyW" || e.code === "Space") pads[0].jump = down;
-      if (e.code === "KeyZ" || e.code === "KeyX") pads[0].fire = down;
       if (e.code === "ArrowLeft") pads[1].left = down;
       if (e.code === "ArrowRight") pads[1].right = down;
       if (e.code === "ArrowUp") pads[1].jump = down;
-      if (e.code === "KeyK" || e.code === "Period") pads[1].fire = down;
-      if (down && (e.code === "Space" || e.code.startsWith("Arrow"))) e.preventDefault();
+      if (down && e.code === "KeyB") {
+        e.preventDefault();
+        startDance(p1);
+      }
+      if (down && e.code === "KeyN") {
+        e.preventDefault();
+        startDance(p2, loadPass().emote);
+      }
+      if (down && /^Digit[1-5]$/.test(e.code)) {
+        const emote = EMOTES[Number(e.code.slice(5)) - 1];
+        if (emote) {
+          e.preventDefault();
+          startDance(p1, emote.id);
+        }
+      }
+      if (down && (e.code === "Space" || e.code.startsWith("Arrow"))) {
+        e.preventDefault();
+      }
     };
     const down = (e: KeyboardEvent) => onKey(e, true);
     const up = (e: KeyboardEvent) => onKey(e, false);
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
-
-    const fire = (who: Fighter) => {
-      if (who.cool > 0 || who.gun === "none") return;
-      const spd = who.gun === "exotic" ? 4.2 : who.gun === "drum" ? 3.2 : 3.6;
-      shots.push({
-        x: who.facing > 0 ? who.x + 18 : who.x - 4,
-        y: who.y + 10,
-        vx: who.facing * spd,
-        team: who.slot,
-      });
-      who.muzzle = 4;
-      who.cool = who.gun === "pump" || who.gun === "drum" ? 28 : 12;
-      sfx.shoot();
-    };
 
     const drawMeteor = () => {
       ctx.fillStyle = "#2a1a18";
@@ -168,132 +180,85 @@ export function MeteorMap() {
       ctx.fillRect(108, 128, 40, 10);
     };
 
+    let raf = 0;
     const loop = () => {
       if (!running.current) return;
       tick += 1;
       if (toastLife > 0) toastLife -= 1;
+      p1.emote = loadPass().emote;
 
-      const players = [p1, p2];
-      for (const who of players) {
-        if (who.deadWait > 0) {
-          who.deadWait -= 1;
-          if (who.deadWait === 0) toSpawn(who);
-          continue;
-        }
-        const pad = pads[who.slot];
-        who.vx = pad.left ? -1.3 : pad.right ? 1.3 : 0;
-        if (pad.left) who.facing = -1;
-        if (pad.right) who.facing = 1;
-        const onPad = !who.airborne && who.y <= PAD_Y + 2;
-        if (onPad) {
-          who.x = Math.max(48, Math.min(176, who.x + who.vx));
-          who.y = PAD_Y;
-          if (pad.jump) {
-            who.airborne = true;
-            who.vy = 1.6;
-            seedTilted();
-            toast = "DROPPING  •  1 HP";
-            toastLife = 60;
-            sfx.drop();
-          }
+      if (tick % 220 === 0) startDance(npcA);
+      if (tick % 260 === 40) startDance(npcB);
+
+      for (const who of people) {
+        const pad = who.bot
+          ? { left: false, right: false, jump: false }
+          : pads[who.slot];
+        const dancing = tick < who.danceUntil;
+        if (!dancing) {
+          who.vx = pad.left ? -1.2 : pad.right ? 1.2 : 0;
+          if (pad.left) who.facing = -1;
+          if (pad.right) who.facing = 1;
         } else {
-          const onGround = who.y >= groundY() - 0.2;
-          if (pad.jump && onGround) {
-            who.vy = -4.1;
-            sfx.jump();
-          }
-          who.vy += who.airborne && who.y < groundY() - 8 ? 0.18 : 0.22;
-          who.y += who.vy;
-          if (who.y >= groundY()) {
-            who.y = groundY();
-            who.vy = 0;
-            who.airborne = false;
-          }
-          who.x = Math.max(4, Math.min(W - 20, who.x + who.vx));
-          if (who.cool > 0) who.cool -= 1;
-          if (who.muzzle > 0) who.muzzle -= 1;
-          if (pad.fire && !onPad) fire(who);
-
-          for (const drop of [...loot]) {
-            if (Math.abs(who.x - drop.x) < 12 && Math.abs(who.y - drop.y) < 16) {
-              if (drop.gun !== "none") {
-                who.gun = drop.gun;
-                loot = loot.filter((d) => d !== drop);
-                sfx.pickup();
-                toast = GUN_NAME[who.gun];
-                toastLife = 50;
-              } else if (drop.secret === "shard") {
-                secretHold += 1;
-                if (secretHold > 50) {
-                  const got = addFind("meteor-shard");
-                  toast = got.fresh ? "SECRET  METEOR SHARD" : "SHARD OWNED";
-                  toastLife = 80;
-                  secretHold = 0;
-                  loot = loot.filter((d) => d !== drop);
-                  sfx.xp();
-                }
-              } else if (drop.secret === "note" && who.y >= groundY() - 1) {
-                const got = addFind("secret-note");
-                toast = got.fresh ? "SECRET  VAULT NOTE" : "NOTE OWNED";
-                toastLife = 80;
-                loot = loot.filter((d) => d !== drop);
-                sfx.xp();
-              } else if (drop.secret === "drum") {
-                who.gun = "drum";
-                addFind("exotic-drum");
-                loot = loot.filter((d) => d !== drop);
-                toast = "EXOTIC DRUM";
-                toastLife = 60;
-                sfx.coin();
-              }
-            }
-          }
+          who.vx *= 0.4;
         }
+        const onGround = who.y >= groundY() - 0.2;
+        if (pad.jump && onGround) {
+          who.vy = JUMP_V;
+          sfx.jump();
+        }
+        who.vy += GRAVITY;
+        who.y += who.vy;
+        if (who.y >= groundY()) {
+          who.y = groundY();
+          who.vy = 0;
+        }
+        who.x = Math.max(4, Math.min(W - 20, who.x + who.vx));
         if (Math.abs(who.vx) > 0.2 && tick % 6 === 0) who.frame ^= 1;
       }
 
-      for (let i = shots.length - 1; i >= 0; i--) {
-        const shot = shots[i];
-        shot.x += shot.vx;
-        if (shot.x < -6 || shot.x > W + 6) {
-          shots.splice(i, 1);
-          continue;
+      const crater = Math.abs(p1.x - 120) < 18 && p1.y >= groundY() - 1;
+      if (crater) {
+        shardHold += 1;
+        if (shardHold === 40) {
+          const got = addFind("meteor-shard");
+          toast = got.fresh ? "METEOR SHARD" : "SHARD OWNED";
+          toastLife = 80;
+          sfx.xp();
         }
-        for (const who of players) {
-          if (who.slot === shot.team || who.deadWait > 0 || (!who.airborne && who.y <= PAD_Y + 2)) continue;
-          if (
-            shot.x > who.x + 2 &&
-            shot.x < who.x + 14 &&
-            shot.y > who.y + 2 &&
-            shot.y < who.y + 14
-          ) {
-            who.deadWait = 24;
-            shots.splice(i, 1);
-            sfx.ko();
-            toast = `P${who.slot + 1} DOWN  •  SPAWN`;
-            toastLife = 70;
-            break;
-          }
+      } else {
+        shardHold = 0;
+      }
+      const vault = p1.x < 22 && p1.y >= groundY() - 1;
+      if (vault) {
+        noteHold += 1;
+        if (noteHold === 40) {
+          const got = addFind("secret-note");
+          toast = got.fresh ? "VAULT NOTE" : "NOTE OWNED";
+          toastLife = 80;
+          sfx.xp();
         }
+      } else {
+        noteHold = 0;
       }
 
-      if (tick % 12 === 0) {
-        setLoadout(`P1 ${GUN_NAME[p1.gun]}  ·  P2 ${GUN_NAME[p2.gun]}`);
-        const onPad = !p1.airborne && p1.y <= PAD_Y + 2;
-        setBanner(
-          onPad
-            ? "SPAWN ISLAND  •  SPACE TO DROP"
-            : "TILTED + METEOR  •  1 HP  •  DIE = LOSE GUNS"
+      if (tick % 20 === 0) {
+        const dancing = people.filter((p) => tick < p.danceUntil).length;
+        setBanner("CHILL PLAZA  •  B TO EMOTE");
+        setStatus(
+          dancing
+            ? `${dancing} dancing on the pad`
+            : "P1 A/D W  ·  P2 arrows  ·  B dance  ·  N for P2"
         );
       }
 
       const g = ctx.createLinearGradient(0, 0, 0, H);
       g.addColorStop(0, "#183868");
-      g.addColorStop(0.35, "#241018");
+      g.addColorStop(0.4, "#241018");
       g.addColorStop(1, "#402018");
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, W, H);
-      const towers = [
+      const towers: Array<[number, number]> = [
         [8, 52],
         [40, 88],
         [84, 120],
@@ -311,56 +276,45 @@ export function MeteorMap() {
       ctx.fillStyle = "#2a1a14";
       ctx.fillRect(0, H - GROUND, W, GROUND);
       drawMeteor();
-      ctx.fillStyle = "#7ec8f8";
-      ctx.fillRect(44, PAD_Y + 16, 168, 6);
+      ctx.fillStyle = "#3cdcff";
+      ctx.fillRect(8, H - GROUND - 10, 10, 10);
       ctx.fillStyle = "#c4a06a";
-      ctx.fillRect(48, PAD_Y + 18, 160, 8);
+      ctx.fillRect(48, H - GROUND, 160, 4);
       ctx.fillStyle = "#ffcc00";
       ctx.font = '8px "Press Start 2P", monospace';
-      ctx.fillText("SPAWN", 104, 28);
+      ctx.fillText("PLAZA", 104, 28);
       ctx.fillStyle = "#ff6a00";
       ctx.fillText("METEOR", 104, 86);
 
-      for (const drop of loot) {
-        if (drop.gun === "none" && drop.secret === "shard") {
-          ctx.fillStyle = tick % 20 < 10 ? "#ff6a00" : "#ffcc00";
-          ctx.fillRect(drop.x, drop.y - 4, 8, 8);
-        } else if (drop.gun === "none" && drop.secret === "note") {
-          ctx.fillStyle = "#3cdcff";
-          ctx.fillRect(drop.x, drop.y, 6, 6);
-        } else {
-          ctx.fillStyle = gunColor(drop.gun);
-          ctx.fillRect(drop.x, drop.y, 10, 4);
-        }
-      }
-
-      const pal2 = {
-        ...skin.palette,
-        O: "#3d7cff",
-        G: "#3d7cff",
-      };
-      for (const who of players) {
-        if (who.deadWait > 12) continue;
+      const skin = equippedSkin();
+      const pal2 = { ...skin.palette, O: "#3d7cff", G: "#3d7cff" };
+      const palNpc = { ...skin.palette, O: "#ff4dae", G: "#ff4dae" };
+      for (const who of people) {
+        const dancing = tick < who.danceUntil;
+        const pose = dancing ? emotePose(who.emote, tick) : idlePose(tick);
+        const pal = who.bot ? palNpc : who.slot === 0 ? skin.palette : pal2;
         drawSprite(
           ctx,
-          spriteRows(skin.sprite, who.frame),
-          who.x,
-          who.y,
-          who.facing < 0,
-          who.slot === 0 ? skin.palette : pal2
+          spriteRows(who.bot ? "fox" : skin.sprite, pose.frame),
+          who.x + pose.ox,
+          who.y + pose.oy,
+          dancing ? pose.flip : who.facing < 0,
+          pal
         );
-        if (who.gun !== "none") {
-          drawGun(ctx, who.x, who.y, who.facing, who.muzzle > 0);
+        if (who.slot === 0) {
+          drawSidekick(ctx, loadPass().sidekick, who.x + 16, who.y + 8, tick);
+        }
+        if (dancing) {
+          const label = EMOTES.find((e) => e.id === who.emote)?.name ?? "EMOTE";
+          drawEmoteName(ctx, label, who.x - 10, who.y - 10);
         }
       }
-      ctx.fillStyle = "#ffcc00";
-      for (const shot of shots) ctx.fillRect(shot.x, shot.y, 5, 2);
 
       ctx.fillStyle = "#00e800";
       ctx.font = '8px "Press Start 2P", monospace';
-      ctx.fillText("HP 1", 8, 14);
+      ctx.fillText("NO GUNS", 8, 14);
       ctx.fillStyle = "#ffcc00";
-      ctx.fillText(!p1.airborne && p1.y <= PAD_Y + 2 ? "SAFE" : "FIGHT", 200, 14);
+      ctx.fillText("HANG", 208, 14);
       if (toastLife > 0) {
         ctx.fillStyle = "rgba(10,0,20,0.7)";
         ctx.fillRect(16, 96, 224, 28);
@@ -370,12 +324,13 @@ export function MeteorMap() {
 
       raf = requestAnimationFrame(loop);
     };
-    let raf = requestAnimationFrame(loop);
+    raf = requestAnimationFrame(loop);
     return () => {
       running.current = false;
       cancelAnimationFrame(raf);
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
+      window.removeEventListener(DANCE_EVENT, onDance);
     };
   }, []);
 
@@ -385,9 +340,11 @@ export function MeteorMap() {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
           <div>
             <p className="font-vt mb-3 text-xl text-[#f8f0d8]">
-              Tilted Towers with a massive meteor in the middle. Everyone has{" "}
-              <span className="text-[#e02020]">1 HP</span>. Grab AR, pump, and
-              exotics. Die and you lose the guns and respawn on Spawn Island.
+              This is VIPER&apos;s Fortnite Creative map:{" "}
+              <span className="text-[#ffcc00]">Tilted Towers</span> with a giant
+              meteor in the middle, secrets in the crater and the vault, and a
+              short on the way. The pad below is a chill plaza — walk, jump,
+              and emote together. No guns.
             </p>
             <div className="game-stage pixel-bevel bg-[#05000a] p-2 sm:p-3">
               <canvas
@@ -399,16 +356,83 @@ export function MeteorMap() {
               />
             </div>
             <p className="font-press mt-3 text-[9px] text-[#ffcc00]">{banner}</p>
-            <p className="font-vt text-lg text-[#c9a0ff]">{loadout}</p>
+            <p className="font-vt text-lg text-[#c9a0ff]">{status}</p>
+            <div className="mt-3 grid grid-cols-4 gap-2 sm:hidden">
+              <Button
+                variant="arcade"
+                className="h-14 text-[10px]"
+                onPointerDown={() => hold(0, "left", true)}
+                onPointerUp={() => hold(0, "left", false)}
+                onPointerLeave={() => hold(0, "left", false)}
+              >
+                ◀
+              </Button>
+              <Button
+                variant="arcade"
+                className="h-14 text-[10px]"
+                onPointerDown={() => hold(0, "jump", true)}
+                onPointerUp={() => hold(0, "jump", false)}
+                onPointerLeave={() => hold(0, "jump", false)}
+              >
+                JUMP
+              </Button>
+              <Button
+                variant="pixel"
+                className="h-14 text-[10px]"
+                onClick={() => {
+                  if (playEmote()) sfx.emote();
+                }}
+              >
+                EMOTE
+              </Button>
+              <Button
+                variant="arcade"
+                className="h-14 text-[10px]"
+                onPointerDown={() => hold(0, "right", true)}
+                onPointerUp={() => hold(0, "right", false)}
+                onPointerLeave={() => hold(0, "right", false)}
+              >
+                ▶
+              </Button>
+            </div>
             <p className="font-vt mt-2 text-lg text-[#f8f0d8]">
-              P1 A/D W Z. P2 arrows + K. Space from spawn to drop. Stand in the
-              orange crater, the left basement glow, and the roof exotic — those
-              are secrets. Finds land in your locker.
+              P1 A/D walk, W jump, B emote, 1–5 pick a dance. P2 arrows + N to
+              dance. Stand on the orange meteor for the shard. Left basement
+              glow is the vault note. Finds land in your locker.
             </p>
           </div>
           <div>
             <div className="mb-3 flex items-center gap-2">
               <PixelIcon name="map" />
+              <h3 className="font-press text-[10px] text-[#ffcc00]">
+                THE CREATIVE MAP
+              </h3>
+            </div>
+            <div className="pixel-bevel mb-4 bg-[#05000a] p-4">
+              <p className="font-press text-[8px] leading-5 text-[#3cdcff]">
+                TILTED TOWERS
+              </p>
+              <p className="font-vt mt-2 text-lg text-[#f8f0d8]">
+                Classic Chapter 1 skyline. Clock tower, roofs, and the old
+                fight that never really left.
+              </p>
+              <p className="font-press mt-4 text-[8px] leading-5 text-[#ff6a00]">
+                THE METEOR
+              </p>
+              <p className="font-vt mt-2 text-lg text-[#f8f0d8]">
+                A giant rock sits in the middle of town. Crater heat, orange
+                glow, secrets if you know where to stand.
+              </p>
+              <p className="font-press mt-4 text-[8px] leading-5 text-[#ffcc00]">
+                SECRETS
+              </p>
+              <p className="font-vt mt-2 text-lg text-[#f8f0d8]">
+                Vault. Roof cache. Meteor core. VIPER is filming a short about
+                them — until it drops, this page is the briefing.
+              </p>
+            </div>
+            <div className="mb-3 flex items-center gap-2">
+              <PixelIcon name="youtube" />
               <h3 className="font-press text-[10px] text-[#ffcc00]">
                 MYSTERY SHORT
               </h3>
@@ -429,13 +453,14 @@ export function MeteorMap() {
                 </div>
               ) : (
                 <div className="relative flex aspect-[9/16] flex-col items-center justify-center bg-[#05000a] text-center">
-                  <p className="font-press text-[10px] text-[#ff6a00]">COMING SOON</p>
+                  <p className="font-press text-[10px] text-[#ff6a00]">
+                    COMING SOON
+                  </p>
                   <p className="font-press mt-4 px-4 text-[8px] leading-5 text-[#ffcc00]">
                     VIPER IS POSTING A SHORT ABOUT THIS MAP AND THE SECRETS
                   </p>
                   <p className="font-vt mt-4 px-4 text-lg text-[#c9a0ff]">
-                    The meteor. The vault. The roof exotic. Watch the tape when
-                    it drops.
+                    The meteor. The vault. Watch the tape when it drops.
                   </p>
                 </div>
               )}
@@ -447,9 +472,7 @@ export function MeteorMap() {
               variant="arcade"
               className="mt-3 h-10 w-full text-[9px]"
               nativeButton={false}
-              render={
-                <a href="#locker" onClick={() => sfx.select()} />
-              }
+              render={<a href="#locker" onClick={() => sfx.select()} />}
             >
               OPEN LOCKER FINDS
             </Button>

@@ -103,7 +103,7 @@ export function Locker() {
           <div>
             <p className="font-vt mb-4 text-xl text-[#c9d46a]">
               Island finds, dances, and pets live here. Pick something up in
-              VIPER DROP or on the meteor map and it shows in Finds.
+              VIPER DROP or walk the Tilted plaza and it shows in Finds.
             </p>
             <div className="mb-4 flex flex-wrap gap-2">
               {(

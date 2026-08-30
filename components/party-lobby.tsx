@@ -2,9 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import {
+  DANCE_EVENT,
+  DANCE_FRAMES,
   EMOTES,
   EMPTY_PASS,
-  equipEmote,
   equipSidekick,
   equipSkin,
   isEmoteUnlocked,
@@ -12,15 +13,18 @@ import {
   isUnlocked,
   loadPass,
   PASS_EVENT,
+  playEmote,
   SIDEKICKS,
   SKINS,
   type PassState,
 } from "@/lib/pass";
 import { sfx } from "@/lib/sfx";
 import {
+  drawEmoteName,
   drawSidekick,
   drawSprite,
   emotePose,
+  idlePose,
   spriteRows,
 } from "@/lib/sprites";
 import { useEffect, useRef, useState } from "react";
@@ -28,6 +32,7 @@ import { useEffect, useRef, useState } from "react";
 function LobbyPad() {
   const ref = useRef<HTMLCanvasElement>(null);
   const [pass, setPass] = useState<PassState>(EMPTY_PASS);
+  const running = useRef(true);
 
   useEffect(() => {
     const sync = () => setPass(loadPass());
@@ -37,15 +42,25 @@ function LobbyPad() {
   }, []);
 
   useEffect(() => {
+    running.current = true;
     const canvas = ref.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     let tick = 0;
+    let danceUntil = DANCE_FRAMES;
     let raf = 0;
-    const skin = SKINS.find((s) => s.id === pass.equipped) ?? SKINS[0];
+    const onDance = () => {
+      danceUntil = tick + DANCE_FRAMES;
+    };
+    window.addEventListener(DANCE_EVENT, onDance);
     const loop = () => {
+      if (!running.current) return;
       tick += 1;
+      const live = loadPass();
+      const skin = SKINS.find((s) => s.id === live.equipped) ?? SKINS[0];
+      const dancing = tick < danceUntil;
+      const pose = dancing ? emotePose(live.emote, tick) : idlePose(tick);
       ctx.imageSmoothingEnabled = false;
       ctx.fillStyle = "#102848";
       ctx.fillRect(0, 0, 160, 120);
@@ -56,23 +71,38 @@ function LobbyPad() {
       ctx.fillStyle = "#2a6a28";
       ctx.fillRect(0, 86, 160, 34);
       ctx.fillStyle = "#c4a06a";
-      ctx.fillRect(48, 82, 64, 8);
+      ctx.fillRect(40, 82, 80, 8);
       ctx.fillStyle = "#8a7040";
-      ctx.fillRect(52, 80, 56, 2);
-      const pose = emotePose(pass.emote, tick);
+      ctx.fillRect(44, 80, 72, 2);
+      ctx.save();
+      ctx.scale(2, 2);
       drawSprite(
         ctx,
         spriteRows(skin.sprite, pose.frame),
-        72 + pose.ox,
-        64 + pose.oy,
+        36 + pose.ox / 2,
+        28 + pose.oy / 2,
         pose.flip,
         skin.palette
       );
-      drawSidekick(ctx, pass.sidekick, 94, 78, tick);
+      drawSidekick(ctx, live.sidekick, 50, 42, tick);
+      ctx.restore();
+      if (dancing) {
+        const label =
+          EMOTES.find((e) => e.id === live.emote)?.name ?? "EMOTE";
+        drawEmoteName(ctx, label, 40, 18);
+      } else {
+        ctx.fillStyle = "#ffcc00";
+        ctx.font = '8px "Press Start 2P", monospace';
+        ctx.fillText("CLICK A DANCE", 20, 18);
+      }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      running.current = false;
+      cancelAnimationFrame(raf);
+      window.removeEventListener(DANCE_EVENT, onDance);
+    };
   }, [pass.equipped, pass.emote, pass.sidekick]);
 
   return (
@@ -94,7 +124,11 @@ export function PartyLobby() {
     const sync = () => setPass(loadPass());
     sync();
     window.addEventListener(PASS_EVENT, sync);
-    return () => window.removeEventListener(PASS_EVENT, sync);
+    window.addEventListener(DANCE_EVENT, sync);
+    return () => {
+      window.removeEventListener(PASS_EVENT, sync);
+      window.removeEventListener(DANCE_EVENT, sync);
+    };
   }, []);
 
   return (
@@ -108,6 +142,16 @@ export function PartyLobby() {
           ? ` · ${SIDEKICKS.find((s) => s.id === pass.sidekick)?.name}`
           : ""}
       </p>
+      <Button
+        variant="pixel"
+        className="mt-2 h-10 w-full text-[9px]"
+        onClick={() => {
+          if (playEmote()) sfx.emote();
+          else sfx.hit();
+        }}
+      >
+        PLAY EMOTE
+      </Button>
       <div className="mt-3 flex gap-2">
         {(["skins", "emotes", "pets"] as const).map((id) => (
           <Button
@@ -157,7 +201,7 @@ export function PartyLobby() {
                   key={emote.id}
                   type="button"
                   onClick={() => {
-                    if (unlocked && equipEmote(emote.id)) sfx.xp();
+                    if (unlocked && playEmote(emote.id)) sfx.emote();
                     else sfx.hit();
                   }}
                   className={`pixel-border p-2 text-left ${
@@ -201,8 +245,8 @@ export function PartyLobby() {
           : null}
       </div>
       <p className="font-vt mt-2 text-base text-[#c9a0ff]">
-        Wait here, swap outfits, dance, then drop with friends. B to emote
-        on the cart. Pets and dances unlock from achievements and island finds.
+        Click a dance or PLAY EMOTE — the fox jumps and the name pops up. On
+        the cart, press B (or 1–5) to dance on the title screen.
       </p>
     </div>
   );
