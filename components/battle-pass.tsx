@@ -4,13 +4,13 @@ import { PixelIcon, PixelPanel } from "@/components/pixel-panel";
 import { Button } from "@/components/ui/button";
 import {
   equipSkin,
-  equippedSkin,
   isUnlocked,
   loadPass,
   maxPassXp,
   nextSkin,
   PASS_EVENT,
   SKINS,
+  skinById,
   type PassState,
 } from "@/lib/pass";
 import { sfx } from "@/lib/sfx";
@@ -61,7 +61,7 @@ export function BattlePass() {
     return () => window.removeEventListener(PASS_EVENT, sync);
   }, []);
 
-  const equipped = equippedSkin();
+  const equipped = skinById(pass.equipped);
   const upcoming = nextSkin(pass);
   const cap = maxPassXp();
   const pct = Math.min(100, Math.round((pass.xp / cap) * 100));
