@@ -7,11 +7,11 @@ import { sfx } from "@/lib/sfx";
 export function GameLibrary() {
   return (
     <section id="library" className="section-wrap py-16 sm:py-20">
-      <PixelPanel title="VIPER LIBRARY  •  TWO CABINETS">
+      <PixelPanel title="VIPER LIBRARY  •  THREE CABINETS">
         <p className="font-vt mb-6 text-xl text-[#c9a0ff] sm:text-2xl">
-          Same island energy. Two carts. 8-bit drop or 3D Royale.
+          Lobby, drop, or fight on VIPER&apos;s Tilted meteor map.
         </p>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           <a
             href="#game"
             onClick={() => sfx.select()}
@@ -20,11 +20,26 @@ export function GameLibrary() {
             <p className="font-press text-[10px] text-[#3cdcff]">01  NES CART</p>
             <h3 className="font-press mt-2 text-sm text-[#ffcc00]">VIPER DROP</h3>
             <p className="font-vt mt-3 text-xl text-[#f8f0d8]">
-              Side-scrolling 8-bit Fortnite. Squads, knocks, Chapter 1 campaign,
-              Peely and Jonesy.
+              Pre-game lobby, skins, emotes, pets, squads, knocks, Chapter 1.
             </p>
             <Button variant="arcade" className="pointer-events-none mt-4 h-10">
-              PLAY 8-BIT
+              ENTER LOBBY
+            </Button>
+          </a>
+          <a
+            href="#map"
+            onClick={() => sfx.coin()}
+            className="pixel-border bg-[#05000a] p-5 transition hover:ring-4 hover:ring-[#ff6a00]"
+          >
+            <p className="font-press text-[10px] text-[#ff6a00]">02  CREATIVE</p>
+            <h3 className="font-press mt-2 text-sm text-[#ff6a00]">
+              TILTED + METEOR
+            </h3>
+            <p className="font-vt mt-3 text-xl text-[#f8f0d8]">
+              1 HP. Exotics. Secrets. Die and you go back to spawn island.
+            </p>
+            <Button variant="arcade" className="pointer-events-none mt-4 h-10">
+              PLAY MAP
             </Button>
           </a>
           <a
@@ -32,13 +47,12 @@ export function GameLibrary() {
             onClick={() => sfx.coin()}
             className="pixel-border bg-[#05000a] p-5 transition hover:ring-4 hover:ring-[#00e800]"
           >
-            <p className="font-press text-[10px] text-[#00e800]">02  3D MATCH</p>
+            <p className="font-press text-[10px] text-[#00e800]">03  3D MATCH</p>
             <h3 className="font-press mt-2 text-sm text-[#00e800]">
               ISLAND DROP
             </h3>
             <p className="font-vt mt-3 text-xl text-[#f8f0d8]">
-              Smooth 3D Fortnite look — Peely, Chief, Battle Bus, free 360°
-              camera. Not the 8-bit cart.
+              Smooth 3D Fortnite look. Free 360 camera. Not the 8-bit cart.
             </p>
             <span className="mt-4 inline-flex items-center gap-2">
               <PixelIcon name="game" />

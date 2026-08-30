@@ -32,8 +32,12 @@ On Pages there is no Node server, so the hall of fame uses `localStorage`. Local
 ## What's on the cart
 
 - **Hero** — VIPER drop zone, battle bus sky, countdown to the next season on October 1
-- **VIPER TV** — CRT bezel around `@coolfox3384` videos. First watch of each tape banks **+50 Battle Pass XP**
-- **Battle Pass** — eight skins, XP bar, equip from the track
+- **VIPER TV** — Watch a tape for **+8 XP** (once). Like a tape for **+12 XP**. Subscribe, then claim the **Channel 3384** exclusive skin.
+- **Battle Pass** — Slow grind. A match caps around **35 XP**. Tiers go through Bad Kit, Kit, Sonic, Phantom, Chief, and Mythic. You cannot finish the pass in one game.
+- **Lobby** — Pre-game pad: swap skins, emotes (Floss, Griddy), and pets, then wait for friends with an invite code.
+- **Achievements** — Wins unlock Floss and the **VIPER** skin. 10 elims unlock Griddy. Island finds unlock cat/dog sidekicks.
+- **Locker** — Skins, emotes, pets, finds from in-game loot, and achievements.
+- **Tilted + Meteor** — VIPER's map: Tilted Towers with a giant meteor, 1 HP, exotics, secrets, spawn island on death. Mystery short slot for the upcoming secrets video.
 - **Library** — two cabinets: 8-bit **VIPER DROP** and 3D **VIPER Royale**
 - **VIPER DROP** — 8-bit Fortnite: battle bus, health + shields, loot, jump, POIs
 - **VIPER Royale / Island Drop** — third-person Battle Royale with smooth (not blocky) Fortnite-style models: Peely, Master Chief armor, a detailed Battle Bus, sunny sky, storm, pickaxe/AR/pump, builds, 10 bots, original drop soundtrack, Victory Royale. Free 360° mouse look. Uses your equipped locker skin. This 3D match does **not** use the 8-bit VIPER cabinet look.

@@ -4,6 +4,7 @@ import { CrtOverlay } from "@/components/crt-overlay";
 import { GameLibrary } from "@/components/game-library";
 import { Hero } from "@/components/hero";
 import { Locker } from "@/components/locker";
+import { MeteorMap } from "@/components/meteor-map";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 import { Timeline } from "@/components/timeline";
@@ -22,6 +23,7 @@ export default function Home() {
         <BattlePass />
         <GameLibrary />
         <ViperDrop />
+        <MeteorMap />
         <ViperRoyale />
         <Timeline />
         <Locker />

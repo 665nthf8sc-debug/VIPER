@@ -2,22 +2,24 @@
 
 import { PixelIcon, PixelPanel, RpgDialog } from "@/components/pixel-panel";
 import { Button } from "@/components/ui/button";
-import { grantWatchXp } from "@/lib/pass";
+import { grantLikeXp, grantWatchXp, claimSubscriber, loadPass, PASS_EVENT } from "@/lib/pass";
 import { sfx } from "@/lib/sfx";
-import {
-  CHANNEL_HANDLE,
-  CHANNEL_NAME,
-  CHANNEL_URL,
-  FEATURED_VIDEOS,
-  SUBSCRIBE_URL,
-} from "@/lib/youtube";
-import { useState } from "react";
+import { CHANNEL_HANDLE, CHANNEL_NAME, CHANNEL_URL, FEATURED_VIDEOS, SUBSCRIBE_URL } from "@/lib/youtube";
+import { useEffect, useState } from "react";
 
 export function YoutubeTv() {
   const [active, setActive] = useState<string>(FEATURED_VIDEOS[0].id);
   const [xpNote, setXpNote] = useState("");
+  const [subbed, setSubbed] = useState(false);
   const current =
     FEATURED_VIDEOS.find((v) => v.id === active) ?? FEATURED_VIDEOS[0];
+
+  useEffect(() => {
+    const sync = () => setSubbed(loadPass().subscribed);
+    sync();
+    window.addEventListener(PASS_EVENT, sync);
+    return () => window.removeEventListener(PASS_EVENT, sync);
+  }, []);
 
   const playTape = (id: string) => {
     sfx.select();
@@ -81,16 +83,41 @@ export function YoutubeTv() {
               </p>
             ) : (
               <p className="font-press mt-1 text-[10px] text-[#ffcc00]">
-                FIRST WATCH = +50 XP
+                FIRST WATCH = +8 XP  ·  LIKE = +12 XP
               </p>
             )}
-            <Button
-              variant="arcade"
-              className="mt-3 h-10 px-4 text-[10px]"
-              onClick={() => playTape(active)}
-            >
-              BANK WATCH XP
-            </Button>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                variant="arcade"
+                className="h-10 px-4 text-[10px]"
+                onClick={() => playTape(active)}
+              >
+                BANK WATCH XP
+              </Button>
+              <Button
+                variant="pixel"
+                className="h-10 px-4 text-[10px]"
+                nativeButton={false}
+                render={
+                  <a
+                    href={`https://www.youtube.com/watch?v=${active}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => {
+                      const reward = grantLikeXp(active);
+                      if (reward.gained > 0) {
+                        sfx.xp();
+                        setXpNote(`+${reward.gained} LIKE XP`);
+                      } else {
+                        setXpNote("ALREADY LIKED THIS TAPE");
+                      }
+                    }}
+                  />
+                }
+              >
+                LIKE TAPE + XP
+              </Button>
+            </div>
           </div>
 
           <div className="flex flex-col gap-4">
@@ -113,6 +140,17 @@ export function YoutubeTv() {
             >
               <PixelIcon name="youtube" />
               SUBSCRIBE
+            </Button>
+            <Button
+              variant={subbed ? "arcade" : "pixel"}
+              className="h-12 w-full text-[10px]"
+              onClick={() => {
+                claimSubscriber();
+                sfx.xp();
+                setXpNote("CHANNEL 3384 SKIN UNLOCKED");
+              }}
+            >
+              {subbed ? "SUB SKIN UNLOCKED" : "I SUBBED  •  CLAIM SKIN"}
             </Button>
             <a
               href={CHANNEL_URL}

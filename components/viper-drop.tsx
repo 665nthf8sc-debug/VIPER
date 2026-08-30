@@ -1,19 +1,26 @@
 "use client";
 
 import { PixelIcon, PixelPanel } from "@/components/pixel-panel";
+import { PartyLobby } from "@/components/party-lobby";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MISSIONS } from "@/lib/campaign";
 import { loadHallOfFame, saveHallOfFame } from "@/lib/client-scores";
 import {
+  addFind,
   beatCampaignMission,
   equippedSkin,
   grantPlayXp,
+  loadPass,
+  recordDrop,
+  recordElims,
+  recordWin,
+  type FindId,
   type Skin,
 } from "@/lib/pass";
 import { POIS, type Poi } from "@/lib/pois";
 import { sfx } from "@/lib/sfx";
-import { drawBattleBus, drawGun, drawSprite, spriteRows } from "@/lib/sprites";
+import { drawBattleBus, drawGun, drawSidekick, drawSprite, emotePose, spriteRows } from "@/lib/sprites";
 import {
   EMPTY_PAD,
   makeInviteCode,
@@ -53,7 +60,11 @@ type Shot = {
   color: string;
 };
 
-type Loot = { x: number; y: number; kind: "mini" | "med" };
+type Loot = {
+  x: number;
+  y: number;
+  kind: "mini" | "med" | "collar" | "treat" | "spray" | "wrap" | "pick";
+};
 type BrickCell = { x: number; y: number; color: string };
 type Particle = {
   x: number;
@@ -434,6 +445,14 @@ export function ViperDrop() {
         { x: 40 + Math.random() * 70, y: groundY() + 8, kind: "mini" },
         { x: 150 + Math.random() * 70, y: groundY() + 8, kind: "med" },
       ];
+      const extra: Loot["kind"][] = ["collar", "treat", "spray", "wrap", "pick"];
+      if (Math.random() < 0.42) {
+        loot.push({
+          x: 90 + Math.random() * 70,
+          y: groundY() + 8,
+          kind: extra[Math.floor(Math.random() * extra.length)],
+        });
+      }
     };
 
     const spawnRival = () => {
@@ -511,9 +530,12 @@ export function ViperDrop() {
       setMode(win ? "win" : "over");
       setScore(scoreRef.current);
       const reward = grantPlayXp(
-        scoreRef.current + (win ? 200 : 0),
-        elimsRef.current
+        scoreRef.current,
+        elimsRef.current,
+        win
       );
+      recordElims(elimsRef.current);
+      if (win) recordWin();
       setXpGain(reward.gained);
       sfx.gameOver();
     };
@@ -745,7 +767,21 @@ export function ViperDrop() {
       ctx.fillRect(0, 0, 6, H);
       ctx.fillRect(W - 6, 0, 6, H);
       for (const drop of drawLoot) {
-        ctx.fillStyle = drop.kind === "mini" ? "#3cdcff" : "#00e800";
+        const tint =
+          drop.kind === "mini"
+            ? "#3cdcff"
+            : drop.kind === "med"
+              ? "#00e800"
+              : drop.kind === "collar"
+                ? "#f0c070"
+                : drop.kind === "treat"
+                  ? "#c4a06a"
+                  : drop.kind === "spray"
+                    ? "#ff4dae"
+                    : drop.kind === "wrap"
+                      ? "#7cf0ff"
+                      : "#ffcc00";
+        ctx.fillStyle = tint;
         ctx.fillRect(drop.x, drop.y, 8, 8);
         ctx.fillStyle = "#140008";
         ctx.fillRect(drop.x + 2, drop.y + 2, 4, 4);
@@ -772,6 +808,9 @@ export function ViperDrop() {
           f.palette
         );
         if (!f.knocked) drawGun(ctx, f.x, f.y, f.facing, f.muzzle > 0);
+        if (f.slot === 0 && f.team === 0) {
+          drawSidekick(ctx, loadPass().sidekick, f.x + 16, f.y + 8, tick);
+        }
         const bx = Math.floor(f.x);
         const by = Math.floor(f.y) - 5;
         ctx.fillStyle = "#140008";
@@ -893,6 +932,7 @@ export function ViperDrop() {
       if (wantStart.current) {
         wantStart.current = false;
         reset();
+        recordDrop();
         modeRef.current = "bus";
         setMode("bus");
         sfx.bus();
@@ -1033,8 +1073,22 @@ export function ViperDrop() {
             if (aabb(mate.x, mate.y, 16, 16, drop.x, drop.y, 8, 8)) {
               if (drop.kind === "mini") {
                 mate.shield = Math.min(SHIELD_MAX, mate.shield + 50);
-              } else {
+              } else if (drop.kind === "med") {
                 mate.hp = Math.min(HP_MAX, mate.hp + 50);
+              } else {
+                const map: Record<string, FindId> = {
+                  collar: "collar",
+                  treat: "treat",
+                  spray: "spray-viper",
+                  wrap: "wrap-storm",
+                  pick: "pick-gold",
+                };
+                const id = map[drop.kind];
+                if (id) {
+                  const got = addFind(id);
+                  banner = got.fresh ? `FOUND ${got.name}` : `${got.name} OWNED`;
+                  bannerLife = 70;
+                }
               }
               loot = loot.filter((d) => d !== drop);
               sfx.pickup();
@@ -1165,18 +1219,32 @@ export function ViperDrop() {
       }
 
       if (modeRef.current === "title") {
-        ctx.fillStyle = "rgba(10,0,20,0.55)";
+        const pad = loadPass();
+        const skin = equippedSkin();
+        const pose = emotePose(pad.emote, tick);
+        ctx.fillStyle = "rgba(10,0,20,0.35)";
         ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = "#c4a06a";
+        ctx.fillRect(96, 150, 64, 8);
+        drawSprite(
+          ctx,
+          spriteRows(skin.sprite, pose.frame),
+          120 + pose.ox,
+          132 + pose.oy,
+          pose.flip,
+          skin.palette
+        );
+        drawSidekick(ctx, pad.sidekick, 140, 146, tick);
         ctx.fillStyle = "#00e800";
         ctx.font = '10px "Press Start 2P", monospace';
-        ctx.fillText("VIPER DROP", 72, 58);
+        ctx.fillText("VIPER DROP", 72, 48);
         ctx.fillStyle = "#ffcc00";
         ctx.font = '8px "Press Start 2P", monospace';
-        ctx.fillText("SQUADS. SHIELDS.", 56, 88);
-        ctx.fillText("REVIVE. CAMPAIGN.", 52, 104);
+        ctx.fillText("PRE-GAME LOBBY", 64, 72);
+        ctx.fillText(skin.name.slice(0, 16), 72, 92);
         if (Math.floor(tick / 30) % 2 === 0) {
           ctx.fillStyle = "#ff6a00";
-          ctx.fillText("PRESS ENTER", 76, 150);
+          ctx.fillText("PRESS ENTER", 76, 188);
         }
       }
       if (modeRef.current === "over" || modeRef.current === "win") {
@@ -1444,7 +1512,8 @@ export function ViperDrop() {
                 LOBBY
               </h3>
             </div>
-            <div className="pixel-bevel bg-[#05000a] p-3">
+            <PartyLobby />
+            <div className="pixel-bevel mt-3 bg-[#05000a] p-3">
               <p className="font-press mb-2 text-[8px] text-[#3cdcff]">PLAYLIST</p>
               <div className="mb-3 flex gap-2">
                 {(["br", "campaign"] as const).map((id) => (

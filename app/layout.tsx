@@ -17,7 +17,7 @@ const vt = VT323({
 export const metadata: Metadata = {
   title: "VIPER3384 DROP ZONE",
   description:
-    "VIPER3384's Fortnite hub: 8-bit VIPER DROP plus 3D VIPER Royale. Battle pass, Chief's locker, and a Battle Royale minigame.",
+    "VIPER3384's Fortnite hub: 8-bit VIPER DROP with a real lobby, Tilted meteor 1HP map, Battle Pass grind, and 3D Island Drop.",
   icons: { icon: "/favicon.svg" },
 };
 

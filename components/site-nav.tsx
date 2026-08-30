@@ -11,9 +11,9 @@ const LINKS = [
   { href: "#hero", label: "START" },
   { href: "#tv", label: "TV" },
   { href: "#pass", label: "PASS" },
-  { href: "#library", label: "GAMES" },
+  { href: "#game", label: "LOBBY" },
+  { href: "#map", label: "MAP" },
   { href: "#royale", label: "3D" },
-  { href: "#lore", label: "LORE" },
   { href: "#locker", label: "LOCKER" },
   { href: "#about", label: "ABOUT" },
 ];

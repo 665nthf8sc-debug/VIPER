@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { equippedSkin, grantPlayXp } from "@/lib/pass";
+import { equippedSkin, grantPlayXp, recordDrop, recordElims, recordWin } from "@/lib/pass";
 import {
   addFortniteSky,
   makeBuilding,
@@ -409,7 +409,9 @@ export function mountRoyale(
     ended = true;
     mode = win ? "win" : "over";
     setBanner(win ? "VICTORY ROYALE" : "ELIMINATED", 8);
-    grantPlayXp(win ? 400 : 80 + elims * 40, elims);
+    grantPlayXp(elims * 20, elims, win);
+    recordElims(elims);
+    if (win) recordWin();
     sfx.gameOver();
     score.setIntensity(win ? "win" : "over");
     if (document.pointerLockElement) document.exitPointerLock();
@@ -547,6 +549,7 @@ export function mountRoyale(
     }
     player.visible = true;
     canvas.requestPointerLock?.();
+    recordDrop();
     score.start();
     score.setIntensity("bus");
     pushHud();

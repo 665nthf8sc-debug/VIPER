@@ -6,10 +6,11 @@ import {
   equipSkin,
   isUnlocked,
   loadPass,
+  EMPTY_PASS,
   maxPassXp,
   nextSkin,
   PASS_EVENT,
-  SKINS,
+  passSkins,
   skinById,
   type PassState,
 } from "@/lib/pass";
@@ -46,13 +47,7 @@ function SkinPreview({
 }
 
 export function BattlePass() {
-  const [pass, setPass] = useState<PassState>({
-    xp: 0,
-    equipped: "fox",
-    watched: [],
-    unlocked: [],
-    campaignStage: 0,
-  });
+  const [pass, setPass] = useState<PassState>(EMPTY_PASS);
 
   useEffect(() => {
     const sync = () => setPass(loadPass());
@@ -82,8 +77,9 @@ export function BattlePass() {
               />
             </div>
             <p className="font-vt mt-2 text-lg text-[#c9a0ff]">
-              Play VIPER DROP or watch Channel 3384 to earn XP. Clear Chapter 1
-              campaign for Jonesy and Peely. Equipped:{" "}
+              XP is slow on purpose. A match banks a handful of points, not the
+              whole track. Watch tapes (+8), like them (+12), then grind drops.
+              Equipped:{" "}
               <span className="text-[#ffcc00]">{equipped.name}</span>
               {upcoming
                 ? ` · ${toNext} XP to ${upcoming.name}`
@@ -96,7 +92,7 @@ export function BattlePass() {
         </div>
 
         <div className="flex gap-3 overflow-x-auto pb-2">
-          {SKINS.map((skin, i) => {
+          {passSkins().map((skin, i) => {
             const unlocked = isUnlocked(skin, pass);
             const active = pass.equipped === skin.id;
             return (
@@ -116,18 +112,14 @@ export function BattlePass() {
                 } ${unlocked ? "" : "opacity-70"}`}
               >
                 <p className="font-press text-[8px] text-[#3cdcff]">
-                  {skin.campaign ? "EXCL" : `TIER ${String(i + 1).padStart(2, "0")}`}
+                  {`TIER ${String(i + 1).padStart(2, "0")}`}
                 </p>
                 <SkinPreview palette={skin.palette} sprite={skin.sprite} />
                 <p className="font-press mt-2 text-[9px] text-[#ffcc00]">
                   {skin.name}
                 </p>
                 <p className="font-vt text-base text-[#c9a0ff]">
-                  {unlocked
-                    ? "UNLOCKED"
-                    : skin.campaign
-                      ? "CAMPAIGN"
-                      : `${skin.xp} XP`}
+                  {unlocked ? "UNLOCKED" : `${skin.xp} XP`}
                 </p>
                 <span className="font-press mt-1 block text-[8px] text-[#00e800]">
                   {active ? "EQUIPPED" : unlocked ? "EQUIP" : "LOCKED"}
@@ -141,15 +133,15 @@ export function BattlePass() {
           <div className="flex items-start gap-3 bg-[#1a0033] p-3">
             <PixelIcon name="game" />
             <p className="font-vt text-lg text-[#f8f0d8]">
-              Drop in and survive. Score and elims convert to Battle Pass XP
-              when you get eliminated.
+              Drop in and survive. A full match caps around 35 XP — you will not
+              clear the pass in one game. Elims and a Victory Royale help.
             </p>
           </div>
           <div className="flex items-start gap-3 bg-[#1a0033] p-3">
             <PixelIcon name="youtube" />
             <p className="font-vt text-lg text-[#f8f0d8]">
-              Watch a featured VIPER clip for +50 XP the first time. Six tapes
-              on the TV.
+              Watch a featured VIPER clip for +8 XP the first time. Like a tape
+              for +12. Subscribers claim the Channel 3384 exclusive.
             </p>
           </div>
         </div>

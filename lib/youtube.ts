@@ -6,6 +6,13 @@ export const SUBSCRIBE_URL =
   "https://www.youtube.com/@coolfox3384?sub_confirmation=1";
 export const UPLOADS_PLAYLIST = "UU3iqHL5Lt9pqSO769dIYLtQ";
 
+export const MYSTERY_SHORT = {
+  id: "",
+  title: "Secrets of Tilted",
+  teaser:
+    "VIPER is posting a short about this map and the secrets. The meteor knows. The vault waits.",
+};
+
 export const FEATURED_VIDEOS = [
   {
     id: "rZ-LBZv7wR4",

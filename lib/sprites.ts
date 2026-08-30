@@ -150,13 +150,285 @@ export const PEELY_B = [
   "....oo.....oo...",
 ];
 
-export type SpriteKind = "fox" | "chief" | "jonesy" | "peely";
+export const KIT_A = [
+  "......oooo......",
+  ".....oWWWWo.....",
+  "....oWWWWWWo....",
+  "....oWbWWbWo....",
+  "....oWWWWWWo....",
+  ".....oWWWWo.....",
+  "....oooooooo....",
+  "...HHoOOOOOoo...",
+  "..HHHHOOOOOOoo..",
+  "..HHHHOOOOOOOo..",
+  "..oOOOOOOOOOOo..",
+  "...oOOOo.oOOo...",
+  "...oOOo...oOOo..",
+  "...oooo...oooo..",
+  "....oo.....oo...",
+  "....oo.....oo...",
+];
+
+export const KIT_B = [
+  "......oooo......",
+  ".....oWWWWo.....",
+  "....oWWWWWWo....",
+  "....oWbWWbWo....",
+  "....oWWWWWWo....",
+  ".....oWWWWo.....",
+  "....oooooooo....",
+  "...HHoOOOOOoo...",
+  "..HHHHOOOOOOoo..",
+  "..HHHHOOOOOOOo..",
+  "..oOOOOOOOOOOo..",
+  "...oOOOo.oOOo...",
+  "....oOOo.oOOo...",
+  "....oooo.oooo...",
+  ".....oo...oo....",
+  "....oo.....oo...",
+];
+
+export const BADKIT_A = [
+  "......oooo......",
+  ".....oWWWWo.....",
+  "....oWWWWWWo....",
+  "....oWbWWbWo....",
+  "....oWWWWWWo....",
+  ".....oWyyWo.....",
+  "....oooooooo....",
+  "...HHoOOOOOoo...",
+  "..HHHHOOOOOOoo..",
+  "..HHHHOOOOOOOo..",
+  "..oOOOOOOOOOOo..",
+  "...oOOOo.oOOo...",
+  "...oOOo...oOOo..",
+  "...oooo...oooo..",
+  "....oo.....oo...",
+  "....oo.....oo...",
+];
+
+export const BADKIT_B = [
+  "......oooo......",
+  ".....oWWWWo.....",
+  "....oWWWWWWo....",
+  "....oWbWWbWo....",
+  "....oWWWWWWo....",
+  ".....oWyyWo.....",
+  "....oooooooo....",
+  "...HHoOOOOOoo...",
+  "..HHHHOOOOOOoo..",
+  "..HHHHOOOOOOOo..",
+  "..oOOOOOOOOOOo..",
+  "...oOOOo.oOOo...",
+  "....oOOo.oOOo...",
+  "....oooo.oooo...",
+  ".....oo...oo....",
+  "....oo.....oo...",
+];
+
+export const SONIC_A = [
+  "....oBBBBBo.....",
+  "...oBBBBBBBo....",
+  "..oBBbBBbBBo....",
+  "..oBBBBBBBBo....",
+  "...oBBBBBBo.....",
+  "....oBBBBo......",
+  "....oooooooo....",
+  "...ooBBBBBBoo...",
+  "..ooBBBBBBBBoo..",
+  "..oBBBBBBBBBBo..",
+  "..oBBBBBBBBBBo..",
+  "...oBBBo.oBBo...",
+  "...oWWo...oWWo..",
+  "...oooo...oooo..",
+  "....oo.....oo...",
+  "....oo.....oo...",
+];
+
+export const SONIC_B = [
+  "....oBBBBBo.....",
+  "...oBBBBBBBo....",
+  "..oBBbBBbBBo....",
+  "..oBBBBBBBBo....",
+  "...oBBBBBBo.....",
+  "....oBBBBo......",
+  "....oooooooo....",
+  "...ooBBBBBBoo...",
+  "..ooBBBBBBBBoo..",
+  "..oBBBBBBBBBBo..",
+  "..oBBBBBBBBBBo..",
+  "...oBBBo.oBBo...",
+  "....oWWo.oWWo...",
+  "....oooo.oooo...",
+  ".....oo...oo....",
+  "....oo.....oo...",
+];
+
+export const PHANTOM_A = [
+  "......oooo......",
+  ".....oGGGGo.....",
+  "....oGGGGGGo....",
+  "....oGVVVVGo....",
+  "....oGGGGGGo....",
+  ".....oGGGGo.....",
+  "....oooooooo....",
+  "...ooGGGGGGoo...",
+  "..ooGGGGGGGGoo..",
+  "..oGGGGGGGGGGo..",
+  "..oGGGGGGGGGGo..",
+  "...oGGGo.oGGo...",
+  "...oGGo...oGGo..",
+  "...oooo...oooo..",
+  "....oo.....oo...",
+  "....oo.....oo...",
+];
+
+export const PHANTOM_B = [
+  "......oooo......",
+  ".....oGGGGo.....",
+  "....oGGGGGGo....",
+  "....oGVVVVGo....",
+  "....oGGGGGGo....",
+  ".....oGGGGo.....",
+  "....oooooooo....",
+  "...ooGGGGGGoo...",
+  "..ooGGGGGGGGoo..",
+  "..oGGGGGGGGGGo..",
+  "..oGGGGGGGGGGo..",
+  "...oGGGo.oGGo...",
+  "....oGGo.oGGo...",
+  "....oooo.oooo...",
+  ".....oo...oo....",
+  "....oo.....oo...",
+];
+
+export const VIPER_A = [
+  "....oooooooo....",
+  "...oOOOOOOOOo...",
+  "..oOOVVbVVOOo...",
+  "..oOOOOOOOOOo...",
+  "...oOOOOOOOo....",
+  "....oOOOOOo.....",
+  "....oooooooo....",
+  "...ooOOOOOOoo...",
+  "..ooOOOOOOOOoo..",
+  "..oOOOOOOOOOOo..",
+  "..oOOOOOOOOOOo..",
+  "...oOOOo.oOOo...",
+  "...oOOo...oOOo..",
+  "...oooo...oooo..",
+  "....oo.....oo...",
+  "....oo.....oo...",
+];
+
+export const VIPER_B = [
+  "....oooooooo....",
+  "...oOOOOOOOOo...",
+  "..oOOVVbVVOOo...",
+  "..oOOOOOOOOOo...",
+  "...oOOOOOOOo....",
+  "....oOOOOOo.....",
+  "....oooooooo....",
+  "...ooOOOOOOoo...",
+  "..ooOOOOOOOOoo..",
+  "..oOOOOOOOOOOo..",
+  "..oOOOOOOOOOOo..",
+  "...oOOOo.oOOo...",
+  "....oOOo.oOOo...",
+  "....oooo.oooo...",
+  ".....oo...oo....",
+  "....oo.....oo...",
+];
+
+export type SpriteKind =
+  | "fox"
+  | "chief"
+  | "jonesy"
+  | "peely"
+  | "kit"
+  | "badkit"
+  | "sonic"
+  | "phantom"
+  | "viper";
+
+export type EmoteId = "wave" | "floss" | "griddy" | "take-l" | "hiss";
+export type SidekickId = "none" | "cat" | "dog";
 
 export function spriteRows(kind: SpriteKind, frame: number) {
   if (kind === "chief") return frame ? CHIEF_B : CHIEF_A;
   if (kind === "jonesy") return frame ? JONESY_B : JONESY_A;
   if (kind === "peely") return frame ? PEELY_B : PEELY_A;
+  if (kind === "kit") return frame ? KIT_B : KIT_A;
+  if (kind === "badkit") return frame ? BADKIT_B : BADKIT_A;
+  if (kind === "sonic") return frame ? SONIC_B : SONIC_A;
+  if (kind === "phantom") return frame ? PHANTOM_B : PHANTOM_A;
+  if (kind === "viper") return frame ? VIPER_B : VIPER_A;
   return frame ? FOX_B : FOX_A;
+}
+
+export function emotePose(id: EmoteId, tick: number) {
+  const t = tick / 6;
+  if (id === "floss") {
+    return {
+      ox: Math.sin(t) * 3,
+      oy: 0,
+      flip: Math.sin(t * 1.4) > 0,
+      frame: tick % 16 < 8 ? 0 : 1,
+    };
+  }
+  if (id === "griddy") {
+    return {
+      ox: Math.sin(t * 1.6) * 7,
+      oy: Math.abs(Math.sin(t * 3)) * 3,
+      flip: Math.sin(t * 1.6) > 0,
+      frame: tick % 10 < 5 ? 0 : 1,
+    };
+  }
+  if (id === "take-l") {
+    return { ox: 0, oy: Math.sin(t) * 1.5, flip: false, frame: 1 };
+  }
+  if (id === "hiss") {
+    return { ox: Math.sin(t * 8) * 1.2, oy: 0, flip: false, frame: 0 };
+  }
+  return {
+    ox: 0,
+    oy: Math.sin(t) * 2,
+    flip: false,
+    frame: tick % 24 < 12 ? 0 : 1,
+  };
+}
+
+export function drawSidekick(
+  ctx: CanvasRenderingContext2D,
+  kind: SidekickId,
+  x: number,
+  y: number,
+  tick: number
+) {
+  if (kind === "none") return;
+  const bob = Math.sin(tick / 8) * 1.5;
+  const px = Math.round(x);
+  const py = Math.round(y + bob);
+  if (kind === "cat") {
+    ctx.fillStyle = "#f0c070";
+    ctx.fillRect(px + 1, py + 2, 6, 5);
+    ctx.fillRect(px, py, 2, 3);
+    ctx.fillRect(px + 6, py, 2, 3);
+    ctx.fillStyle = "#140008";
+    ctx.fillRect(px + 2, py + 3, 1, 1);
+    ctx.fillRect(px + 5, py + 3, 1, 1);
+    ctx.fillStyle = "#ff6a00";
+    ctx.fillRect(px + 7, py + 4, 3, 1);
+  } else {
+    ctx.fillStyle = "#c4a06a";
+    ctx.fillRect(px + 1, py + 2, 7, 5);
+    ctx.fillRect(px, py + 1, 2, 2);
+    ctx.fillStyle = "#140008";
+    ctx.fillRect(px + 3, py + 3, 1, 1);
+    ctx.fillRect(px + 6, py + 3, 1, 1);
+    ctx.fillStyle = "#3a2210";
+    ctx.fillRect(px + 7, py + 1, 2, 3);
+  }
 }
 
 export function drawSprite(

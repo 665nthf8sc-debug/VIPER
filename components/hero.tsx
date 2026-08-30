@@ -54,6 +54,14 @@ export function Hero() {
             variant="arcade"
             className="h-12 px-5 text-[11px]"
             nativeButton={false}
+            render={<a href="#map" onClick={() => sfx.start()} />}
+          >
+            TILTED MAP
+          </Button>
+          <Button
+            variant="arcade"
+            className="h-12 px-5 text-[11px]"
+            nativeButton={false}
             render={<a href="#royale" onClick={() => sfx.start()} />}
           >
             3D ROYALE
