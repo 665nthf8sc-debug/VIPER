@@ -9,6 +9,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 import { Timeline } from "@/components/timeline";
 import { ViperDrop } from "@/components/viper-drop";
+import { ViperFps } from "@/components/viper-fps";
 import { ViperRoyale } from "@/components/viper-royale";
 import { YoutubeTv } from "@/components/youtube-tv";
 
@@ -25,6 +26,7 @@ export default function Home() {
         <ViperDrop />
         <MeteorMap />
         <ViperRoyale />
+        <ViperFps />
         <Timeline />
         <Locker />
         <About />

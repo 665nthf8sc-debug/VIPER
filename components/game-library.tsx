@@ -7,11 +7,11 @@ import { sfx } from "@/lib/sfx";
 export function GameLibrary() {
   return (
     <section id="library" className="section-wrap py-16 sm:py-20">
-      <PixelPanel title="VIPER LIBRARY  •  THREE CABINETS">
+      <PixelPanel title="VIPER LIBRARY  •  FOUR CABINETS">
         <p className="font-vt mb-6 text-xl text-[#c9a0ff] sm:text-2xl">
-          Lobby, drop, or hang on VIPER&apos;s Tilted meteor map.
+          Lobby, plaza, 3D drop, or raycast FPS on the island.
         </p>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <a
             href="#game"
             onClick={() => sfx.select()}
@@ -20,7 +20,7 @@ export function GameLibrary() {
             <p className="font-press text-[10px] text-[#3cdcff]">01  NES CART</p>
             <h3 className="font-press mt-2 text-sm text-[#ffcc00]">VIPER DROP</h3>
             <p className="font-vt mt-3 text-xl text-[#f8f0d8]">
-              Pre-game lobby, skins, emotes, pets, squads, knocks, Chapter 1.
+              Pre-game lobby, skins, emotes, 12-player Victory Royale.
             </p>
             <Button variant="arcade" className="pointer-events-none mt-4 h-10">
               ENTER LOBBY
@@ -36,8 +36,7 @@ export function GameLibrary() {
               TILTED + METEOR
             </h3>
             <p className="font-vt mt-3 text-xl text-[#f8f0d8]">
-              VIPER&apos;s Creative map: Tilted, a giant meteor, secrets. Chill
-              plaza to walk and emote. Short coming soon.
+              VIPER&apos;s map lore and a chill plaza to hang and emote.
             </p>
             <Button variant="arcade" className="pointer-events-none mt-4 h-10">
               OPEN MAP
@@ -53,7 +52,7 @@ export function GameLibrary() {
               ISLAND DROP
             </h3>
             <p className="font-vt mt-3 text-xl text-[#f8f0d8]">
-              Smooth 3D Fortnite look. Free 360 camera. Not the 8-bit cart.
+              Smooth 3D Fortnite look. Free 360 camera.
             </p>
             <span className="mt-4 inline-flex items-center gap-2">
               <PixelIcon name="game" />
@@ -61,6 +60,20 @@ export function GameLibrary() {
                 PLAY 3D
               </Button>
             </span>
+          </a>
+          <a
+            href="#fps"
+            onClick={() => sfx.coin()}
+            className="pixel-border bg-[#05000a] p-5 transition hover:ring-4 hover:ring-[#e02020]"
+          >
+            <p className="font-press text-[10px] text-[#e02020]">04  RAYCAST</p>
+            <h3 className="font-press mt-2 text-sm text-[#e02020]">VIPER FPS</h3>
+            <p className="font-vt mt-3 text-xl text-[#f8f0d8]">
+              Wolfenstein raycasting. Peely, Chief, pump, SCAR, exotic loot.
+            </p>
+            <Button variant="arcade" className="pointer-events-none mt-4 h-10">
+              ENTER FPS
+            </Button>
           </a>
         </div>
       </PixelPanel>

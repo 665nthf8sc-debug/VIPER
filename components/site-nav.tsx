@@ -14,6 +14,7 @@ const LINKS = [
   { href: "#game", label: "LOBBY" },
   { href: "#map", label: "MAP" },
   { href: "#royale", label: "3D" },
+  { href: "#fps", label: "FPS" },
   { href: "#locker", label: "LOCKER" },
   { href: "#about", label: "ABOUT" },
 ];

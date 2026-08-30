@@ -199,6 +199,10 @@
   z-index: 90;
 }
 
+.fps-stage canvas {
+  min-height: 220px;
+}
+
 .game-stage:fullscreen {
   background: #05000a;
   display: flex;
