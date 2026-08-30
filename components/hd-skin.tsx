@@ -13,15 +13,8 @@ export const HD_SKIN: Partial<Record<SkinId, AngleKind>> = {
   stormstep: "stormstep",
 };
 
-const portraitCache = new Map<AngleKind, Promise<HTMLCanvasElement | null>>();
-
 function portraitFor(kind: AngleKind) {
-  let pending = portraitCache.get(kind);
-  if (!pending) {
-    pending = loadFrontPortrait(kind);
-    portraitCache.set(kind, pending);
-  }
-  return pending;
+  return loadFrontPortrait(kind);
 }
 
 export function HdSkin({

@@ -18,7 +18,8 @@ import {
   PASS_EVENT,
   type PassState,
 } from "@/lib/pass";
-import { HdSkin } from "@/components/hd-skin";
+import { HD_SKIN, HdSkin } from "@/components/hd-skin";
+import { loadFrontPortrait } from "@/lib/fps/sprite-loader";
 import { sfx } from "@/lib/sfx";
 import { useEffect, useState } from "react";
 
@@ -31,6 +32,12 @@ export function Locker() {
     sync();
     window.addEventListener(PASS_EVENT, sync);
     return () => window.removeEventListener(PASS_EVENT, sync);
+  }, []);
+
+  useEffect(() => {
+    Object.values(HD_SKIN).forEach((kind) => {
+      void loadFrontPortrait(kind);
+    });
   }, []);
 
   const chief = SKINS.find((s) => s.id === "chief")!;

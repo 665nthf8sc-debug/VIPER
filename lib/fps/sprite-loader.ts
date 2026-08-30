@@ -18,11 +18,15 @@ export function isMagentaKey(r: number, g: number, b: number) {
   return false;
 }
 
+function ctx2d(canvas: HTMLCanvasElement) {
+  return canvas.getContext("2d", { willReadFrequently: true })!;
+}
+
 export function knockChroma(
   source: HTMLCanvasElement,
   mode: "magenta" | "gray" | "both" = "both"
 ) {
-  const ctx = source.getContext("2d")!;
+  const ctx = ctx2d(source);
   const frame = ctx.getImageData(0, 0, source.width, source.height);
   const d = frame.data;
   for (let i = 0; i < d.length; i += 4) {
@@ -38,7 +42,7 @@ export function knockChroma(
 }
 
 export function cropToAlpha(source: HTMLCanvasElement) {
-  const ctx = source.getContext("2d")!;
+  const ctx = ctx2d(source);
   const { width, height } = source;
   const data = ctx.getImageData(0, 0, width, height).data;
   let minX = width;
@@ -87,7 +91,7 @@ export function canvasFromImage(img: HTMLImageElement) {
   const tmp = document.createElement("canvas");
   tmp.width = img.width;
   tmp.height = img.height;
-  const ctx = tmp.getContext("2d")!;
+  const ctx = ctx2d(tmp);
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(img, 0, 0);
   return tmp;
@@ -354,22 +358,30 @@ export function loadFpsArt(legacyFallback: HdSpriteSet): Promise<FpsArt> {
   return artPromise;
 }
 
+const frontCache = new Map<AngleKind, Promise<HTMLCanvasElement | null>>();
+
 /** Locker-only: crop the front frame of one 8-angle sheet. */
-export async function loadFrontPortrait(kind: AngleKind): Promise<HTMLCanvasElement | null> {
-  try {
-    const img = await loadImage(fpsAsset(ANGLE_FILES[kind]));
-    const fw = Math.max(1, Math.floor(img.width / 8));
-    const cell = document.createElement("canvas");
-    cell.width = fw;
-    cell.height = img.height;
-    const ctx = cell.getContext("2d")!;
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(img, 0, 0, fw, img.height, 0, 0, fw, img.height);
-    knockChroma(cell, "magenta");
-    return normalizeSpriteSize(cropToAlpha(cell), 256);
-  } catch {
-    return null;
-  }
+export function loadFrontPortrait(kind: AngleKind): Promise<HTMLCanvasElement | null> {
+  const hit = frontCache.get(kind);
+  if (hit) return hit;
+  const pending = (async () => {
+    try {
+      const img = await loadImage(fpsAsset(ANGLE_FILES[kind]));
+      const fw = Math.max(1, Math.floor(img.width / 8));
+      const cell = document.createElement("canvas");
+      cell.width = fw;
+      cell.height = img.height;
+      const ctx = ctx2d(cell);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, 0, 0, fw, img.height, 0, 0, fw, img.height);
+      knockChroma(cell, "magenta");
+      return normalizeSpriteSize(cropToAlpha(cell), 256);
+    } catch {
+      return null;
+    }
+  })();
+  frontCache.set(kind, pending);
+  return pending;
 }
 
 export function canvasToUrl(canvas: HTMLCanvasElement) {
