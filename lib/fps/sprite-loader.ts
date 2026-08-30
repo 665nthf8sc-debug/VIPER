@@ -499,3 +499,70 @@ export function canvasToUrl(canvas: HTMLCanvasElement) {
     return "";
   }
 }
+
+const GUN_FIRE_FILES: Record<"pickaxe" | "pump" | "scar" | "exotic", string> = {
+  pickaxe: "/fps/sprites/gun-fire-pickaxe.png",
+  pump: "/fps/sprites/gun-fire-pump.png",
+  scar: "/fps/sprites/gun-fire-scar.png",
+  exotic: "/fps/sprites/gun-fire-exotic.png",
+};
+
+const ENEMY_SHOOT_FILES: Record<AngleKind, string> = {
+  viper: "/fps/sprites/char-viper-shoot.png",
+  chief: "/fps/sprites/char-chief-shoot.png",
+  peely: "/fps/sprites/char-peely-shoot.png",
+  stormstep: "/fps/sprites/char-stormstep-shoot.png",
+};
+
+function sliceHorizontalFrames(source: HTMLCanvasElement) {
+  const frames = Math.max(1, Math.round(source.width / Math.max(1, source.height)));
+  return sliceAngleStrip(source, frames);
+}
+
+export async function loadGunFireStrips(): Promise<
+  Partial<Record<"pickaxe" | "pump" | "scar" | "exotic", HTMLCanvasElement[]>>
+> {
+  const out: Partial<Record<"pickaxe" | "pump" | "scar" | "exotic", HTMLCanvasElement[]>> = {};
+  await Promise.all(
+    (Object.keys(GUN_FIRE_FILES) as Array<keyof typeof GUN_FIRE_FILES>).map(async (id) => {
+      const sheet = await loadOptionalCanvas(GUN_FIRE_FILES[id]);
+      if (!sheet) return;
+      knockChroma(sheet, "magenta");
+      out[id] = sliceHorizontalFrames(sheet);
+    })
+  );
+  return out;
+}
+
+export async function loadHudFaceStrip(): Promise<HTMLCanvasElement[] | null> {
+  const sheet = await loadOptionalCanvas("/fps/sprites/hud-viper-faces.png");
+  if (!sheet) return null;
+  knockChroma(sheet, "magenta");
+  const frames = 5;
+  const fw = Math.floor(sheet.width / frames);
+  const out: HTMLCanvasElement[] = [];
+  for (let i = 0; i < frames; i++) {
+    const cell = document.createElement("canvas");
+    cell.width = Math.max(1, fw);
+    cell.height = sheet.height;
+    const ctx = ctx2d(cell);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(sheet, i * fw, 0, fw, sheet.height, 0, 0, fw, sheet.height);
+    knockChroma(cell, "magenta");
+    out.push(cropToAlpha(cell));
+  }
+  return out;
+}
+
+export async function loadEnemyShootSheets(): Promise<Partial<Record<AngleKind, HTMLCanvasElement>>> {
+  const out: Partial<Record<AngleKind, HTMLCanvasElement>> = {};
+  await Promise.all(
+    (Object.keys(ENEMY_SHOOT_FILES) as AngleKind[]).map(async (kind) => {
+      const sheet = await loadOptionalCanvas(ENEMY_SHOOT_FILES[kind]);
+      if (!sheet) return;
+      knockChroma(sheet, "magenta");
+      out[kind] = normalizeSpriteSize(cropToAlpha(sheet));
+    })
+  );
+  return out;
+}

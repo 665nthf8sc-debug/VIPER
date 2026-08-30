@@ -4,7 +4,7 @@ import type { FloorTheme } from "@/lib/fps/textures";
 
 export const RADAR_SIZE = 104;
 export const RADAR_MARGIN = 6;
-export const RADAR_TOP = 26;
+export const RADAR_TOP = 6;
 
 export const ENEMY_RADAR: Partial<Record<EnemyKind, { letter: string; color: string }>> = {
   viper: { letter: "V", color: "#00e800" },
@@ -71,11 +71,13 @@ export function drawMinimap(
     fov: number;
     enemies: RadarEnemy[];
     viewW: number;
+    viewH?: number;
   }
 ) {
   const size = RADAR_SIZE;
   const x = opts.viewW - size - RADAR_MARGIN;
-  const y = RADAR_TOP;
+  const maxY = (opts.viewH ?? 320) - size - RADAR_MARGIN;
+  const y = Math.min(RADAR_TOP, Math.max(2, maxY));
   const cx = x + size / 2;
   const cy = y + size / 2;
   const scale = (size * 0.9) / Math.max(MAP_W, MAP_H);

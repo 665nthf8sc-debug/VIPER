@@ -230,63 +230,106 @@ export function buildPickupSprite(kind: PickupKind) {
   return canvas;
 }
 
+function paintMuzzle(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, hot = 1) {
+  ctx.fillStyle = `rgba(255,255,210,${0.85 * hot})`;
+  ctx.fillRect(x, y - 2, size, 5);
+  ctx.fillStyle = `rgba(255,180,40,${0.7 * hot})`;
+  ctx.fillRect(x + 2, y - 5, size + 6, 11);
+  ctx.fillStyle = `rgba(255,80,16,${0.45 * hot})`;
+  ctx.fillRect(x + 8, y - 8, size + 4, 17);
+}
+
+/** Wolf-style viewmodel: idle + fire (kick, muzzle, pump cycle). Barrel aims up-left. */
 export function buildWeaponView(id: "pickaxe" | "pump" | "scar" | "exotic", frame: number) {
-  const w = 160;
-  const h = 100;
+  const w = 200;
+  const h = 130;
   const canvas = document.createElement("canvas");
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d")!;
   ctx.imageSmoothingEnabled = false;
-  const kick = frame > 0 ? frame * 3 : 0;
+  const justFired = frame > 0;
+  const kick = justFired ? Math.min(16, frame * 1.6) : 0;
+  const rise = justFired ? Math.min(10, frame) : 0;
+
+  ctx.fillStyle = "#d0a070";
+  ctx.fillRect(118, 96 + kick, 36, 28);
+  ctx.fillRect(86, 102 + kick, 40, 22);
+  ctx.fillStyle = "#8a6038";
+  ctx.fillRect(120, 98 + kick, 32, 8);
 
   if (id === "pickaxe") {
+    const swing = justFired ? 10 - Math.min(10, frame) : 0;
     ctx.fillStyle = "#8a7040";
-    ctx.fillRect(36, 48 + kick, 48, 8);
+    ctx.fillRect(70 + swing, 58 + kick, 54, 10);
     ctx.fillStyle = "#c4a06a";
-    ctx.fillRect(76, 34 + kick, 36, 24);
+    ctx.fillRect(118 + swing, 40 + kick - rise, 40, 28);
     ctx.fillStyle = "#ffcc00";
-    ctx.fillRect(82, 40 + kick, 24, 12);
+    ctx.fillRect(124 + swing, 46 + kick - rise, 26, 14);
+    if (justFired && frame > 6) {
+      ctx.fillStyle = "rgba(255,255,220,0.35)";
+      ctx.fillRect(40, 36 + kick, 36, 8);
+    }
   } else if (id === "pump") {
-    ctx.fillStyle = "#2a2a38";
-    ctx.fillRect(16, 58 + kick, 96, 14);
-    ctx.fillStyle = "#505058";
-    ctx.fillRect(28, 46 + kick, 72, 16);
+    const pump = frame > 4 && frame < 14 ? (frame > 9 ? 14 - frame : frame - 4) * 3 : 0;
+    ctx.fillStyle = "#1a1a24";
+    ctx.fillRect(28, 72 + kick, 120, 16);
+    ctx.fillStyle = "#3a3a48";
+    ctx.fillRect(40, 58 + kick, 96, 18);
     ctx.fillStyle = "#a060ff";
-    ctx.fillRect(34, 48 + kick, 48, 10);
+    ctx.fillRect(48 + pump, 60 + kick, 44, 12);
+    ctx.fillStyle = "#6a6a78";
+    ctx.fillRect(100, 62 + kick, 28, 10);
     ctx.fillStyle = "#ffcc00";
-    ctx.fillRect(88, 50 + kick, 10, 5);
-    if (frame > 0) {
-      ctx.fillStyle = "rgba(255,200,80,0.6)";
-      ctx.fillRect(118, 48 + kick, 22, 12);
+    ctx.fillRect(128, 64 + kick, 10, 5);
+    ctx.fillStyle = "#2a2a38";
+    ctx.fillRect(18, 74 + kick, 16, 8);
+    if (justFired && frame > 10) {
+      paintMuzzle(ctx, 4, 76 + kick, 16, frame / 18);
     }
   } else if (id === "scar") {
     ctx.fillStyle = "#1a1a28";
-    ctx.fillRect(12, 60 + kick, 108, 12);
-    ctx.fillStyle = "#6a6a78";
-    ctx.fillRect(24, 48 + kick, 84, 16);
+    ctx.fillRect(20, 74 + kick, 132, 12);
+    ctx.fillStyle = "#5a5a68";
+    ctx.fillRect(36, 58 + kick, 100, 18);
     ctx.fillStyle = "#3a3a48";
-    ctx.fillRect(30, 50 + kick, 60, 8);
+    ctx.fillRect(44, 62 + kick, 72, 8);
+    ctx.fillStyle = "#2a2a38";
+    ctx.fillRect(12, 76 + kick, 22, 6);
     ctx.fillStyle = "#ffcc00";
-    ctx.fillRect(100, 52 + kick, 8, 4);
-    if (frame > 0) {
-      ctx.fillStyle = "#ffcc00";
-      ctx.fillRect(118, 50 + kick, 14, 5);
-    }
+    ctx.fillRect(126, 64 + kick, 8, 4);
+    if (justFired) paintMuzzle(ctx, 2, 76 + kick, 14, Math.min(1, frame / 5));
   } else {
     ctx.fillStyle = "#1a1a28";
-    ctx.fillRect(12, 60 + kick, 108, 12);
-    ctx.fillStyle = "#ffcc00";
-    ctx.fillRect(24, 44 + kick, 84, 18);
+    ctx.fillRect(16, 76 + kick, 140, 10);
+    ctx.fillStyle = "#c4a020";
+    ctx.fillRect(40, 52 + kick, 104, 22);
     ctx.fillStyle = "#ff6a00";
-    ctx.fillRect(30, 50 + kick, 24, 8);
+    ctx.fillRect(48, 58 + kick, 28, 10);
     ctx.fillStyle = "#f8f0d8";
-    ctx.fillRect(62, 52 + kick, 36, 5);
-    if (frame > 0) {
-      ctx.fillStyle = "rgba(255,220,100,0.75)";
-      ctx.fillRect(118, 48 + kick, 20, 10);
-    }
+    ctx.fillRect(82, 62 + kick, 40, 5);
+    ctx.fillStyle = "#2a2a38";
+    ctx.fillRect(6, 78 + kick, 18, 5);
+    if (justFired) paintMuzzle(ctx, 0, 78 + kick, 18, Math.min(1, frame / 6));
   }
+  return canvas;
+}
+
+export function buildMuzzleFlash() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 32;
+  canvas.height = 24;
+  const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = "#fff6c0";
+  ctx.fillRect(10, 8, 12, 8);
+  ctx.fillStyle = "#ffcc00";
+  ctx.fillRect(4, 6, 24, 12);
+  ctx.fillStyle = "#ff6a00";
+  ctx.fillRect(0, 4, 10, 16);
+  ctx.fillRect(22, 4, 10, 16);
+  ctx.fillStyle = "#fffde8";
+  ctx.fillRect(13, 9, 6, 6);
   return canvas;
 }
 

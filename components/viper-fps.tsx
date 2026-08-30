@@ -26,6 +26,8 @@ const EMPTY: FpsHud = {
   remaining: 5,
   bossLive: false,
   bossName: "",
+  score: 0,
+  lives: 3,
 };
 
 export function ViperFps() {
@@ -84,10 +86,9 @@ export function ViperFps() {
           <div>
             <p className="font-vt mb-3 text-xl text-[#f8f0d8]">
               Three-level raycast island. Beach Outpost, Neon Villa, then
-              Hazard Foundry — each with its own walls, floor, and sky. Clear
-              the regulars, then fight King Peely, Storm Overlord, and Iron
-              Chief. HD 8-angle billboards. Loot pump, SCAR, exotic, ammo,
-              medkits, chests, and llamas.
+              Hazard Foundry. Wolf3D stats bar under the view — VIPER face
+              beats up as you take hits. Animated guns, rivals that shoot
+              back. Loot pump, SCAR, exotic, ammo, medkits, chests, and llamas.
             </p>
             <div
               ref={stageRef}
@@ -109,11 +110,7 @@ export function ViperFps() {
                   start();
                 }}
               >
-                {hud.mode === "over"
-                  ? "RETRY LEVEL"
-                  : hud.mode === "win"
-                    ? "DROP AGAIN"
-                    : "ENTER ISLAND"}
+                {hud.mode === "win" || hud.mode === "over" ? "DROP AGAIN" : "ENTER ISLAND"}
               </Button>
               <Button variant="arcade" className="h-11 px-3" onClick={() => void toggleFull()}>
                 {full ? "EXIT FULL" : "FULLSCREEN"}
@@ -156,7 +153,10 @@ export function ViperFps() {
                 {Math.max(0, Math.ceil(hud.shield))} SHIELD
               </p>
               <p className="font-vt mt-1 text-xl text-[#ffcc00]">
-                LEVEL {hud.level} {hud.levelName} ·{" "}
+                SCORE {hud.score} · LIVES {hud.lives} · LEVEL {hud.level}{" "}
+                {hud.levelName}
+              </p>
+              <p className="font-vt mt-1 text-xl text-[#f8f0d8]">
                 {hud.bossLive ? `BOSS ${hud.bossName}` : `REMAIN ${hud.remaining}`}{" "}
                 · ELIMS {hud.elims}
               </p>
@@ -194,8 +194,8 @@ export function ViperFps() {
               <p className="font-vt mt-2 text-lg text-[#f8f0d8]">
                 L1 Beach Outpost — 5 rivals then King Peely. L2 Neon Villa —
                 8 then Storm Overlord. L3 Hazard Foundry — 12 then Iron
-                Chief. Beat the last boss for a Victory Royale. Death retries
-                the current level.
+                Chief. +100 score per elim, +500 boss. Three lives; death
+                respawns the level. Zero lives is game over.
               </p>
               <p className="font-press mt-3 text-[8px] text-[#00e800]">ISLAND TILES</p>
               <p className="font-vt mt-2 text-lg text-[#c9a0ff]">
