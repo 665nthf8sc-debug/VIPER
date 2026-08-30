@@ -205,10 +205,12 @@
 }
 
 .royale-wrap {
-  background: linear-gradient(180deg, #071018 0%, #12304a 40%, #1a6a9c 100%);
+  background: linear-gradient(180deg, #0a3d73 0%, #1f7fc4 48%, #7ec8f8 100%);
 }
 
 .royale-stage {
+  position: relative;
+  z-index: 90;
   aspect-ratio: 16 / 9;
   min-height: 280px;
 }

@@ -36,7 +36,7 @@ On Pages there is no Node server, so the hall of fame uses `localStorage`. Local
 - **Battle Pass** — eight skins, XP bar, equip from the track
 - **Library** — two cabinets: 8-bit **VIPER DROP** and 3D **VIPER Royale**
 - **VIPER DROP** — 8-bit Fortnite: battle bus, health + shields, loot, jump, POIs
-- **VIPER Royale** — third-person Fortnite-style Battle Royale: toon characters, sunny island, storm, pickaxe/AR/pump, walls, ramps, 10 bots, original drop soundtrack, Victory Royale. Uses your equipped locker skin
+- **VIPER Royale / Island Drop** — third-person Battle Royale with smooth (not blocky) Fortnite-style models: Peely, Master Chief armor, a detailed Battle Bus, sunny sky, storm, pickaxe/AR/pump, builds, 10 bots, original drop soundtrack, Victory Royale. Free 360° mouse look. Uses your equipped locker skin. This 3D match does **not** use the 8-bit VIPER cabinet look.
 - **Squads** — Solo / Duo / Trio. Fill with bots or a local invite code (another tab on this PC). Couch P2 uses arrows + K
 - **Knocked** — In duo/trio you get downed. A teammate standing on you for 5 seconds revives you
 - **Campaign** — Chapter 1, eight drops. Unlock **Jonesy** at Tilted and **Peely** after The Cube
@@ -46,7 +46,7 @@ On Pages there is no Node server, so the hall of fame uses `localStorage`. Local
 - **Hall of Fame** — 3-letter arcade initials
 - **Quest log** — Chapter 1 timeline
 
-Royale: **WASD** move, mouse look, **Space** jump / leave the bus, **1/2/3** weapons, click harvest/shoot, **Q** wall, **E/C** ramp, **Shift** sprint.
+Royale: drag the lobby to look around, then **Drop in**. **WASD** move (relative to camera), mouse look 360°, **Space** jump / leave the bus, **1/2/3** weapons, click harvest/shoot, **Q** wall, **E/C** ramp, **Shift** sprint.
 
 ## Stack
 

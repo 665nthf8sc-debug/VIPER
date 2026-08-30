@@ -42,7 +42,7 @@ export function SiteNav() {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0a0014]/95">
+    <header className="sticky top-0 z-[100] bg-[#0a0014]/95">
       <div className="section-wrap flex items-center justify-between gap-3 py-3">
         <a
           href="#hero"

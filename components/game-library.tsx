@@ -34,11 +34,11 @@ export function GameLibrary() {
           >
             <p className="font-press text-[10px] text-[#00e800]">02  3D MATCH</p>
             <h3 className="font-press mt-2 text-sm text-[#00e800]">
-              VIPER ROYALE
+              ISLAND DROP
             </h3>
             <p className="font-vt mt-3 text-xl text-[#f8f0d8]">
-              Third-person Fortnite look: toon fighters, sunny island, storm,
-              and an original drop soundtrack.
+              Smooth 3D Fortnite look — Peely, Chief, Battle Bus, free 360°
+              camera. Not the 8-bit cart.
             </p>
             <span className="mt-4 inline-flex items-center gap-2">
               <PixelIcon name="game" />

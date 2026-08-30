@@ -23,8 +23,8 @@ const EMPTY: RoyaleHud = {
 
 function slotClass(id: RoyaleWeapon, current: RoyaleWeapon) {
   return id === current
-    ? "border-[#ffcc33] bg-[#152238]/90 text-[#ffcc33] shadow-[0_0_16px_#ffcc3388]"
-    : "border-white/25 bg-black/40 text-white/80";
+    ? "border-amber-300 bg-sky-950/85 text-amber-300 shadow-[0_0_18px_#fde04766]"
+    : "border-white/20 bg-black/35 text-white/80";
 }
 
 export function ViperRoyale() {
@@ -89,53 +89,53 @@ export function ViperRoyale() {
   return (
     <section id="royale" className="royale-wrap py-16 sm:py-20">
       <div className="mx-auto w-[min(1120px,calc(100%-1.5rem))]">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-xs font-black tracking-[0.35em] text-[#7ec8ff]">
-              CHAPTER 7  •  VIPER ISLAND
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sky-300">
+              3D Battle Royale
             </p>
             <h2 className="mt-1 text-3xl font-black tracking-tight text-white sm:text-5xl">
-              VIPER Royale
+              Island Drop
             </h2>
             <p className="mt-2 max-w-xl text-base text-white/75">
-              Fortnite-style third person. Smooth fighters, sunny island, storm
-              wall, and an original drop score. Outfit: {skinName}.
+              Smooth fighters, a real Battle Bus, and a free 360° camera. Drag
+              to look around the lobby, then drop in. Outfit: {skinName}.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={dropIn}
-              className="rounded-sm bg-[#ffcc33] px-5 py-3 text-sm font-black tracking-widest text-[#1a1400] shadow-[0_4px_0_#b38f00] hover:brightness-110"
+              className="rounded-full bg-amber-300 px-6 py-3 text-sm font-black tracking-wide text-stone-900 shadow-lg shadow-amber-300/30 hover:brightness-110"
             >
               {hud.mode === "over" || hud.mode === "win"
-                ? "DROP IN AGAIN"
-                : "DROP IN"}
+                ? "Drop in again"
+                : "Drop in"}
             </button>
             <button
               type="button"
               onClick={() => void toggleFull()}
-              className="rounded-sm bg-[#2b5cff] px-4 py-3 text-sm font-black tracking-widest text-white shadow-[0_4px_0_#1636aa]"
+              className="rounded-full bg-blue-600 px-5 py-3 text-sm font-black tracking-wide text-white shadow-lg shadow-blue-900/40"
             >
-              {full ? "EXIT" : "FULLSCREEN"}
+              {full ? "Exit" : "Fullscreen"}
             </button>
             <button
               type="button"
               onClick={toggleMusic}
-              className="rounded-sm bg-[#152238] px-4 py-3 text-sm font-black tracking-widest text-white ring-1 ring-white/20"
+              className="rounded-full bg-slate-900/80 px-5 py-3 text-sm font-black tracking-wide text-white ring-1 ring-white/20"
             >
-              {musicOn ? "MUSIC ON" : "MUSIC OFF"}
+              {musicOn ? "Music on" : "Music off"}
             </button>
           </div>
         </div>
 
         <div
           ref={stageRef}
-          className="royale-stage relative overflow-hidden rounded-sm ring-4 ring-[#152238] shadow-[0_20px_60px_#041018]"
+          className="royale-stage relative overflow-hidden rounded-2xl ring-1 ring-white/15 shadow-[0_24px_80px_#041018]"
         >
           <canvas
             ref={canvasRef}
-            className="block h-full w-full"
+            className="block h-full w-full cursor-grab active:cursor-grabbing"
             onContextMenu={(e) => e.preventDefault()}
           />
           <div className="pointer-events-none absolute inset-0 font-sans">
@@ -147,26 +147,26 @@ export function ViperRoyale() {
                 <span className="absolute right-0 top-1/2 h-px w-2 -translate-y-1/2 bg-white" />
               </div>
             ) : (
-              <div className="absolute inset-x-0 bottom-10 text-center">
-                <p className="text-sm font-black tracking-[0.4em] text-white/90">
-                  BATTLE BUS INBOUND
+              <div className="absolute inset-x-0 bottom-8 text-center">
+                <p className="text-sm font-semibold tracking-wide text-white drop-shadow-[0_2px_8px_#000]">
+                  Drag to look around · Peely, Chief, and the Battle Bus are on the pad
                 </p>
               </div>
             )}
 
             {hud.banner ? (
-              <p className="absolute left-1/2 top-14 -translate-x-1/2 bg-[#152238]/80 px-5 py-2 text-center text-sm font-black tracking-[0.28em] text-[#ffcc33]">
+              <p className="absolute left-1/2 top-14 -translate-x-1/2 rounded-full bg-slate-950/70 px-5 py-2 text-center text-sm font-semibold tracking-wide text-amber-300">
                 {hud.banner}
               </p>
             ) : null}
 
             <div className="absolute right-5 top-5 text-right text-white drop-shadow-[0_2px_8px_#000]">
               <p className="text-4xl font-black">{hud.playersLeft}</p>
-              <p className="text-[11px] font-black tracking-[0.25em] text-white/80">
+              <p className="text-[11px] font-semibold tracking-widest text-white/80">
                 PLAYERS LEFT
               </p>
-              <p className="mt-2 text-xs font-black text-[#ffcc33]">
-                ELIMS {hud.elims}
+              <p className="mt-2 text-xs font-semibold text-amber-300">
+                Elims {hud.elims}
               </p>
             </div>
 
@@ -175,36 +175,36 @@ export function ViperRoyale() {
                 <div className="mb-2 flex justify-center gap-2">
                   {(
                     [
-                      ["pickaxe", "1  PICKAXE"],
-                      ["ar", "2  ASSAULT"],
-                      ["shotgun", "3  PUMP"],
+                      ["pickaxe", "1  Pickaxe"],
+                      ["ar", "2  Assault"],
+                      ["shotgun", "3  Pump"],
                     ] as const
                   ).map(([id, label]) => (
                     <span
                       key={id}
-                      className={`rounded-sm border-2 px-3 py-2 text-[11px] font-black ${slotClass(id, hud.weapon)}`}
+                      className={`rounded-lg border-2 px-3 py-2 text-[11px] font-bold ${slotClass(id, hud.weapon)}`}
                     >
                       {label}
                     </span>
                   ))}
                 </div>
-                <div className="rounded-sm bg-[#152238]/80 px-3 py-2 ring-1 ring-white/10">
-                  <div className="mb-1 h-2.5 w-full overflow-hidden rounded-sm bg-[#16324d]">
+                <div className="rounded-xl bg-slate-950/70 px-3 py-2 ring-1 ring-white/10">
+                  <div className="mb-1 h-2.5 w-full overflow-hidden rounded-full bg-sky-950">
                     <div
-                      className="h-full bg-[#3cdcff]"
+                      className="h-full bg-cyan-400"
                       style={{ width: `${hud.shield}%` }}
                     />
                   </div>
-                  <div className="h-3.5 w-full overflow-hidden rounded-sm bg-[#143018]">
+                  <div className="h-3.5 w-full overflow-hidden rounded-full bg-green-950">
                     <div
-                      className="h-full bg-[#4cff62]"
+                      className="h-full bg-lime-400"
                       style={{ width: `${hud.hp}%` }}
                     />
                   </div>
-                  <div className="mt-1 flex justify-between text-[11px] font-black text-white">
+                  <div className="mt-1 flex justify-between text-[11px] font-bold text-white">
                     <span>HP {Math.round(hud.hp)}</span>
-                    <span>SHIELD {Math.round(hud.shield)}</span>
-                    <span className="text-[#e8b020]">WOOD {hud.mats}</span>
+                    <span>Shield {Math.round(hud.shield)}</span>
+                    <span className="text-amber-300">Wood {hud.mats}</span>
                   </div>
                 </div>
               </div>
@@ -213,8 +213,8 @@ export function ViperRoyale() {
             {hud.mode === "win" || hud.mode === "over" ? (
               <div className="absolute inset-0 flex items-center justify-center bg-black/45">
                 <p
-                  className={`text-5xl font-black tracking-[0.12em] sm:text-7xl ${
-                    hud.mode === "win" ? "text-[#ffcc33]" : "text-[#ff5a5a]"
+                  className={`text-5xl font-black tracking-tight sm:text-7xl ${
+                    hud.mode === "win" ? "text-amber-300" : "text-red-400"
                   }`}
                 >
                   {hud.mode === "win" ? "VICTORY ROYALE" : "ELIMINATED"}
@@ -225,9 +225,10 @@ export function ViperRoyale() {
         </div>
 
         <p className="mt-4 text-sm text-white/70">
-          WASD move · Mouse look · Space jump / leave bus · 1 pickaxe 2 AR 3 pump
-          · Click harvest or shoot · Q wall · E / C ramp · Shift sprint · Gold
-          chests for shield and wood. Music is original VIPER score, not Epic&apos;s
+          Drag or mouse-look in any direction — up, down, and full 360. WASD
+          moves where you are looking. Space jumps or leaves the bus. 1 / 2 / 3
+          weapons. Click to harvest or shoot. Q wall, E / C ramp, Shift sprint.
+          Chests drop shield and wood. Music is an original score, not Epic&apos;s
           soundtrack.
         </p>
       </div>

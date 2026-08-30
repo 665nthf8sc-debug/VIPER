@@ -118,11 +118,12 @@ export function mountRoyale(
   const camera = new THREE.PerspectiveCamera(68, 16 / 9, 0.1, 500);
   addFortniteSky(scene);
 
-  scene.add(new THREE.HemisphereLight(0xfff4d6, 0x3d8a48, 1.05));
-  const sun = new THREE.DirectionalLight(0xfff1d0, 1.35);
+  scene.add(new THREE.HemisphereLight(0xfff4d6, 0x3d8a48, 1.15));
+  scene.add(new THREE.AmbientLight(0xb8d4ff, 0.28));
+  const sun = new THREE.DirectionalLight(0xfff1d0, 1.55);
   sun.position.set(48, 70, 22);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.mapSize.set(2048, 2048);
   sun.shadow.camera.near = 10;
   sun.shadow.camera.far = 180;
   sun.shadow.camera.left = -80;
@@ -171,6 +172,8 @@ export function mountRoyale(
   scene.add(makeCloud(10, 36, -55, 3.1));
   scene.add(makeCloud(-20, 30, 48, 2.2));
   scene.add(makeCloud(35, 26, 40, 1.8));
+  scene.add(makeCloud(-55, 34, 8, 2.6));
+  scene.add(makeCloud(18, 40, 22, 3.4));
 
   const boxes: BoxCol[] = [];
   const addBuilding = (
@@ -251,6 +254,15 @@ export function mountRoyale(
   const player = makeFighter(fighterStyle(), body, skinTone, accent);
   scene.add(player);
 
+  const lobbyPeely = makeFighter("peely", "#ffe14a", "#ffe14a", "#4a2a12");
+  lobbyPeely.position.set(8.2, 0, 8.4);
+  lobbyPeely.rotation.y = -0.6;
+  scene.add(lobbyPeely);
+  const lobbyChief = makeFighter("chief", "#5c6b38", "#6b8f3c", "#e8a318");
+  lobbyChief.position.set(3.6, 0, 8.6);
+  lobbyChief.rotation.y = 0.85;
+  scene.add(lobbyChief);
+
   const rifle = makeRifle();
   const shotgun = makeShotgun();
   const pick = makePickaxe();
@@ -288,11 +300,23 @@ export function mountRoyale(
 
   const bots: Bot[] = [];
   const botColors = ["#3d7cff", "#22c55e", "#ff4dae", "#3cdcff", "#ffcc00", "#c45a3a"];
+  const botLooks: FighterStyle[] = [
+    "peely",
+    "chief",
+    "jonesy",
+    "bot",
+    "fox",
+    "jonesy",
+    "bot",
+    "peely",
+    "fox",
+    "chief",
+  ];
   for (let i = 0; i < 10; i++) {
     const ang = Math.random() * Math.PI * 2;
     const r = 18 + Math.random() * 40;
     const mesh = makeFighter(
-      "bot",
+      botLooks[i],
       botColors[i % botColors.length],
       "#f0d8c0",
       "#ffffff"
@@ -317,8 +341,9 @@ export function mountRoyale(
   let mats = 0;
   let weapon: RoyaleWeapon = "pickaxe";
   let elims = 0;
-  let yaw = 0;
-  let pitch = 0.18;
+  let yaw = 0.85;
+  let pitch = 0.22;
+  let lookTouched = false;
   let px = 0;
   let py = 0;
   let pz = 0;
@@ -521,6 +546,7 @@ export function mountRoyale(
       drop.mesh.visible = true;
     }
     player.visible = true;
+    canvas.requestPointerLock?.();
     score.start();
     score.setIntensity("bus");
     pushHud();
@@ -562,20 +588,17 @@ export function mountRoyale(
     }
   };
   const onDown = (e: PointerEvent) => {
-    if (mode === "title") return;
-    if (e.button === 0) {
-      if (mode === "bus") {
-        mode = "drop";
-        setBanner("SKYDIVING");
-        sfx.drop();
-      } else if (mode === "play") {
-        keys.Mouse0 = true;
-      }
-    }
     dragging = true;
     lastMx = e.clientX;
     lastMy = e.clientY;
-    if (mode === "play" || mode === "drop") {
+    if (e.button === 0 && mode === "bus") {
+      mode = "drop";
+      setBanner("SKYDIVING");
+      sfx.drop();
+    } else if (e.button === 0 && mode === "play") {
+      keys.Mouse0 = true;
+    }
+    if (mode === "play" || mode === "drop" || mode === "bus") {
       canvas.requestPointerLock?.();
     }
   };
@@ -607,11 +630,26 @@ export function mountRoyale(
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
 
-    yaw -= look.dx * 0.0024;
-    pitch -= look.dy * 0.002;
-    pitch = Math.max(-0.9, Math.min(1.15, pitch));
+    if (look.dx !== 0 || look.dy !== 0) lookTouched = true;
+    yaw -= look.dx * 0.0026;
+    pitch -= look.dy * 0.0022;
+    pitch = Math.max(-1.25, Math.min(1.35, pitch));
     look.dx = 0;
     look.dy = 0;
+
+    const orbitCam = (tx: number, ty: number, tz: number, dist: number, height = 1.4) => {
+      const lookY = ty + height;
+      const cp = Math.cos(pitch);
+      const sp = Math.sin(pitch);
+      const cx = tx + Math.sin(yaw) * cp * dist;
+      const cy = Math.max(0.45, lookY + sp * dist);
+      const cz = tz + Math.cos(yaw) * cp * dist;
+      camera.position.set(cx, cy, cz);
+      camera.lookAt(tx, lookY, tz);
+    };
+
+    const prop = bus.userData.propeller as THREE.Object3D | undefined;
+    if (prop) prop.rotation.x += dt * 22;
 
     if (bannerT > 0) bannerT -= dt;
     if (inv > 0) inv -= dt;
@@ -627,13 +665,16 @@ export function mountRoyale(
     bus.lookAt(0, 36, 0);
 
     if (mode === "title") {
-      camera.position.set(
-        Math.cos(now / 4000) * 90,
-        28,
-        Math.sin(now / 4000) * 90
-      );
-      camera.lookAt(0, 4, 0);
-      player.visible = false;
+      player.visible = true;
+      lobbyPeely.visible = true;
+      lobbyChief.visible = true;
+      player.position.set(6, 0, 10);
+      player.rotation.y = 0.55;
+      if (!lookTouched) yaw -= dt * 0.18;
+      orbitCam(6, 0.4, 10, 14, 1.25);
+    } else {
+      lobbyPeely.visible = false;
+      lobbyChief.visible = false;
     }
 
     if (mode === "bus") {
@@ -643,8 +684,7 @@ export function mountRoyale(
       pz = bus.position.z;
       player.position.set(px, py, pz);
       player.rotation.y = yaw;
-      camera.position.set(px - fx * 10, py + 4, pz - fz * 10);
-      camera.lookAt(px, py + 1, pz);
+      orbitCam(px, py, pz, 12, 1.1);
     }
 
     if (mode === "drop") {
@@ -660,12 +700,12 @@ export function mountRoyale(
         mz -= fz;
       }
       if (keys.KeyA) {
-        mx += rx;
-        mz += rz;
-      }
-      if (keys.KeyD) {
         mx -= rx;
         mz -= rz;
+      }
+      if (keys.KeyD) {
+        mx += rx;
+        mz += rz;
       }
       const len = Math.hypot(mx, mz) || 1;
       px += (mx / len) * speed * dt;
@@ -682,8 +722,7 @@ export function mountRoyale(
       }
       player.position.set(px, py, pz);
       player.rotation.y = yaw;
-      camera.position.set(px - fx * 9, py + 5, pz - fz * 9);
-      camera.lookAt(px, py + 1.4, pz);
+      orbitCam(px, py, pz, 10, 1.25);
     }
 
     if (mode === "play") {
@@ -703,12 +742,12 @@ export function mountRoyale(
         mz -= fz;
       }
       if (keys.KeyA) {
-        mx += rx;
-        mz += rz;
-      }
-      if (keys.KeyD) {
         mx -= rx;
         mz -= rz;
+      }
+      if (keys.KeyD) {
+        mx += rx;
+        mz += rz;
       }
       const sprint = keys.ShiftLeft || keys.ShiftRight ? 1.45 : 1;
       const len = Math.hypot(mx, mz);
@@ -754,13 +793,11 @@ export function mountRoyale(
 
       player.position.set(px, py, pz);
       player.rotation.y = yaw;
-      const camDist = 7.2;
-      const camH = 2.1 + Math.sin(pitch) * 1.2;
-      const cx = px - fx * Math.cos(pitch) * camDist;
-      const cy = py + camH + Math.max(0, -pitch) * 2;
-      const cz = pz - fz * Math.cos(pitch) * camDist;
-      camera.position.set(cx, cy, cz);
-      camera.lookAt(px, py + 1.45, pz);
+      orbitCam(px, py, pz, 6.8, 1.45);
+    }
+
+    if (mode === "over" || mode === "win") {
+      orbitCam(px, py, pz, 8.5, 1.3);
     }
 
     rifle.visible = weapon === "ar";
