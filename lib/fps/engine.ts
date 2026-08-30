@@ -7,7 +7,6 @@ import {
   paintTitlePoster,
   type FloorSample,
   type FloorTheme,
-  type WallTexId,
 } from "@/lib/fps/textures";
 import {
   angleFrame,
@@ -93,7 +92,7 @@ const VIEW_GUN_H = 70;
 const PICKUP_SCALE = 0.5;
 const FLOOR_W = 640;
 const FLOOR_H = 180;
-const FLOOR_SCALE = 1.35;
+const FLOOR_SCALE = 2.6;
 type GunId = "pump" | "scar" | "exotic";
 
 function wallAt(grid: number[][], x: number, y: number) {
@@ -825,8 +824,13 @@ export function mountFps(
       if (side === 0 && rayDirX > 0) wallX = 1 - wallX;
       if (side === 1 && rayDirY < 0) wallX = 1 - wallX;
 
-      const texId = (hit || 1) as WallTexId;
-      const tex = wallTex[texId] ?? wallTex[1];
+      const viewTheme = themeAt(px, py);
+      const tex =
+        viewTheme === "indoor"
+          ? wallTex[2]
+          : viewTheme === "industrial"
+            ? wallTex[3]
+            : wallTex[4];
       const texX = Math.min(tex.width - 1, (wallX * tex.width) | 0);
 
       offCtx.drawImage(tex, texX, 0, 1, tex.height, col, drawStart, 1, drawEnd - drawStart);
