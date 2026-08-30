@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --port 43180 --hostname 0.0.0.0",
     "build": "next build",
+    "build:pages": "GITHUB_PAGES=true next build",
     "start": "next start --port 43180 --hostname 0.0.0.0",
     "lint": "eslint"
   },

@@ -4,6 +4,7 @@ import { PixelIcon, PixelPanel } from "@/components/pixel-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { HighScore } from "@/lib/types";
+import { loadHallOfFame, saveHallOfFame } from "@/lib/client-scores";
 import { sfx } from "@/lib/sfx";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
@@ -173,16 +174,15 @@ export function MeteorGame() {
 
   useEffect(() => {
     const ac = new AbortController();
-    fetch("/api/scores", { cache: "no-store", signal: ac.signal })
-      .then((res) => res.json())
-      .then((data: { scores?: HighScore[]; error?: string }) => {
-        const next = data.scores ?? [];
+    loadHallOfFame()
+      .then((next) => {
+        if (ac.signal.aborted) return;
         scoresRef.current = next;
         setScores(next);
         setError("");
       })
-      .catch((err: unknown) => {
-        if (err instanceof DOMException && err.name === "AbortError") return;
+      .catch(() => {
+        if (ac.signal.aborted) return;
         setError("HALL OF FAME OFFLINE");
       });
     return () => ac.abort();
@@ -517,17 +517,7 @@ export function MeteorGame() {
     setSaving(true);
     setSaveMsg("");
     try {
-      const res = await fetch("/api/scores", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ initials: letters, score }),
-      });
-      const data = (await res.json()) as {
-        scores?: HighScore[];
-        error?: string;
-      };
-      if (!res.ok) throw new Error(data.error || "save failed");
-      const next = data.scores ?? [];
+      const next = await saveHallOfFame(letters, score);
       scoresRef.current = next;
       setScores(next);
       setSaveMsg("NAME ENTERED");
@@ -666,8 +656,8 @@ export function MeteorGame() {
               ))}
             </ol>
             <p className="font-vt mt-4 text-lg text-[#c9a0ff]">
-              High scores live in a local SQLite arcade ROM. Beat VIP if you
-              can.
+              High scores save to the arcade ROM on this machine. Beat VIP if
+              you can.
             </p>
           </div>
         </div>
