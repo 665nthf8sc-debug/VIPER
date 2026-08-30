@@ -25,7 +25,7 @@ export const LEVELS: LevelDef[] = [
     bossKind: "bossPeely",
     bossName: "KING PEELY",
     bossHp: 220,
-    bossScale: 1.7,
+    bossScale: 2,
     bossMelee: 20,
     skyPath: "/fps/sprites/sky-level1-island.png",
     skyFallback: "/fps/sprites/sky-storm.png",

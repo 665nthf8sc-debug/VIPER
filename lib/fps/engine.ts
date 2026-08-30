@@ -259,7 +259,11 @@ export function mountFps(
       });
     void loadLevelSkyImages()
       .then((skies) => {
-        levelSkies = { ...levelSkies, ...skies };
+        const wrapped: Partial<Record<1 | 2 | 3, HTMLCanvasElement>> = {};
+        ([1, 2, 3] as const).forEach((id) => {
+          if (skies[id]) wrapped[id] = buildSkyFromImage(skies[id]!, RENDER_W, RENDER_H);
+        });
+        levelSkies = { ...levelSkies, ...wrapped };
         if (mode === "play") paintLevelTheme(levelById(level));
       })
       .catch(() => {
