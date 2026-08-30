@@ -1,6 +1,6 @@
 "use client";
 
-import { fpsAsset, loadAngleSheets, type AngleKind } from "@/lib/fps/sprite-loader";
+import { loadFrontPortrait, type AngleKind } from "@/lib/fps/sprite-loader";
 import type { SkinId } from "@/lib/pass";
 import { drawSprite, spriteRows, type SpriteKind } from "@/lib/sprites";
 import { useEffect, useRef, useState } from "react";
@@ -13,27 +13,22 @@ export const HD_SKIN: Partial<Record<SkinId, AngleKind>> = {
   stormstep: "stormstep",
 };
 
-let portraitCache: Promise<Partial<Record<AngleKind, HTMLCanvasElement>>> | null = null;
+const portraitCache = new Map<AngleKind, Promise<HTMLCanvasElement | null>>();
 
-function loadPortraits() {
-  if (!portraitCache) {
-    portraitCache = loadAngleSheets().then((angles) => {
-      const out: Partial<Record<AngleKind, HTMLCanvasElement>> = {};
-      (Object.keys(angles) as AngleKind[]).forEach((k) => {
-        const frame = angles[k]?.[0];
-        if (frame) out[k] = frame;
-      });
-      return out;
-    });
+function portraitFor(kind: AngleKind) {
+  let pending = portraitCache.get(kind);
+  if (!pending) {
+    pending = loadFrontPortrait(kind);
+    portraitCache.set(kind, pending);
   }
-  return portraitCache;
+  return pending;
 }
 
 export function HdSkin({
   palette,
   sprite,
   skinId,
-  size = 40,
+  size = 72,
 }: {
   palette: Record<string, string>;
   sprite: SpriteKind;
@@ -47,8 +42,8 @@ export function HdSkin({
   useEffect(() => {
     if (!sheet) return;
     let live = true;
-    void loadPortraits().then((portraits) => {
-      if (live && portraits[sheet]) setHd(portraits[sheet]!);
+    void portraitFor(sheet).then((frame) => {
+      if (live && frame) setHd(frame);
     });
     return () => {
       live = false;
@@ -60,18 +55,19 @@ export function HdSkin({
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.imageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = true;
     ctx.fillStyle = "#0c1408";
     ctx.fillRect(0, 0, size, size);
     if (hd) {
-      const pad = 2;
+      const pad = 4;
       const scale = Math.min((size - pad * 2) / hd.width, (size - pad * 2) / hd.height);
       const w = Math.max(1, (hd.width * scale) | 0);
       const h = Math.max(1, (hd.height * scale) | 0);
       ctx.drawImage(hd, ((size - w) / 2) | 0, ((size - h) / 2) | 0, w, h);
     } else {
-      const ox = size >= 48 ? 16 : 12;
-      const oy = size >= 48 ? 16 : 12;
+      ctx.imageSmoothingEnabled = false;
+      const ox = Math.max(4, ((size - 16) / 2) | 0);
+      const oy = Math.max(4, ((size - 16) / 2) | 0);
       drawSprite(ctx, spriteRows(sprite, 0), ox, oy, false, palette);
     }
   }, [hd, palette, size, sprite]);
@@ -81,12 +77,8 @@ export function HdSkin({
       ref={ref}
       width={size}
       height={size}
-      className="pixelated mx-auto block"
-      style={{ width: size * 1.4, height: size * 1.4 }}
+      className="mx-auto block bg-[#0c1408]"
+      style={{ width: size, height: size }}
     />
   );
-}
-
-export function hdSheetUrl(kind: AngleKind) {
-  return fpsAsset(`/fps/sprites/char-${kind}-8angle.png`);
 }

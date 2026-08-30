@@ -121,12 +121,7 @@ export function mountFps(
     chest: buildPickupSprite("chest"),
   };
   const gunHd: Partial<Record<WeaponId, HTMLCanvasElement>> = {};
-  void loadFpsArt({
-    chief: enemyFlat.chief,
-    peely: enemyFlat.peely,
-    jonesy: enemyFlat.jonesy,
-    fox: enemyFlat.fox,
-  }).then((art) => {
+  const applyArt = (art: Awaited<ReturnType<typeof loadFpsArt>>) => {
     enemyAngles = art.angles;
     if (art.angles.chief?.[0]) enemyFlat.chief = art.angles.chief[0];
     if (art.angles.peely?.[0]) enemyFlat.peely = art.angles.peely[0];
@@ -154,7 +149,19 @@ export function mountFps(
     if (art.env.sky) skyCanvas = buildSkyFromImage(art.env.sky, RENDER_W, RENDER_H);
     const grass = art.env.surfaces[2];
     if (grass) floorCanvas = buildFloorFromTile(grass, RENDER_W, RENDER_H);
-  });
+  };
+  const bootArt = () => {
+    void loadFpsArt({
+      chief: enemyFlat.chief,
+      peely: enemyFlat.peely,
+      jonesy: enemyFlat.jonesy,
+      fox: enemyFlat.fox,
+    })
+      .then(applyArt)
+      .catch(() => {
+        /* keep procedural fallbacks */
+      });
+  };
 
   const enemyTexFor = (e: Enemy) => {
     const sheet = enemyAngles[angleKindFor(e.kind)];
@@ -230,6 +237,7 @@ export function mountFps(
   };
 
   const reset = () => {
+    bootArt();
     px = SPAWN.x;
     py = SPAWN.y;
     pa = SPAWN.angle;
@@ -798,6 +806,7 @@ export function mountFps(
   };
 
   pushHud();
+  bootArt();
   raf = requestAnimationFrame(loop);
 
   return {

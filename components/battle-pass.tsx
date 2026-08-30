@@ -59,7 +59,7 @@ export function BattlePass() {
             </p>
           </div>
           <div className="pixel-bevel bg-[#05000a] p-2">
-            <HdSkin palette={equipped.palette} sprite={equipped.sprite} skinId={equipped.id} size={48} />
+            <HdSkin palette={equipped.palette} sprite={equipped.sprite} skinId={equipped.id} size={72} />
           </div>
         </div>
 
@@ -86,7 +86,7 @@ export function BattlePass() {
                 <p className="font-press text-[8px] text-[#3cdcff]">
                   {`TIER ${String(i + 1).padStart(2, "0")}`}
                 </p>
-                <HdSkin palette={skin.palette} sprite={skin.sprite} skinId={skin.id} size={48} />
+                <HdSkin palette={skin.palette} sprite={skin.sprite} skinId={skin.id} size={72} />
                 <p className="font-press mt-2 text-[9px] text-[#ffcc00]">
                   {skin.name}
                 </p>

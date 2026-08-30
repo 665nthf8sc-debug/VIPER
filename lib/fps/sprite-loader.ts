@@ -329,20 +329,47 @@ export async function loadHdEnemySprites(
   return out;
 }
 
-export async function loadFpsArt(legacyFallback: HdSpriteSet): Promise<FpsArt> {
-  const [angles, items, env, legacy] = await Promise.all([
-    loadAngleSheets(),
-    loadItemGrids(),
-    loadEnvArt(),
-    loadHdEnemySprites(legacyFallback),
-  ]);
-  return {
-    angles,
-    items,
-    env,
-    portraits: portraitsFromAngles(angles),
-    legacy,
-  };
+let artPromise: Promise<FpsArt> | null = null;
+
+export function loadFpsArt(legacyFallback: HdSpriteSet): Promise<FpsArt> {
+  if (!artPromise) {
+    artPromise = Promise.all([
+      loadAngleSheets(),
+      loadItemGrids(),
+      loadEnvArt(),
+      loadHdEnemySprites(legacyFallback),
+    ])
+      .then(([angles, items, env, legacy]) => ({
+        angles,
+        items,
+        env,
+        portraits: portraitsFromAngles(angles),
+        legacy,
+      }))
+      .catch((err) => {
+        artPromise = null;
+        throw err;
+      });
+  }
+  return artPromise;
+}
+
+/** Locker-only: crop the front frame of one 8-angle sheet. */
+export async function loadFrontPortrait(kind: AngleKind): Promise<HTMLCanvasElement | null> {
+  try {
+    const img = await loadImage(fpsAsset(ANGLE_FILES[kind]));
+    const fw = Math.max(1, Math.floor(img.width / 8));
+    const cell = document.createElement("canvas");
+    cell.width = fw;
+    cell.height = img.height;
+    const ctx = cell.getContext("2d")!;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, 0, 0, fw, img.height, 0, 0, fw, img.height);
+    knockChroma(cell, "magenta");
+    return normalizeSpriteSize(cropToAlpha(cell), 256);
+  } catch {
+    return null;
+  }
 }
 
 export function canvasToUrl(canvas: HTMLCanvasElement) {
