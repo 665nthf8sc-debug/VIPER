@@ -21,6 +21,11 @@ const EMPTY: FpsHud = {
   pumpAmmo: "—",
   scarAmmo: "—",
   exoticAmmo: "—",
+  level: 1,
+  levelName: "BEACH OUTPOST",
+  remaining: 5,
+  bossLive: false,
+  bossName: "",
 };
 
 export function ViperFps() {
@@ -74,14 +79,15 @@ export function ViperFps() {
 
   return (
     <section id="fps" className="section-wrap py-16 sm:py-20">
-      <PixelPanel title="VIPER FPS  •  RAYCAST ISLAND" tone="orange">
+      <PixelPanel title="VIPER FPS  •  3 LEVELS + BOSSES" tone="orange">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
           <div>
             <p className="font-vt mb-3 text-xl text-[#f8f0d8]">
-              Wolfenstein-style raycasting on a Fortnite island. HD 8-angle
-              VIPER, Peely, Chief, and Stormstep billboards. Paired outdoor,
-              indoor, and industrial tiles with a storm sky. Loot pump, SCAR,
-              exotic, ammo boxes, medkits, chests, and llamas.
+              Three-level raycast island. Beach Outpost, Neon Villa, then
+              Hazard Foundry — each with its own walls, floor, and sky. Clear
+              the regulars, then fight King Peely, Storm Overlord, and Iron
+              Chief. HD 8-angle billboards. Loot pump, SCAR, exotic, ammo,
+              medkits, chests, and llamas.
             </p>
             <div
               ref={stageRef}
@@ -103,9 +109,11 @@ export function ViperFps() {
                   start();
                 }}
               >
-                {hud.mode === "win" || hud.mode === "over"
-                  ? "DROP AGAIN"
-                  : "ENTER ISLAND"}
+                {hud.mode === "over"
+                  ? "RETRY LEVEL"
+                  : hud.mode === "win"
+                    ? "DROP AGAIN"
+                    : "ENTER ISLAND"}
               </Button>
               <Button variant="arcade" className="h-11 px-3" onClick={() => void toggleFull()}>
                 {full ? "EXIT FULL" : "FULLSCREEN"}
@@ -148,7 +156,12 @@ export function ViperFps() {
                 {Math.max(0, Math.ceil(hud.shield))} SHIELD
               </p>
               <p className="font-vt mt-1 text-xl text-[#ffcc00]">
-                {hud.weapon.replace("_", " ").toUpperCase()} · {hud.ammo} · ELIMS {hud.elims}
+                LEVEL {hud.level} {hud.levelName} ·{" "}
+                {hud.bossLive ? `BOSS ${hud.bossName}` : `REMAIN ${hud.remaining}`}{" "}
+                · ELIMS {hud.elims}
+              </p>
+              <p className="font-vt mt-1 text-xl text-[#c9a0ff]">
+                {hud.weapon.replace("_", " ").toUpperCase()} · {hud.ammo}
               </p>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 {(
@@ -177,17 +190,18 @@ export function ViperFps() {
               </div>
             </div>
             <div className="pixel-bevel mt-4 bg-[#05000a] p-4">
-              <p className="font-press text-[8px] text-[#ff6a00]">RIVALS</p>
+              <p className="font-press text-[8px] text-[#ff6a00]">LEVEL LOOP</p>
               <p className="font-vt mt-2 text-lg text-[#f8f0d8]">
-                VIPER, Peely, Chief, and Stormstep patrol the outpost. Walk
-                around them to see all eight angles. Clear the island for a
-                Victory Royale.
+                L1 Beach Outpost — 5 rivals then King Peely. L2 Neon Villa —
+                8 then Storm Overlord. L3 Hazard Foundry — 12 then Iron
+                Chief. Beat the last boss for a Victory Royale. Death retries
+                the current level.
               </p>
               <p className="font-press mt-3 text-[8px] text-[#00e800]">ISLAND TILES</p>
               <p className="font-vt mt-2 text-lg text-[#c9a0ff]">
-                Outdoor stucco + grass, indoor villa wood, and industrial
-                metal stay paired — no mixed walls in one vista, no grass
-                indoors. Storm sky wraps. Mag / reserve ammo on every gun.
+                Each stage retile: outdoor grass, indoor villa wood, industrial
+                metal. Radar marks bosses with a star. Q/E turn, walk-over
+                loot, mag / reserve on every gun.
               </p>
             </div>
           </div>

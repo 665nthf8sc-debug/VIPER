@@ -1,11 +1,12 @@
 import { MAP_H, MAP_W } from "@/lib/fps/map";
-import type { EnemyKind } from "@/lib/fps/sprites";
+import { isBossKind, type EnemyKind } from "@/lib/fps/sprites";
+import type { FloorTheme } from "@/lib/fps/textures";
 
 export const RADAR_SIZE = 104;
 export const RADAR_MARGIN = 6;
 export const RADAR_TOP = 26;
 
-export const ENEMY_RADAR: Record<EnemyKind, { letter: string; color: string }> = {
+export const ENEMY_RADAR: Partial<Record<EnemyKind, { letter: string; color: string }>> = {
   viper: { letter: "V", color: "#00e800" },
   chief: { letter: "C", color: "#d4af37" },
   peely: { letter: "P", color: "#ffcc00" },
@@ -19,23 +20,23 @@ export type RadarEnemy = {
   x: number;
   y: number;
   alive: boolean;
+  boss?: boolean;
 };
 
 /** Pre-render wall cells so the HUD radar can rotate cheaply. */
-export function buildRadarWalls(grid: number[][], cell = 4) {
+export function buildRadarWalls(grid: number[][], theme: FloorTheme = "outdoor", cell = 4) {
   const canvas = document.createElement("canvas");
   canvas.width = MAP_W * cell;
   canvas.height = MAP_H * cell;
   const ctx = canvas.getContext("2d")!;
   ctx.fillStyle = "rgba(12,0,24,0.35)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const wall =
+    theme === "indoor" ? "#8a6238" : theme === "industrial" ? "#5a5a6a" : "#3d6a40";
   for (let y = 0; y < MAP_H; y++) {
     for (let x = 0; x < MAP_W; x++) {
-      const id = grid[y][x];
-      if (id <= 0) continue;
-      if (id === 1 || id === 2 || id === 8) ctx.fillStyle = "#8a6238";
-      else if (id === 3 || id === 6) ctx.fillStyle = "#5a5a6a";
-      else ctx.fillStyle = "#3d6a40";
+      if (grid[y][x] <= 0) continue;
+      ctx.fillStyle = wall;
       ctx.fillRect(x * cell, y * cell, cell, cell);
     }
   }
@@ -115,7 +116,25 @@ export function drawMinimap(
     if (!e.alive) continue;
     const [sx, sy] = worldToRadar(e.x, e.y, opts.px, opts.py, opts.pa, cx, cy, scale);
     if (sx < x - 4 || sy < y - 4 || sx > x + size + 4 || sy > y + size + 4) continue;
+    if (e.boss || isBossKind(e.kind)) {
+      ctx.fillStyle = "#ff2a6a";
+      ctx.beginPath();
+      ctx.moveTo(sx, sy - 5);
+      ctx.lineTo(sx + 2.2, sy - 1.2);
+      ctx.lineTo(sx + 5, sy);
+      ctx.lineTo(sx + 2.2, sy + 1.2);
+      ctx.lineTo(sx, sy + 5);
+      ctx.lineTo(sx - 2.2, sy + 1.2);
+      ctx.lineTo(sx - 5, sy);
+      ctx.lineTo(sx - 2.2, sy - 1.2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#ffcc00";
+      ctx.fillText("*", sx + 5, sy);
+      continue;
+    }
     const mark = ENEMY_RADAR[e.kind];
+    if (!mark) continue;
     ctx.fillStyle = mark.color;
     ctx.beginPath();
     ctx.arc(sx, sy, 2.4, 0, Math.PI * 2);

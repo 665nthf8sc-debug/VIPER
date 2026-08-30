@@ -439,6 +439,59 @@ export function loadFrontPortrait(kind: AngleKind): Promise<HTMLCanvasElement | 
   return pending;
 }
 
+export type BossAngleKind = "bossPeely" | "bossStorm" | "bossChief";
+
+const BOSS_FILES: Record<BossAngleKind, string> = {
+  bossPeely: "/fps/sprites/boss-peely-king.png",
+  bossStorm: "/fps/sprites/boss-storm-overlord.png",
+  bossChief: "/fps/sprites/boss-iron-chief.png",
+};
+
+const LEVEL_SKY_FILES: Record<1 | 2 | 3, string> = {
+  1: "/fps/sprites/sky-level1-island.png",
+  2: "/fps/sprites/sky-level2-storm.png",
+  3: "/fps/sprites/sky-level3-foundry.png",
+};
+
+const optionalFail = new Set<string>();
+
+/** Load an optional PNG; failed paths retry later (files may land on the branch). */
+export async function loadOptionalCanvas(path: string) {
+  if (optionalFail.has(path)) optionalFail.delete(path);
+  try {
+    return canvasFromImage(await loadImage(fpsAsset(path)));
+  } catch {
+    optionalFail.add(path);
+    return null;
+  }
+}
+
+export async function loadBossSheets(): Promise<Partial<Record<BossAngleKind, HTMLCanvasElement[]>>> {
+  const out: Partial<Record<BossAngleKind, HTMLCanvasElement[]>> = {};
+  await Promise.all(
+    (Object.keys(BOSS_FILES) as BossAngleKind[]).map(async (kind) => {
+      try {
+        const sheet = await loadKeyedSheet(BOSS_FILES[kind]);
+        out[kind] = sliceAngleStrip(sheet);
+      } catch {
+        /* stand-in regular sheet */
+      }
+    })
+  );
+  return out;
+}
+
+export async function loadLevelSkyImages(): Promise<Partial<Record<1 | 2 | 3, HTMLCanvasElement>>> {
+  const out: Partial<Record<1 | 2 | 3, HTMLCanvasElement>> = {};
+  await Promise.all(
+    ([1, 2, 3] as const).map(async (id) => {
+      const img = await loadOptionalCanvas(LEVEL_SKY_FILES[id]);
+      if (img) out[id] = img;
+    })
+  );
+  return out;
+}
+
 export function canvasToUrl(canvas: HTMLCanvasElement) {
   try {
     return canvas.toDataURL("image/png");

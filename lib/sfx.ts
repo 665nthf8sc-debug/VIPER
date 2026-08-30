@@ -154,6 +154,19 @@ class ChipSynth {
     this.noise(0.16, 0.04, 200, 900);
   }
 
+  bossSting() {
+    this.tone(196, 0.12, "sawtooth", 0.07, 280);
+    setTimeout(() => this.tone(247, 0.12, "square", 0.06, 360), 90);
+    setTimeout(() => this.tone(392, 0.22, "square", 0.07, 520), 200);
+    this.noise(0.2, 0.05, 180, 1400);
+  }
+
+  levelClear() {
+    this.tone(392, 0.1, "square", 0.05);
+    setTimeout(() => this.tone(523, 0.12, "square", 0.05), 90);
+    setTimeout(() => this.tone(659, 0.16, "square", 0.06), 180);
+  }
+
   crunch() {
     this.tone(140, 0.08, "sawtooth", 0.04, 70);
   }

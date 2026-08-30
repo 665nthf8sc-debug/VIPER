@@ -7,30 +7,41 @@ import {
   paintTitlePoster,
   type FloorSample,
   type FloorTheme,
+  type WallTexId,
 } from "@/lib/fps/textures";
 import {
   angleFrame,
+  loadBossSheets,
   loadFpsArt,
+  loadLevelSkyImages,
   type AngleKind,
+  type BossAngleKind,
 } from "@/lib/fps/sprite-loader";
 import {
   angleKindFor,
   buildEnemySprite,
   buildPickupSprite,
   buildWeaponView,
+  isBossKind,
   PICKUP_LABEL,
+  regularFor,
   type EnemyKind,
   type PickupKind,
 } from "@/lib/fps/sprites";
 import {
-  buildFloorThemes,
   buildMapGrid,
-  ENEMY_SPAWNS,
   MAP_H,
   MAP_W,
   PICKUP_SPAWNS,
   SPAWN,
 } from "@/lib/fps/map";
+import {
+  farOpenCell,
+  LEVELS,
+  levelById,
+  pickRegularSpawns,
+  type LevelDef,
+} from "@/lib/fps/levels";
 import {
   formatAmmo,
   WEAPON_ORDER,
@@ -62,6 +73,11 @@ export type FpsHud = {
   pumpAmmo: string;
   scarAmmo: string;
   exoticAmmo: string;
+  level: number;
+  levelName: string;
+  remaining: number;
+  bossLive: boolean;
+  bossName: string;
 };
 
 type Enemy = {
@@ -74,6 +90,12 @@ type Enemy = {
   vx: number;
   vy: number;
   facing: number;
+  boss: boolean;
+  scale: number;
+  speed: number;
+  melee: number;
+  rush: number;
+  standIn: boolean;
 };
 
 type Pickup = {
@@ -141,13 +163,22 @@ export function mountFps(
   ctx.imageSmoothingEnabled = false;
 
   const grid = buildMapGrid();
-  const radarWalls = buildRadarWalls(grid);
-  const floorTheme = buildFloorThemes(grid);
   const wallTex = buildWallTextures();
+  const themeWalls: Record<FloorTheme, HTMLCanvasElement> = {
+    outdoor: wallTex[4],
+    indoor: wallTex[2],
+    industrial: wallTex[3],
+  };
   let skyCanvas = buildSkyCanvas(RENDER_W, RENDER_H);
+  let stormSky = skyCanvas;
   let floorTiles = buildThemeFloors([], []);
+  let themeFloors = floorTiles;
   let titleArt: HTMLCanvasElement | null = null;
-  const enemyFlat: Record<EnemyKind, HTMLCanvasElement> = {
+  let radarWalls = buildRadarWalls(grid, "outdoor");
+  let levelTheme: FloorTheme = "outdoor";
+  let levelSkies: Partial<Record<1 | 2 | 3, HTMLCanvasElement>> = {};
+  let bossAngles: Partial<Record<BossAngleKind, HTMLCanvasElement[]>> = {};
+  const enemyFlat: Record<"peely" | "chief" | "viper" | "stormstep" | "jonesy" | "fox", HTMLCanvasElement> = {
     peely: buildEnemySprite("peely"),
     chief: buildEnemySprite("chief"),
     viper: buildEnemySprite("viper"),
@@ -167,6 +198,9 @@ export function mountFps(
     ammo: buildPickupSprite("ammo"),
   };
   const gunHd: Partial<Record<WeaponId, HTMLCanvasElement>> = {};
+  let level = 1;
+  let bossLive = false;
+  let pendingAdvance = 0;
   const applyArt = (art: Awaited<ReturnType<typeof loadFpsArt>>) => {
     enemyAngles = art.angles;
     if (art.angles.chief?.[0]) enemyFlat.chief = art.angles.chief[0];
@@ -193,11 +227,44 @@ export function mountFps(
     if (art.items.chests?.[0]) pickupTex.chest = art.items.chests[0];
     if (art.items.chests?.[3]) pickupTex.ammo = art.items.chests[3];
     applyHdWalls(wallTex, art.env.interiors, art.env.surfaces, art.env.walls);
+    themeWalls.outdoor = wallTex[4];
+    themeWalls.indoor = wallTex[2];
+    themeWalls.industrial = wallTex[3];
     if (art.env.sky) {
-      skyCanvas = buildSkyFromImage(art.env.sky, RENDER_W, RENDER_H);
+      stormSky = buildSkyFromImage(art.env.sky, RENDER_W, RENDER_H);
     }
     floorTiles = buildThemeFloors(art.env.surfaces, art.env.interiors, art.env.floors);
+    themeFloors = floorTiles;
     titleArt = art.env.title;
+    paintLevelTheme(levelById(level));
+  };
+  const paintLevelTheme = (def: LevelDef) => {
+    levelTheme = def.theme;
+    const wall = themeWalls[def.theme];
+    ([1, 2, 3, 4, 5, 6, 7, 8] as WallTexId[]).forEach((id) => {
+      wallTex[id] = wall;
+    });
+    const floor = themeFloors[def.theme];
+    floorTiles = { outdoor: floor, indoor: floor, industrial: floor };
+    skyCanvas = levelSkies[def.id] ?? stormSky;
+    radarWalls = buildRadarWalls(grid, def.theme);
+  };
+  const bootOptionalArt = () => {
+    void loadBossSheets()
+      .then((sheets) => {
+        bossAngles = { ...bossAngles, ...sheets };
+      })
+      .catch(() => {
+        /* stand-in regulars */
+      });
+    void loadLevelSkyImages()
+      .then((skies) => {
+        levelSkies = { ...levelSkies, ...skies };
+        if (mode === "play") paintLevelTheme(levelById(level));
+      })
+      .catch(() => {
+        /* keep storm sky */
+      });
   };
   const bootArt = () => {
     void loadFpsArt({
@@ -210,15 +277,17 @@ export function mountFps(
       .catch(() => {
         /* keep procedural fallbacks */
       });
+    bootOptionalArt();
   };
 
   const enemyTexFor = (e: Enemy) => {
-    const sheet = enemyAngles[angleKindFor(e.kind)];
+    const bossSheet = e.boss && isBossKind(e.kind) ? bossAngles[e.kind] : undefined;
+    const sheet = bossSheet ?? enemyAngles[angleKindFor(e.kind)];
     if (sheet && sheet.length === 8) {
       const idx = angleFrame(e.facing, px, py, e.x, e.y);
       return sheet[idx] ?? sheet[0];
     }
-    return enemyFlat[e.kind];
+    return enemyFlat[regularFor(e.kind)];
   };
 
   let mode: FpsMode = "title";
@@ -245,7 +314,7 @@ export function mountFps(
   let musicArmed = false;
   let spawnGuard = 0;
 
-  const spawnEnemy = (s: (typeof ENEMY_SPAWNS)[number]): Enemy => {
+  const spawnRegular = (s: { kind: EnemyKind; x: number; y: number }): Enemy => {
     const vx = (Math.random() - 0.5) * 0.6;
     const vy = (Math.random() - 0.5) * 0.6;
     return {
@@ -258,10 +327,16 @@ export function mountFps(
       vx,
       vy,
       facing: Math.atan2(vy, vx),
+      boss: false,
+      scale: CHAR_SCALE,
+      speed: s.kind === "chief" ? 1.5 : 1.1,
+      melee: 12,
+      rush: 0,
+      standIn: false,
     };
   };
 
-  let enemies: Enemy[] = ENEMY_SPAWNS.map(spawnEnemy);
+  let enemies: Enemy[] = [];
 
   let pickups: Pickup[] = PICKUP_SPAWNS.map((s) => ({
     kind: s.kind,
@@ -346,6 +421,11 @@ export function mountFps(
       pumpAmmo: ammoLine(owned, "pump", ammo.pump),
       scarAmmo: ammoLine(owned, "scar", ammo.scar),
       exoticAmmo: ammoLine(owned, "exotic", ammo.exotic),
+      level,
+      levelName: levelById(level).name,
+      remaining: enemies.filter((e) => e.alive && !e.boss).length,
+      bossLive,
+      bossName: bossLive ? levelById(level).bossName : "",
     });
   };
 
@@ -412,27 +492,7 @@ export function mountFps(
     }
   };
 
-  const reset = () => {
-    bootArt();
-    px = SPAWN.x;
-    py = SPAWN.y;
-    pa = SPAWN.angle;
-    hp = 100;
-    shield = 50;
-    elims = 0;
-    weapon = "pickaxe";
-    owned = new Set<WeaponId>(["pickaxe"]);
-    ammo = emptyAmmo();
-    cool = 0;
-    fireFrame = 0;
-    banner = "LOOT THE ISLAND";
-    bannerT = 120;
-    hurtFlash = 0;
-    hurtFrom = 0;
-    shotTrace = 0;
-    shotHit = false;
-    spawnGuard = 180;
-    enemies = ENEMY_SPAWNS.map(spawnEnemy);
+  const resetPickups = () => {
     pickups = PICKUP_SPAWNS.map((s) => ({
       kind: s.kind,
       x: s.x,
@@ -440,6 +500,65 @@ export function mountFps(
       taken: false,
       bob: Math.random() * Math.PI * 2,
     }));
+  };
+
+  const spawnBoss = (def: LevelDef) => {
+    const at = farOpenCell(grid, px, py);
+    const standIn = !bossAngles[def.bossKind];
+    enemies.push({
+      kind: def.bossKind,
+      x: at.x,
+      y: at.y,
+      hp: def.bossHp,
+      alive: true,
+      flash: 0,
+      vx: 0,
+      vy: 0,
+      facing: Math.atan2(py - at.y, px - at.x),
+      boss: true,
+      scale: def.bossScale,
+      speed: 0.68,
+      melee: def.bossMelee,
+      rush: 0,
+      standIn,
+    });
+    bossLive = true;
+    banner = def.bossName;
+    bannerT = 110;
+    spawnGuard = 40;
+    sfx.bossSting();
+    pushHud();
+  };
+
+  const startLevel = (id: number, keepLoadout: boolean) => {
+    const def = levelById(id);
+    level = def.id;
+    bossLive = false;
+    pendingAdvance = 0;
+    bootArt();
+    paintLevelTheme(def);
+    px = SPAWN.x;
+    py = SPAWN.y;
+    pa = SPAWN.angle;
+    hp = 100;
+    shield = 50;
+    if (!keepLoadout) {
+      elims = 0;
+      weapon = "pickaxe";
+      owned = new Set<WeaponId>(["pickaxe"]);
+      ammo = emptyAmmo();
+    }
+    cool = 0;
+    fireFrame = 0;
+    banner = `LEVEL ${def.id}`;
+    bannerT = 100;
+    hurtFlash = 0;
+    hurtFrom = 0;
+    shotTrace = 0;
+    shotHit = false;
+    spawnGuard = 180;
+    enemies = pickRegularSpawns(grid, def.regulars).map(spawnRegular);
+    resetPickups();
     mode = "play";
     inputArmed = true;
     firing = false;
@@ -452,6 +571,13 @@ export function mountFps(
     sfx.start();
     armMusic("game");
     requestLock();
+  };
+
+  const beginRun = () => startLevel(1, false);
+
+  const continuePlay = () => {
+    if (mode === "over") startLevel(level, true);
+    else beginRun();
   };
 
   const finish = (win: boolean) => {
@@ -529,7 +655,20 @@ export function mountFps(
       e.alive = false;
       elims += 1;
       sfx.ko();
-      if (enemies.every((x) => !x.alive)) finish(true);
+      if (e.boss) {
+        bossLive = false;
+        if (level >= LEVELS.length) {
+          finish(true);
+        } else {
+          banner = `LEVEL ${level + 1}`;
+          bannerT = 90;
+          pendingAdvance = level + 1;
+          sfx.levelClear();
+        }
+      } else if (!bossLive && !pendingAdvance && enemies.every((x) => !x.alive || x.boss)) {
+        spawnBoss(levelById(level));
+      }
+      pushHud();
     } else {
       sfx.hit();
     }
@@ -605,7 +744,7 @@ export function mountFps(
       (e.code === "Enter" || e.code === "Space") &&
       (mode === "title" || mode === "win" || mode === "over")
     ) {
-      reset();
+      continuePlay();
       return;
     }
     if (down && e.code === "KeyM" && mode === "play") {
@@ -648,7 +787,7 @@ export function mountFps(
     inputArmed = true;
     if (!musicArmed) armMusic(mode === "play" ? "game" : "title");
     if (mode === "win" || mode === "over" || mode === "title") {
-      reset();
+      continuePlay();
       requestLock();
       return;
     }
@@ -721,6 +860,7 @@ export function mountFps(
     flash: boolean;
     scale: number;
     smooth?: boolean;
+    tint?: string;
   };
 
   const scaleCache = new WeakMap<HTMLCanvasElement, Map<string, HTMLCanvasElement>>();
@@ -752,12 +892,7 @@ export function mountFps(
   const floorImg = floorCtx.createImageData(FLOOR_W, FLOOR_H);
   const floorPix = floorImg.data;
 
-  const themeAt = (wx: number, wy: number): FloorTheme => {
-    const gx = Math.floor(wx);
-    const gy = Math.floor(wy);
-    if (gx < 0 || gy < 0 || gx >= MAP_W || gy >= MAP_H) return "outdoor";
-    return floorTheme[gy][gx];
-  };
+  const themeAt = (): FloorTheme => levelTheme;
 
   const sampleFloor = (tile: FloorSample, u: number, v: number, shade: number, di: number) => {
     const mask = tile.size - 1;
@@ -791,7 +926,7 @@ export function mountFps(
         v -= Math.floor(v);
         if (u < 0) u += 1;
         if (v < 0) v += 1;
-        const tile = floorTiles[themeAt(floorX, floorY)];
+        const tile = floorTiles[themeAt()];
         sampleFloor(tile, u, v, dim, (y * FLOOR_W + x) * 4);
         floorX += stepX;
         floorY += stepY;
@@ -885,7 +1020,7 @@ export function mountFps(
       if (side === 0 && rayDirX > 0) wallX = 1 - wallX;
       if (side === 1 && rayDirY < 0) wallX = 1 - wallX;
 
-      const viewTheme = themeAt(px, py);
+      const viewTheme = themeAt();
       const tex =
         viewTheme === "indoor"
           ? wallTex[2]
@@ -974,6 +1109,12 @@ export function mountFps(
           offCtx.drawImage(tex, texX, 0, 1, tex.height, stripe, drawStartY, 1, spriteH);
         }
       }
+      if (sp.tint) {
+        offCtx.globalCompositeOperation = "overlay";
+        offCtx.globalAlpha = 0.45;
+        offCtx.fillStyle = sp.tint;
+        offCtx.fillRect(clipStartX, Math.max(0, drawStartY), clipEndX - clipStartX, spriteH);
+      }
       offCtx.restore();
     }
   };
@@ -1044,6 +1185,11 @@ export function mountFps(
       if (hurtFlash > 0) hurtFlash -= 1;
       if (shotTrace > 0) shotTrace -= 1;
       if (spawnGuard > 0) spawnGuard -= 1;
+      if (pendingAdvance && bannerT <= 0) {
+        const next = pendingAdvance;
+        pendingAdvance = 0;
+        startLevel(next, true);
+      }
 
       let meleeAttacker: Enemy | null = null;
       let meleeDist = MELEE_REACH;
@@ -1051,15 +1197,20 @@ export function mountFps(
         if (!e.alive) continue;
         if (e.flash > 0) e.flash -= 1;
         const d = Math.hypot(e.x - px, e.y - py);
-        if (d < 8 && d > 0.58) {
+        if (e.boss) {
+          if (e.rush > 0) e.rush -= 1;
+          else if (tick % 160 === 0) e.rush = 48;
+          if (e.standIn && tick % 22 < 9) e.flash = Math.max(e.flash, 3);
+        }
+        if (d < (e.boss ? 11 : 8) && d > 0.58) {
           const ang = Math.atan2(py - e.y, px - e.x);
           e.facing = ang;
-          const step = dt * (e.kind === "chief" ? 1.5 : 1.1);
+          const step = dt * (e.rush > 0 ? e.speed * 2.6 : e.speed);
           const nx = e.x + Math.cos(ang) * step;
           const ny = e.y + Math.sin(ang) * step;
           if (!isBlocked(grid, nx, e.y, 0.18)) e.x = nx;
           if (!isBlocked(grid, e.x, ny, 0.18)) e.y = ny;
-        } else if (d >= 8) {
+        } else if (d >= (e.boss ? 11 : 8)) {
           const nx = e.x + e.vx * dt;
           const ny = e.y + e.vy * dt;
           if (!isBlocked(grid, nx, e.y, 0.18)) e.x = nx;
@@ -1077,9 +1228,9 @@ export function mountFps(
           meleeDist = d;
         }
       }
-      if (meleeAttacker && tick % 36 === 0) {
+      if (meleeAttacker && tick % (meleeAttacker.boss ? 26 : 36) === 0) {
         applyPlayerDamage(
-          12,
+          meleeAttacker.melee,
           Math.atan2(meleeAttacker.y - py, meleeAttacker.x - px)
         );
       }
@@ -1127,8 +1278,15 @@ export function mountFps(
           y: e.y,
           tex: enemyTexFor(e),
           flash: e.flash > 0,
-          scale: CHAR_SCALE,
+          scale: e.scale,
           smooth: true,
+          tint: e.standIn
+            ? e.kind === "bossPeely"
+              ? "#ffe14a"
+              : e.kind === "bossStorm"
+                ? "#3cdcff"
+                : "#d4af37"
+            : undefined,
         });
       }
       for (const p of pickups) {
@@ -1218,6 +1376,14 @@ export function mountFps(
       offCtx.fillStyle = "#f8f0d8";
       offCtx.fillText(weaponAmmo(), 12, 60);
       offCtx.fillStyle = "#ffcc00";
+      offCtx.fillText(`LEVEL ${level}`, 12, 74);
+      offCtx.fillStyle = bossLive ? "#ff2a6a" : "#f8f0d8";
+      offCtx.fillText(
+        bossLive ? "BOSS" : `REMAIN ${enemies.filter((e) => e.alive && !e.boss).length}`,
+        12,
+        88
+      );
+      offCtx.fillStyle = "#ffcc00";
       offCtx.fillText(`ELIMS ${elims}`, RENDER_W - 110, 18);
       drawMinimap(offCtx, {
         wallMap: radarWalls,
@@ -1254,7 +1420,11 @@ export function mountFps(
         offCtx.fillText(mode === "win" ? "VICTORY" : "ELIMINATED", 120, RENDER_H / 2);
         offCtx.fillStyle = "#ffcc00";
         offCtx.font = '10px "Press Start 2P", monospace';
-        offCtx.fillText("ENTER / SPACE / CLICK", 118, RENDER_H / 2 + 36);
+        offCtx.fillText(
+          mode === "over" ? "RETRY LEVEL" : "ENTER / SPACE / CLICK",
+          mode === "over" ? 200 : 118,
+          RENDER_H / 2 + 36
+        );
       }
     }
 
@@ -1271,7 +1441,7 @@ export function mountFps(
   raf = requestAnimationFrame(loop);
 
   return {
-    start: reset,
+    start: continuePlay,
     lockPointer: requestLock,
     stop() {
       running = false;
