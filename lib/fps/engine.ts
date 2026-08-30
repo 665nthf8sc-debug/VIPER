@@ -219,7 +219,48 @@ export function mountFps(
   const keys = new Set<string>();
   let mouseDx = 0;
   let firing = false;
+  let dragging = false;
   let pointerLocked = false;
+
+  const canvasHasKeys = () =>
+    document.activeElement === canvas || document.pointerLockElement === canvas;
+
+  const isLookKey = (code: string) =>
+    code === "ArrowLeft" ||
+    code === "ArrowRight" ||
+    code === "KeyQ" ||
+    code === "KeyC" ||
+    code === "Comma" ||
+    code === "Period";
+
+  const isMoveKey = (code: string) =>
+    code === "KeyW" ||
+    code === "KeyA" ||
+    code === "KeyS" ||
+    code === "KeyD" ||
+    code === "ArrowUp" ||
+    code === "ArrowDown" ||
+    code === "ShiftLeft" ||
+    code === "ShiftRight";
+
+  const isFireKey = (code: string) =>
+    code === "Space" || code === "ControlLeft" || code === "ControlRight";
+
+  const shouldHandleKey = (e: KeyboardEvent) => {
+    if (!canvasHasKeys()) return false;
+    return (
+      isFireKey(e.code) ||
+      isLookKey(e.code) ||
+      isMoveKey(e.code) ||
+      e.code === "KeyE" ||
+      e.code === "KeyM" ||
+      e.code === "Enter" ||
+      e.code === "Digit1" ||
+      e.code === "Digit2" ||
+      e.code === "Digit3" ||
+      e.code === "Digit4"
+    );
+  };
 
   const pushHud = () => {
     onHud({
@@ -260,6 +301,12 @@ export function mountFps(
       bob: Math.random() * Math.PI * 2,
     }));
     mode = "play";
+    firing = false;
+    dragging = false;
+    mouseDx = 0;
+    keys.delete("Space");
+    keys.delete("ControlLeft");
+    keys.delete("ControlRight");
     pushHud();
     sfx.start();
   };
@@ -378,9 +425,23 @@ export function mountFps(
   ro.observe(canvas);
 
   const onKey = (e: KeyboardEvent, down: boolean) => {
+    if (!shouldHandleKey(e)) return;
+    e.preventDefault();
     if (down) keys.add(e.code);
     else keys.delete(e.code);
-    if (down && e.code === "Enter" && mode === "title") reset();
+    if (
+      down &&
+      (e.code === "Enter" || e.code === "Space") &&
+      (mode === "title" || mode === "win" || mode === "over")
+    ) {
+      reset();
+      return;
+    }
+    if (down && e.code === "KeyM" && mode === "play") {
+      if (pointerLocked) document.exitPointerLock();
+      else void canvas.requestPointerLock();
+      return;
+    }
     if (down && e.code === "KeyE" && mode === "play") tryPickup();
     if (down && e.code === "Digit1" && owned.has("pickaxe")) weapon = "pickaxe";
     if (down && e.code === "Digit2" && owned.has("pump")) weapon = "pump";
@@ -397,38 +458,56 @@ export function mountFps(
   window.addEventListener("keyup", up);
 
   const onMouseMove = (e: MouseEvent) => {
-    if (pointerLocked) mouseDx += e.movementX;
+    if (pointerLocked || dragging) mouseDx += e.movementX;
   };
   window.addEventListener("mousemove", onMouseMove);
 
   const onClick = () => {
-    if (mode === "win" || mode === "over") {
+    canvas.focus();
+    if (mode === "win" || mode === "over" || mode === "title") {
       reset();
       return;
     }
-    if (mode === "title") {
-      reset();
-      return;
-    }
-    if (mode !== "play") return;
-    if (!pointerLocked) canvas.requestPointerLock();
-    else shoot();
+    if (mode === "play") shoot();
   };
   canvas.addEventListener("click", onClick);
 
   const onPointer = () => {
     pointerLocked = document.pointerLockElement === canvas;
+    if (pointerLocked) canvas.focus();
   };
   document.addEventListener("pointerlockchange", onPointer);
 
   const onMouseDown = (e: MouseEvent) => {
-    if (e.button === 0) firing = true;
+    canvas.focus();
+    if (e.button === 2) {
+      e.preventDefault();
+      if (mode === "play" && !pointerLocked) void canvas.requestPointerLock();
+      dragging = true;
+      return;
+    }
+    if (e.button === 0) {
+      firing = true;
+      dragging = true;
+    }
   };
-  const onMouseUp = () => {
+  const onMouseUp = (e: MouseEvent) => {
+    if (e.button === 0) firing = false;
+    if (e.button === 0 || e.button === 2) dragging = false;
+  };
+  const onContextMenu = (e: MouseEvent) => {
+    e.preventDefault();
+  };
+  const onBlur = () => {
+    if (document.pointerLockElement === canvas) return;
+    keys.clear();
     firing = false;
+    dragging = false;
   };
   canvas.addEventListener("mousedown", onMouseDown);
   window.addEventListener("mouseup", onMouseUp);
+  canvas.addEventListener("contextmenu", onContextMenu);
+  canvas.addEventListener("blur", onBlur);
 
   type SpriteDraw = {
     dist: number;
@@ -620,8 +699,12 @@ export function mountFps(
         pa += mouseDx * 0.0028;
         mouseDx = 0;
       }
-      if (keys.has("ArrowLeft") || keys.has("KeyQ")) pa -= ROT_SPEED * dt;
-      if (keys.has("ArrowRight")) pa += ROT_SPEED * dt;
+      if (keys.has("ArrowLeft") || keys.has("KeyQ") || keys.has("Comma")) {
+        pa -= ROT_SPEED * dt;
+      }
+      if (keys.has("ArrowRight") || keys.has("KeyC") || keys.has("Period")) {
+        pa += ROT_SPEED * dt;
+      }
 
       const sprint = keys.has("ShiftLeft") || keys.has("ShiftRight");
       const spd = MOVE_SPEED * dt * (sprint ? SPRINT : 1);
@@ -646,8 +729,11 @@ export function mountFps(
       if (!isBlocked(grid, nx, py)) px = nx;
       if (!isBlocked(grid, px, ny)) py = ny;
 
-      if (firing && WEAPONS[weapon].auto) shoot();
-      else if (firing && !WEAPONS[weapon].auto && cool <= 0) shoot();
+      const keyFire =
+        keys.has("Space") || keys.has("ControlLeft") || keys.has("ControlRight");
+      const wantFire = firing || keyFire;
+      if (wantFire && WEAPONS[weapon].auto) shoot();
+      else if (wantFire && !WEAPONS[weapon].auto && cool <= 0) shoot();
 
       if (cool > 0) cool -= 1;
       if (fireFrame > 0) fireFrame -= 1;
@@ -707,7 +793,7 @@ export function mountFps(
       offCtx.fillText("VIPER · PEELY · CHIEF", 150, 175);
       if (Math.floor(tick / 30) % 2 === 0) {
         offCtx.fillStyle = "#ff6a00";
-        offCtx.fillText("CLICK OR ENTER", 190, 230);
+        offCtx.fillText("ENTER / SPACE / CLICK", 145, 230);
       }
     } else {
       const zBuffer = renderWorld(offCtx);
@@ -793,7 +879,7 @@ export function mountFps(
         offCtx.fillText(mode === "win" ? "VICTORY" : "ELIMINATED", 120, RENDER_H / 2);
         offCtx.fillStyle = "#ffcc00";
         offCtx.font = '10px "Press Start 2P", monospace';
-        offCtx.fillText("CLICK TO RETRY", 130, RENDER_H / 2 + 36);
+        offCtx.fillText("ENTER / SPACE / CLICK", 118, RENDER_H / 2 + 36);
       }
     }
 
@@ -821,6 +907,8 @@ export function mountFps(
       canvas.removeEventListener("click", onClick);
       canvas.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mouseup", onMouseUp);
+      canvas.removeEventListener("contextmenu", onContextMenu);
+      canvas.removeEventListener("blur", onBlur);
       document.removeEventListener("pointerlockchange", onPointer);
       if (document.pointerLockElement === canvas) document.exitPointerLock();
     },

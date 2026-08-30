@@ -94,8 +94,9 @@ export function ViperFps() {
                 {full ? "EXIT FULL" : "FULLSCREEN"}
               </Button>
               <p className="font-vt text-lg text-[#c9a0ff]">
-                WASD move · mouse look · click shoot · E loot · 1–4 weapons ·
-                Shift sprint
+                WASD move · arrows/Q/C look · Space shoot · E loot · 1–4
+                weapons · Shift sprint. Mouse is optional: click to shoot, drag
+                or M / right-click to look.
               </p>
             </div>
             {hud.banner ? (
