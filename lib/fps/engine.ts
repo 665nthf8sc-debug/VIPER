@@ -221,9 +221,13 @@ export function mountFps(
   let firing = false;
   let dragging = false;
   let pointerLocked = false;
+  let inputArmed = false;
+  const fpsSection = canvas.closest("#fps") ?? canvas.parentElement ?? canvas;
 
   const canvasHasKeys = () =>
-    document.activeElement === canvas || document.pointerLockElement === canvas;
+    inputArmed ||
+    document.activeElement === canvas ||
+    document.pointerLockElement === canvas;
 
   const isLookKey = (code: string) =>
     code === "ArrowLeft" ||
@@ -301,6 +305,7 @@ export function mountFps(
       bob: Math.random() * Math.PI * 2,
     }));
     mode = "play";
+    inputArmed = true;
     firing = false;
     dragging = false;
     mouseDx = 0;
@@ -499,15 +504,26 @@ export function mountFps(
     e.preventDefault();
   };
   const onBlur = () => {
-    if (document.pointerLockElement === canvas) return;
+    if (document.pointerLockElement === canvas || inputArmed) return;
     keys.clear();
     firing = false;
     dragging = false;
+  };
+  const onDocPointerDown = (e: PointerEvent) => {
+    const t = e.target;
+    if (t instanceof Node && fpsSection.contains(t)) return;
+    inputArmed = false;
+    if (document.activeElement !== canvas) {
+      keys.clear();
+      firing = false;
+      dragging = false;
+    }
   };
   canvas.addEventListener("mousedown", onMouseDown);
   window.addEventListener("mouseup", onMouseUp);
   canvas.addEventListener("contextmenu", onContextMenu);
   canvas.addEventListener("blur", onBlur);
+  document.addEventListener("pointerdown", onDocPointerDown, true);
 
   type SpriteDraw = {
     dist: number;
@@ -912,6 +928,7 @@ export function mountFps(
       window.removeEventListener("mouseup", onMouseUp);
       canvas.removeEventListener("contextmenu", onContextMenu);
       canvas.removeEventListener("blur", onBlur);
+      document.removeEventListener("pointerdown", onDocPointerDown, true);
       document.removeEventListener("pointerlockchange", onPointer);
       if (document.pointerLockElement === canvas) document.exitPointerLock();
     },
