@@ -33,6 +33,13 @@ export function Locker() {
     return () => window.removeEventListener(PASS_EVENT, sync);
   }, []);
 
+  useEffect(() => {
+    sfx.playFpsMusic("game");
+    return () => {
+      sfx.stopFpsMusic();
+    };
+  }, []);
+
   const chief = SKINS.find((s) => s.id === "chief")!;
   const chiefReady = isUnlocked(chief, pass);
 

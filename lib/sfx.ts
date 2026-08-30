@@ -1,15 +1,79 @@
 "use client";
 
-type Wave = OscillatorType;
 type FpsMusicMode = "off" | "title" | "game";
 
-class ChipSynth {
+const SFX_NAMES = [
+  "coin",
+  "start",
+  "hit",
+  "shoot",
+  "punch",
+  "ko",
+  "crunch",
+  "gameOver",
+  "move",
+  "select",
+  "jump",
+  "drop",
+  "pickup",
+  "bus",
+  "xp",
+  "warp",
+  "knock",
+  "revive",
+  "emote",
+  "scarShot",
+  "pumpShot",
+  "exoticShot",
+  "pickaxeSwing",
+  "dryClick",
+  "pickupGun",
+  "pickupAmmo",
+  "medkitUse",
+  "shieldChug",
+  "chestOpen",
+  "llama",
+  "playerHurt",
+  "reload",
+] as const;
+
+type SfxName = (typeof SFX_NAMES)[number];
+
+const MUSIC_URL = {
+  title: "/audio/music/viper-title-theme.ogg",
+  game: "/audio/music/viper-locker-theme.ogg",
+} as const;
+
+const MASTER_GAIN = 0.9;
+const SFX_GAIN = 0.9;
+const MUSIC_GAIN = 0.35;
+const TITLE_LOOP_FADE = 0.05;
+const MUSIC_STOP_FADE = 0.08;
+
+function publicAsset(path: string) {
+  if (typeof window === "undefined") return path;
+  const prefix = window.location.pathname.startsWith("/VIPER") ? "/VIPER" : "";
+  return `${prefix}${path}`;
+}
+
+type MusicNode = {
+  src: AudioBufferSourceNode;
+  gain: GainNode;
+};
+
+class SamplePlayer {
   private ctx: AudioContext | null = null;
+  private offline: OfflineAudioContext | null = null;
   private master: GainNode | null = null;
-  private musicGain: GainNode | null = null;
-  private musicTimer: number | null = null;
+  private sfxBus: GainNode | null = null;
+  private musicBus: GainNode | null = null;
+  private buffers = new Map<string, AudioBuffer>();
+  private preloadStarted = false;
+  private gestureBound = false;
   private musicMode: FpsMusicMode = "off";
-  private musicStep = 0;
+  private musicNodes: MusicNode[] = [];
+  private musicTimer: number | null = null;
+  private musicGen = 0;
   muted = false;
 
   private audio() {
@@ -20,275 +84,304 @@ class ChipSynth {
         .webkitAudioContext;
     this.ctx = new Ctx();
     this.master = this.ctx.createGain();
-    this.master.gain.value = 0.9;
+    this.master.gain.value = this.muted ? 0 : MASTER_GAIN;
     this.master.connect(this.ctx.destination);
-    this.musicGain = this.ctx.createGain();
-    this.musicGain.gain.value = 0.22;
-    this.musicGain.connect(this.master);
+    this.sfxBus = this.ctx.createGain();
+    this.sfxBus.gain.value = SFX_GAIN;
+    this.sfxBus.connect(this.master);
+    this.musicBus = this.ctx.createGain();
+    this.musicBus.gain.value = MUSIC_GAIN;
+    this.musicBus.connect(this.master);
     return this.ctx;
   }
 
-  private dest() {
-    this.audio();
-    return this.master!;
+  private decoder() {
+    if (this.ctx) return this.ctx;
+    if (!this.offline) this.offline = new OfflineAudioContext(2, 1, 44100);
+    return this.offline;
+  }
+
+  private gestureActive() {
+    const nav = navigator as Navigator & {
+      userActivation?: { isActive: boolean; hasBeenActive: boolean };
+    };
+    return Boolean(nav.userActivation?.isActive || nav.userActivation?.hasBeenActive);
+  }
+
+  private bindGesture() {
+    if (this.gestureBound || typeof window === "undefined") return;
+    this.gestureBound = true;
+    const arm = () => this.unlock();
+    window.addEventListener("pointerdown", arm, { capture: true, once: true });
+    window.addEventListener("keydown", arm, { capture: true, once: true });
   }
 
   unlock() {
     if (typeof window === "undefined") return;
+    this.bindGesture();
+    this.kickPreload();
+    if (!this.ctx && !this.gestureActive()) return;
     const ctx = this.audio();
     if (ctx.state === "suspended") void ctx.resume();
+    this.maybeStartPendingMusic();
   }
 
   setMuted(next: boolean) {
     this.muted = next;
     if (!this.master || !this.ctx) return;
-    this.master.gain.setTargetAtTime(next ? 0 : 0.9, this.ctx.currentTime, 0.04);
+    this.master.gain.setTargetAtTime(
+      next ? 0 : MASTER_GAIN,
+      this.ctx.currentTime,
+      0.04
+    );
     if (next) this.stopFpsMusic();
   }
 
-  tone(
-    freq: number,
-    duration = 0.12,
-    type: Wave = "square",
-    gain = 0.05,
-    slideTo?: number
-  ) {
-    if (this.muted || typeof window === "undefined") return;
-    const ctx = this.audio();
-    if (ctx.state === "suspended") void ctx.resume();
-    const osc = ctx.createOscillator();
-    const amp = ctx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, ctx.currentTime);
-    if (slideTo) {
-      osc.frequency.exponentialRampToValueAtTime(
-        Math.max(slideTo, 20),
-        ctx.currentTime + duration
-      );
-    }
-    amp.gain.setValueAtTime(gain, ctx.currentTime);
-    amp.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
-    osc.connect(amp);
-    amp.connect(this.dest());
-    osc.start();
-    osc.stop(ctx.currentTime + duration);
+  private kickPreload() {
+    if (this.preloadStarted || typeof window === "undefined") return;
+    this.preloadStarted = true;
+    void this.loadAll();
   }
 
-  private noise(duration: number, gain: number, hp = 800, lp = 4000) {
+  private async loadAll() {
+    const jobs: Promise<void>[] = SFX_NAMES.map((name) =>
+      this.loadBuffer(`/audio/sfx/${name}.ogg`, name)
+    );
+    jobs.push(this.loadBuffer(MUSIC_URL.title, "music:title"));
+    jobs.push(this.loadBuffer(MUSIC_URL.game, "music:game"));
+    await Promise.all(jobs);
+    this.maybeStartPendingMusic();
+  }
+
+  private async loadBuffer(path: string, key: string) {
+    try {
+      const res = await fetch(publicAsset(path));
+      if (!res.ok) return;
+      const data = await res.arrayBuffer();
+      const buf = await this.decoder().decodeAudioData(data.slice(0));
+      this.buffers.set(key, buf);
+    } catch {
+      /* missing / decode failure: skip */
+    }
+  }
+
+  private maybeStartPendingMusic() {
+    if (this.muted) return;
+    if (this.musicMode !== "title" && this.musicMode !== "game") return;
+    if (this.musicNodes.length > 0 || this.musicTimer != null) return;
+    if (!this.ctx) return;
+    this.startMusic(this.musicMode, this.musicGen);
+  }
+
+  private oneshot(name: SfxName) {
     if (this.muted || typeof window === "undefined") return;
-    const ctx = this.audio();
+    this.unlock();
+    const ctx = this.ctx;
+    const bus = this.sfxBus;
+    const buf = this.buffers.get(name);
+    if (!ctx || !bus || !buf) return;
     if (ctx.state === "suspended") void ctx.resume();
-    const buffer = ctx.createBuffer(1, Math.max(1, (ctx.sampleRate * duration) | 0), ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
     const src = ctx.createBufferSource();
-    src.buffer = buffer;
-    const filter = ctx.createBiquadFilter();
-    filter.type = "bandpass";
-    filter.frequency.value = (hp + lp) / 2;
-    filter.Q.value = 0.7;
-    const amp = ctx.createGain();
-    amp.gain.setValueAtTime(gain, ctx.currentTime);
-    amp.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
-    src.connect(filter);
-    filter.connect(amp);
-    amp.connect(this.dest());
+    src.buffer = buf;
+    src.connect(bus);
     src.start();
   }
 
-  private musicTone(
-    freq: number,
-    duration: number,
-    type: Wave,
-    gain: number,
-    slideTo?: number
-  ) {
-    if (this.muted || !this.ctx || !this.musicGain) return;
-    const ctx = this.ctx;
-    const osc = ctx.createOscillator();
-    const amp = ctx.createGain();
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = type === "sawtooth" ? 720 : 1400;
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, ctx.currentTime);
-    if (slideTo) {
-      osc.frequency.exponentialRampToValueAtTime(Math.max(slideTo, 20), ctx.currentTime + duration);
+  private haltMusic(fadeSec: number) {
+    this.musicGen += 1;
+    if (this.musicTimer != null) {
+      window.clearTimeout(this.musicTimer);
+      this.musicTimer = null;
     }
-    amp.gain.setValueAtTime(gain, ctx.currentTime);
-    amp.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
-    osc.connect(filter);
-    filter.connect(amp);
-    amp.connect(this.musicGain);
-    osc.start();
-    osc.stop(ctx.currentTime + duration);
+    const ctx = this.ctx;
+    const nodes = this.musicNodes;
+    this.musicNodes = [];
+    if (!ctx || nodes.length === 0) return;
+    const t = ctx.currentTime;
+    for (const node of nodes) {
+      try {
+        node.gain.gain.cancelScheduledValues(t);
+        const cur = Math.max(node.gain.gain.value, 0.0001);
+        node.gain.gain.setValueAtTime(cur, t);
+        node.gain.gain.linearRampToValueAtTime(0.0001, t + fadeSec);
+        node.src.stop(t + fadeSec + 0.02);
+      } catch {
+        /* already stopped */
+      }
+    }
+  }
+
+  private startMusic(mode: Exclude<FpsMusicMode, "off">, gen: number) {
+    if (this.muted || this.musicGen !== gen) return;
+    const ctx = this.ctx;
+    const bus = this.musicBus;
+    if (!ctx || !bus) return;
+    if (ctx.state === "suspended") void ctx.resume();
+    const buf = this.buffers.get(mode === "title" ? "music:title" : "music:game");
+    if (!buf) return;
+
+    bus.gain.cancelScheduledValues(ctx.currentTime);
+    bus.gain.setTargetAtTime(MUSIC_GAIN, ctx.currentTime, 0.02);
+
+    if (mode === "game") {
+      const src = ctx.createBufferSource();
+      const gain = ctx.createGain();
+      src.buffer = buf;
+      src.loop = true;
+      src.loopStart = 0;
+      src.loopEnd = buf.duration;
+      gain.gain.value = 1;
+      src.connect(gain);
+      gain.connect(bus);
+      src.start();
+      this.musicNodes.push({ src, gain });
+      return;
+    }
+
+    this.playTitleSlice(buf, ctx.currentTime, true, gen);
+  }
+
+  private playTitleSlice(
+    buf: AudioBuffer,
+    when: number,
+    fromStart: boolean,
+    gen: number
+  ) {
+    if (this.musicMode !== "title" || this.musicGen !== gen || this.muted) return;
+    const ctx = this.ctx;
+    const bus = this.musicBus;
+    if (!ctx || !bus) return;
+
+    const fade = TITLE_LOOP_FADE;
+    const offset = fromStart ? 0 : buf.duration / 3;
+    const playDur = buf.duration - offset;
+    if (playDur <= fade * 2) return;
+
+    const src = ctx.createBufferSource();
+    const gain = ctx.createGain();
+    src.buffer = buf;
+    src.connect(gain);
+    gain.connect(bus);
+
+    const startGain = fromStart ? 1 : 0.0001;
+    gain.gain.setValueAtTime(startGain, when);
+    if (!fromStart) {
+      gain.gain.linearRampToValueAtTime(1, when + fade);
+    }
+    const fadeOutAt = when + playDur - fade;
+    gain.gain.setValueAtTime(1, fadeOutAt);
+    gain.gain.linearRampToValueAtTime(0.0001, when + playDur);
+
+    src.start(when, offset);
+    src.stop(when + playDur + 0.02);
+    this.musicNodes.push({ src, gain });
+    src.onended = () => {
+      this.musicNodes = this.musicNodes.filter((n) => n.src !== src);
+    };
+
+    const nextAt = when + playDur - fade;
+    const waitMs = Math.max(0, (nextAt - ctx.currentTime) * 1000 - 40);
+    this.musicTimer = window.setTimeout(() => {
+      if (this.musicGen !== gen || this.musicMode !== "title") return;
+      this.playTitleSlice(buf, Math.max(ctx.currentTime, nextAt), false, gen);
+    }, waitMs);
   }
 
   coin() {
-    this.tone(880, 0.08, "square", 0.06);
-    setTimeout(() => this.tone(1320, 0.12, "square", 0.05), 80);
+    this.oneshot("coin");
   }
-
   start() {
-    this.tone(392, 0.1, "square", 0.05);
-    setTimeout(() => this.tone(523, 0.1, "square", 0.05), 100);
-    setTimeout(() => this.tone(659, 0.16, "square", 0.05), 200);
+    this.oneshot("start");
   }
-
   hit() {
-    this.tone(180, 0.18, "square", 0.07, 60);
+    this.oneshot("hit");
   }
-
   shoot() {
-    this.tone(880, 0.04, "square", 0.045);
-    this.tone(220, 0.06, "sawtooth", 0.03, 80);
+    this.oneshot("shoot");
   }
-
   punch() {
-    this.tone(520, 0.05, "square", 0.05);
-    this.tone(180, 0.08, "square", 0.04, 90);
+    this.oneshot("punch");
   }
-
   ko() {
-    this.tone(260, 0.12, "square", 0.06, 120);
-    this.noise(0.16, 0.04, 200, 900);
+    this.oneshot("ko");
   }
-
   crunch() {
-    this.tone(140, 0.08, "sawtooth", 0.04, 70);
+    this.oneshot("crunch");
   }
-
   gameOver() {
-    this.tone(330, 0.18, "square", 0.06, 200);
-    setTimeout(() => this.tone(247, 0.22, "square", 0.06, 140), 180);
-    setTimeout(() => this.tone(165, 0.4, "square", 0.07, 70), 380);
+    this.oneshot("gameOver");
   }
-
   move() {
-    this.tone(220, 0.03, "square", 0.02);
+    this.oneshot("move");
   }
-
   select() {
-    this.tone(740, 0.06, "square", 0.04);
+    this.oneshot("select");
   }
-
   jump() {
-    this.tone(420, 0.08, "square", 0.04, 720);
+    this.oneshot("jump");
   }
-
   drop() {
-    this.tone(180, 0.22, "sawtooth", 0.05, 90);
-    setTimeout(() => this.tone(140, 0.12, "square", 0.04), 120);
+    this.oneshot("drop");
   }
-
   pickup() {
-    this.tone(660, 0.06, "square", 0.045);
-    setTimeout(() => this.tone(990, 0.1, "square", 0.04), 50);
+    this.oneshot("pickup");
   }
-
   bus() {
-    this.tone(196, 0.1, "square", 0.04);
-    setTimeout(() => this.tone(247, 0.1, "square", 0.04), 90);
-    setTimeout(() => this.tone(330, 0.18, "square", 0.05), 180);
+    this.oneshot("bus");
   }
-
   xp() {
-    this.tone(660, 0.07, "square", 0.045);
-    setTimeout(() => this.tone(880, 0.1, "square", 0.04), 70);
+    this.oneshot("xp");
   }
-
   warp() {
-    this.tone(520, 0.08, "square", 0.04, 880);
+    this.oneshot("warp");
   }
-
   knock() {
-    this.tone(140, 0.22, "square", 0.06, 70);
+    this.oneshot("knock");
   }
-
   revive() {
-    this.tone(392, 0.1, "square", 0.05);
-    setTimeout(() => this.tone(523, 0.12, "square", 0.05), 90);
-    setTimeout(() => this.tone(784, 0.16, "square", 0.05), 180);
+    this.oneshot("revive");
   }
-
   emote() {
-    this.tone(523, 0.08, "square", 0.05);
-    setTimeout(() => this.tone(659, 0.1, "square", 0.05), 70);
-    setTimeout(() => this.tone(784, 0.12, "square", 0.05), 140);
+    this.oneshot("emote");
   }
-
   scarShot() {
-    this.noise(0.045, 0.055, 1800, 7000);
-    this.tone(620, 0.035, "square", 0.04, 180);
-    this.tone(140, 0.05, "sawtooth", 0.03, 70);
+    this.oneshot("scarShot");
   }
-
   pumpShot() {
-    this.noise(0.12, 0.08, 200, 1800);
-    this.tone(90, 0.18, "sine", 0.09, 36);
-    this.tone(220, 0.08, "sawtooth", 0.04, 60);
+    this.oneshot("pumpShot");
   }
-
   exoticShot() {
-    this.tone(880, 0.07, "sawtooth", 0.045, 1400);
-    this.tone(440, 0.09, "triangle", 0.035, 90);
-    this.noise(0.05, 0.03, 3000, 8000);
+    this.oneshot("exoticShot");
   }
-
   pickaxeSwing() {
-    this.noise(0.08, 0.035, 400, 2200);
-    this.tone(200, 0.1, "square", 0.04, 80);
+    this.oneshot("pickaxeSwing");
   }
-
   dryClick() {
-    this.tone(240, 0.04, "square", 0.035);
-    this.tone(90, 0.05, "square", 0.02);
+    this.oneshot("dryClick");
   }
-
   pickupGun() {
-    this.tone(392, 0.06, "triangle", 0.05);
-    setTimeout(() => this.tone(587, 0.08, "triangle", 0.045), 55);
-    setTimeout(() => this.tone(784, 0.1, "square", 0.035), 110);
+    this.oneshot("pickupGun");
   }
-
   pickupAmmo() {
-    this.tone(180, 0.04, "square", 0.04);
-    setTimeout(() => this.tone(220, 0.05, "square", 0.035), 40);
-    setTimeout(() => this.tone(160, 0.06, "triangle", 0.03), 80);
+    this.oneshot("pickupAmmo");
   }
-
   medkitUse() {
-    this.tone(330, 0.1, "sine", 0.045);
-    setTimeout(() => this.tone(415, 0.12, "sine", 0.04), 90);
-    setTimeout(() => this.tone(554, 0.18, "triangle", 0.04), 180);
+    this.oneshot("medkitUse");
   }
-
   shieldChug() {
-    this.tone(140, 0.1, "sine", 0.05, 90);
-    setTimeout(() => this.tone(220, 0.12, "triangle", 0.04), 80);
-    setTimeout(() => this.tone(880, 0.16, "sine", 0.03), 170);
+    this.oneshot("shieldChug");
   }
-
   chestOpen() {
-    this.tone(160, 0.1, "sawtooth", 0.04, 90);
-    setTimeout(() => this.tone(523, 0.08, "triangle", 0.04), 90);
-    setTimeout(() => this.tone(784, 0.12, "square", 0.03), 160);
+    this.oneshot("chestOpen");
   }
-
   llama() {
-    this.tone(330, 0.08, "square", 0.04, 440);
-    setTimeout(() => this.tone(392, 0.08, "square", 0.04, 520), 70);
-    setTimeout(() => this.tone(262, 0.14, "triangle", 0.045), 150);
+    this.oneshot("llama");
   }
-
   playerHurt() {
-    this.tone(110, 0.16, "sawtooth", 0.06, 50);
-    this.noise(0.1, 0.035, 300, 1200);
+    this.oneshot("playerHurt");
   }
-
   reload() {
-    this.tone(200, 0.05, "square", 0.03);
-    setTimeout(() => this.tone(140, 0.06, "triangle", 0.03), 60);
+    this.oneshot("reload");
   }
 
   playWeapon(id: "pickaxe" | "pump" | "scar" | "exotic") {
@@ -301,69 +394,22 @@ class ChipSynth {
   playFpsMusic(mode: Exclude<FpsMusicMode, "off">) {
     if (typeof window === "undefined") return;
     this.unlock();
-    if (this.musicMode === mode && this.musicTimer != null) return;
-    this.stopFpsMusic();
-    if (this.muted) return;
-    this.musicMode = mode;
-    this.musicStep = 0;
-    if (this.musicGain && this.ctx) {
-      this.musicGain.gain.setTargetAtTime(mode === "title" ? 0.24 : 0.14, this.ctx.currentTime, 0.08);
+    const live = this.musicNodes.length > 0 || this.musicTimer != null;
+    if (this.musicMode === mode) {
+      if (live) return;
+      if (!this.muted) this.startMusic(mode, this.musicGen);
+      return;
     }
-    const period = mode === "title" ? 150 : 210;
-    this.tickFpsMusic();
-    this.musicTimer = window.setInterval(() => this.tickFpsMusic(), period);
+    this.haltMusic(MUSIC_STOP_FADE);
+    this.musicMode = mode;
+    if (this.muted) return;
+    this.startMusic(mode, this.musicGen);
   }
 
   stopFpsMusic() {
-    if (this.musicTimer != null) {
-      window.clearInterval(this.musicTimer);
-      this.musicTimer = null;
-    }
+    this.haltMusic(MUSIC_STOP_FADE);
     this.musicMode = "off";
-    if (this.musicGain && this.ctx) {
-      this.musicGain.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.08);
-    }
-  }
-
-  private tickFpsMusic() {
-    if (this.muted || this.musicMode === "off") {
-      this.musicStep = (this.musicStep + 1) % 32;
-      return;
-    }
-    const s = this.musicStep % 32;
-    this.musicStep += 1;
-    const title = this.musicMode === "title";
-
-    const bass = title
-      ? [73.42, 73.42, 65.41, 87.31, 73.42, 55, 65.41, 49]
-      : [55, 55, 49, 41.2, 55, 46.25, 49, 36.71];
-    if (s % 4 === 0) {
-      this.musicTone(bass[(s / 4) % bass.length], title ? 0.38 : 0.5, "sawtooth", title ? 0.055 : 0.04);
-    }
-    if (s % 8 === 4) {
-      this.musicTone(bass[(s / 4) % bass.length] * 1.5, 0.16, "square", title ? 0.02 : 0.012);
-    }
-
-    if (title && (s === 4 || s === 12 || s === 20 || s === 28)) {
-      const stab = s === 12 || s === 28 ? 349.23 : 293.66;
-      this.musicTone(stab, 0.14, "square", 0.03);
-      this.musicTone(stab * 1.25, 0.12, "triangle", 0.022);
-      this.musicTone(stab * 1.5, 0.1, "sawtooth", 0.012);
-    }
-
-    if (title && s % 8 === 2) {
-      const lead = [440, 523.25, 493.88, 392, 349.23, 440, 523.25, 587.33];
-      this.musicTone(lead[(s / 8) % lead.length], 0.2, "triangle", 0.028);
-    }
-
-    if (!title && s % 8 === 0) {
-      this.musicTone(82.41, 0.7, "sine", 0.03);
-    }
-    if (!title && s === 16) {
-      this.musicTone(196, 0.22, "triangle", 0.018);
-      this.musicTone(233.08, 0.18, "square", 0.01);
-    }
   }
 }
 
-export const sfx = new ChipSynth();
+export const sfx = new SamplePlayer();
