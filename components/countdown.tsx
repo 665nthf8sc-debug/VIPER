@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-const TARGET = new Date("2026-10-01T00:00:00");
+/** Override (C7S4) launched 20 Aug 2026. Next season drop is the Override end. */
+const OVERRIDE_START = Date.parse("2026-08-20T14:00:00Z");
+const NEXT_SEASON = Date.parse("2026-11-01T14:00:00Z");
 
 function pad(n: number) {
   return String(Math.max(0, n)).padStart(2, "0");
@@ -17,6 +19,21 @@ function splitMs(ms: number) {
   return { days, hours, minutes, seconds, done: ms <= 0 };
 }
 
+function seasonTarget(now: number) {
+  if (now < OVERRIDE_START) {
+    return {
+      at: OVERRIDE_START,
+      live: "NEXT SEASON  •  CH.7 S4 OVERRIDE",
+      done: "OVERRIDE IS LIVE",
+    };
+  }
+  return {
+    at: NEXT_SEASON,
+    live: "NEXT SEASON  •  CH.7 S4 OVERRIDE",
+    done: "NEW SEASON DROPPED",
+  };
+}
+
 export function CountdownClock() {
   const [now, setNow] = useState(() => Date.now());
 
@@ -25,7 +42,8 @@ export function CountdownClock() {
     return () => window.clearInterval(id);
   }, []);
 
-  const t = splitMs(TARGET.getTime() - now);
+  const target = seasonTarget(now);
+  const t = splitMs(target.at - now);
   const cells = [
     { label: "DAYS", value: pad(t.days) },
     { label: "HRS", value: pad(t.hours) },
@@ -35,8 +53,8 @@ export function CountdownClock() {
 
   return (
     <div className="pixel-bevel mx-auto w-full max-w-xl bg-[#05000a] p-3 sm:p-4">
-      <p className="font-press mb-3 text-center text-[9px] text-[#ff6a00] sm:text-[10px]">
-        {t.done ? "THE METEOR HAS LANDED" : "METEOR IMPACT CLOCK  OCT 1"}
+      <p className="font-press mb-3 text-center text-[9px] text-[#ffcc00] sm:text-[10px]">
+        {t.done ? target.done : target.live}
       </p>
       <div className="grid grid-cols-4 gap-2">
         {cells.map((cell) => (

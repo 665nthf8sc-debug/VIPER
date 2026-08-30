@@ -29,7 +29,7 @@ export function Hero() {
         </div>
         <p className="font-vt max-w-xl text-xl text-[#f8f0d8] sm:text-2xl">
           A lost 8-bit cartridge that somehow knew the towers would fall.
-          Dodge the meteor. Remember the skyline. Press start.
+          Dodge meteors. Fight the squad. Count down to the next season.
         </p>
         <CountdownClock />
         <div className="flex flex-wrap items-center justify-center gap-3">

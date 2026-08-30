@@ -63,6 +63,15 @@ class ChipSynth {
     this.tone(180, 0.18, "square", 0.07, 60);
   }
 
+  punch() {
+    this.tone(520, 0.05, "square", 0.05);
+    this.tone(180, 0.08, "square", 0.04, 90);
+  }
+
+  ko() {
+    this.tone(260, 0.12, "square", 0.06, 120);
+  }
+
   crunch() {
     this.tone(140, 0.08, "sawtooth", 0.04, 70);
   }

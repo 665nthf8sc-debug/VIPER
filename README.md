@@ -33,9 +33,9 @@ On Pages there is no Node server, so the hall of fame uses `localStorage`. Local
 
 ## What's on the cart
 
-- **Hero** — pixel title, blinking RPG prompt, live countdown to October 1, meteor sky
+- **Hero** — pixel title, blinking RPG prompt, live countdown to the next season (Chapter 7 Season 4 Override), meteor sky
 - **Tilted TV** — CRT bezel around `@coolfox3384` videos and a subscribe button
-- **Meteor Strike** — dodge falling rocks while Tilted crumbles; GAME OVER reads `TILTED DESTROYED`
+- **Meteor Strike** — dodge rocks aimed at you, punch other droppers; GAME OVER reads `ELIMINATED`
 - **Hall of Fame** — 3-letter arcade initials
 - **Quest log** — Chapter 1 timeline in RPG dialog boxes
 - **Memory Pak** — before/after Tilted with a pixel wipe
