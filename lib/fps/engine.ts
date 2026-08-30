@@ -1,10 +1,12 @@
 import {
   applyHdWalls,
-  buildFloorCanvas,
-  buildFloorFromTile,
   buildSkyCanvas,
   buildSkyFromImage,
+  buildThemeFloors,
   buildWallTextures,
+  paintTitlePoster,
+  type FloorSample,
+  type FloorTheme,
   type WallTexId,
 } from "@/lib/fps/textures";
 import {
@@ -22,6 +24,7 @@ import {
   type PickupKind,
 } from "@/lib/fps/sprites";
 import {
+  buildFloorThemes,
   buildMapGrid,
   ENEMY_SPAWNS,
   MAP_H,
@@ -29,7 +32,13 @@ import {
   PICKUP_SPAWNS,
   SPAWN,
 } from "@/lib/fps/map";
-import { WEAPONS, weaponFromPickup, type WeaponId } from "@/lib/fps/weapons";
+import {
+  formatAmmo,
+  WEAPON_ORDER,
+  WEAPONS,
+  weaponFromPickup,
+  type WeaponId,
+} from "@/lib/fps/weapons";
 import { sfx } from "@/lib/sfx";
 
 export type FpsMode = "title" | "play" | "win" | "over";
@@ -45,6 +54,9 @@ export type FpsHud = {
   hasPump: boolean;
   hasScar: boolean;
   hasExotic: boolean;
+  pumpAmmo: string;
+  scarAmmo: string;
+  exoticAmmo: string;
 };
 
 type Enemy = {
@@ -67,6 +79,8 @@ type Pickup = {
   bob: number;
 };
 
+type GunAmmo = { mag: number; reserve: number };
+
 const RENDER_W = 640;
 const RENDER_H = 360;
 const FOV = Math.PI / 2.8;
@@ -74,6 +88,12 @@ const MAX_DEPTH = 22;
 const MOVE_SPEED = 3.4;
 const SPRINT = 1.55;
 const ROT_SPEED = 2.4;
+const VIEW_GUN_W = 100;
+const VIEW_GUN_H = 70;
+const PICKUP_SCALE = 0.5;
+const FLOOR_W = 320;
+const FLOOR_H = 180;
+type GunId = "pump" | "scar" | "exotic";
 
 function wallAt(grid: number[][], x: number, y: number) {
   const gx = Math.floor(x);
@@ -91,6 +111,19 @@ function isBlocked(grid: number[][], x: number, y: number, r = 0.22) {
   );
 }
 
+function emptyAmmo(): Record<GunId, GunAmmo> {
+  return {
+    pump: { mag: 0, reserve: 0 },
+    scar: { mag: 0, reserve: 0 },
+    exotic: { mag: 0, reserve: 0 },
+  };
+}
+
+function ammoLine(owned: Set<WeaponId>, id: GunId, pack: GunAmmo) {
+  if (!owned.has(id)) return "—";
+  return formatAmmo(pack.mag, pack.reserve);
+}
+
 export function mountFps(
   canvas: HTMLCanvasElement,
   onHud: (h: FpsHud) => void
@@ -99,9 +132,11 @@ export function mountFps(
   ctx.imageSmoothingEnabled = false;
 
   const grid = buildMapGrid();
+  const floorTheme = buildFloorThemes(grid);
   const wallTex = buildWallTextures();
   let skyCanvas = buildSkyCanvas(RENDER_W, RENDER_H);
-  let floorCanvas = buildFloorCanvas(RENDER_W, RENDER_H);
+  let floorTiles = buildThemeFloors([], []);
+  let titleArt: HTMLCanvasElement | null = null;
   const enemyFlat: Record<EnemyKind, HTMLCanvasElement> = {
     peely: buildEnemySprite("peely"),
     chief: buildEnemySprite("chief"),
@@ -119,6 +154,7 @@ export function mountFps(
     shield: buildPickupSprite("shield"),
     llama: buildPickupSprite("llama"),
     chest: buildPickupSprite("chest"),
+    ammo: buildPickupSprite("ammo"),
   };
   const gunHd: Partial<Record<WeaponId, HTMLCanvasElement>> = {};
   const applyArt = (art: Awaited<ReturnType<typeof loadFpsArt>>) => {
@@ -145,10 +181,15 @@ export function mountFps(
     if (art.items.shields?.[0]) pickupTex.shield = art.items.shields[0];
     if (art.items.chests?.[6]) pickupTex.llama = art.items.chests[6];
     if (art.items.chests?.[0]) pickupTex.chest = art.items.chests[0];
-    applyHdWalls(wallTex, art.env.interiors, art.env.surfaces);
-    if (art.env.sky) skyCanvas = buildSkyFromImage(art.env.sky, RENDER_W, RENDER_H);
-    const grass = art.env.surfaces[2];
-    if (grass) floorCanvas = buildFloorFromTile(grass, RENDER_W, RENDER_H);
+    if (art.items.chests?.[3]) pickupTex.ammo = art.items.chests[3];
+    applyHdWalls(wallTex, art.env.interiors, art.env.surfaces, art.env.walls);
+    if (art.env.sky) {
+      skyCanvas = buildSkyFromImage(art.env.sky, RENDER_W, RENDER_H, {
+        seamless: !art.env.skySeamless,
+      });
+    }
+    floorTiles = buildThemeFloors(art.env.surfaces, art.env.interiors, art.env.floors);
+    titleArt = art.env.title;
   };
   const bootArt = () => {
     void loadFpsArt({
@@ -181,6 +222,7 @@ export function mountFps(
   let elims = 0;
   let weapon: WeaponId = "pickaxe";
   let owned = new Set<WeaponId>(["pickaxe"]);
+  let ammo = emptyAmmo();
   let cool = 0;
   let fireFrame = 0;
   let banner = "";
@@ -189,6 +231,7 @@ export function mountFps(
   let running = true;
   let raf = 0;
   let tick = 0;
+  let musicArmed = false;
 
   const spawnEnemy = (s: (typeof ENEMY_SPAWNS)[number]): Enemy => {
     const vx = (Math.random() - 0.5) * 0.6;
@@ -250,20 +293,31 @@ export function mountFps(
   const isFireKey = (code: string) =>
     code === "Space" || code === "ControlLeft" || code === "ControlRight";
 
+  const isInvKey = (code: string) =>
+    code === "Digit1" ||
+    code === "Digit2" ||
+    code === "Digit3" ||
+    code === "Digit4" ||
+    code === "BracketLeft" ||
+    code === "BracketRight" ||
+    code === "KeyR";
+
   const shouldHandleKey = (e: KeyboardEvent) => {
     if (!canvasHasKeys()) return false;
     return (
       isFireKey(e.code) ||
       isLookKey(e.code) ||
       isMoveKey(e.code) ||
+      isInvKey(e.code) ||
       e.code === "KeyE" ||
       e.code === "KeyM" ||
-      e.code === "Enter" ||
-      e.code === "Digit1" ||
-      e.code === "Digit2" ||
-      e.code === "Digit3" ||
-      e.code === "Digit4"
+      e.code === "Enter"
     );
+  };
+
+  const weaponAmmo = () => {
+    if (weapon === "pickaxe") return "MELEE";
+    return formatAmmo(ammo[weapon].mag, ammo[weapon].reserve);
   };
 
   const pushHud = () => {
@@ -272,13 +326,69 @@ export function mountFps(
       hp,
       shield,
       weapon,
-      ammo: weapon === "pickaxe" ? "MELEE" : "∞",
+      ammo: weaponAmmo(),
       elims,
       banner: bannerT > 0 ? banner : "",
       hasPump: owned.has("pump"),
       hasScar: owned.has("scar"),
       hasExotic: owned.has("exotic"),
+      pumpAmmo: ammoLine(owned, "pump", ammo.pump),
+      scarAmmo: ammoLine(owned, "scar", ammo.scar),
+      exoticAmmo: ammoLine(owned, "exotic", ammo.exotic),
     });
+  };
+
+  const armMusic = (next: "title" | "game") => {
+    sfx.unlock();
+    musicArmed = true;
+    sfx.playFpsMusic(next);
+  };
+
+  const addReserve = (id: GunId, amount: number) => {
+    const cap = WEAPONS[id].reserveMax;
+    ammo[id].reserve = Math.min(cap, ammo[id].reserve + amount);
+  };
+
+  const grantGun = (id: GunId, extra = 0) => {
+    if (owned.has(id)) {
+      addReserve(id, WEAPONS[id].pickupReserve + extra);
+      return false;
+    }
+    owned.add(id);
+    ammo[id].mag = WEAPONS[id].startMag;
+    addReserve(id, WEAPONS[id].startReserve + extra);
+    weapon = id;
+    return true;
+  };
+
+  const grantChestAmmo = () => {
+    addReserve("pump", 6);
+    addReserve("scar", 20);
+    addReserve("exotic", 10);
+  };
+
+  const cycleWeapon = (dir: 1 | -1) => {
+    const have = WEAPON_ORDER.filter((id) => owned.has(id));
+    if (have.length < 2) return;
+    const i = have.indexOf(weapon);
+    weapon = have[(i + dir + have.length) % have.length];
+    sfx.select();
+    pushHud();
+  };
+
+  const reload = () => {
+    if (weapon === "pickaxe" || mode !== "play") return;
+    const pack = ammo[weapon];
+    const need = WEAPONS[weapon].magSize - pack.mag;
+    if (need <= 0 || pack.reserve <= 0) return;
+    const take = Math.min(need, pack.reserve);
+    pack.reserve -= take;
+    pack.mag += take;
+    cool = Math.max(cool, 16);
+    sfx.reload();
+    banner = "RELOAD";
+    bannerT = 40;
+    pushHud();
   };
 
   const reset = () => {
@@ -291,6 +401,7 @@ export function mountFps(
     elims = 0;
     weapon = "pickaxe";
     owned = new Set<WeaponId>(["pickaxe"]);
+    ammo = emptyAmmo();
     cool = 0;
     fireFrame = 0;
     banner = "LOOT THE ISLAND";
@@ -314,6 +425,7 @@ export function mountFps(
     keys.delete("ControlRight");
     pushHud();
     sfx.start();
+    armMusic("game");
   };
 
   const finish = (win: boolean) => {
@@ -322,6 +434,7 @@ export function mountFps(
     bannerT = 999;
     pushHud();
     sfx.gameOver();
+    sfx.stopFpsMusic();
     if (document.pointerLockElement === canvas) document.exitPointerLock();
   };
 
@@ -332,42 +445,49 @@ export function mountFps(
       if (d > 1.1) continue;
       if (p.kind === "pump" || p.kind === "scar" || p.kind === "exotic") {
         const w = weaponFromPickup(p.kind);
-        owned.add(w);
-        weapon = w;
-        banner = PICKUP_LABEL[p.kind];
+        const fresh = grantGun(w);
+        banner = fresh ? PICKUP_LABEL[p.kind] : `${WEAPONS[w].name} +AMMO`;
         bannerT = 90;
         p.taken = true;
-        sfx.coin();
+        sfx.pickupGun();
       } else if (p.kind === "med") {
         hp = Math.min(100, hp + 50);
         p.taken = true;
         banner = "MEDKIT +50";
         bannerT = 60;
-        sfx.revive();
+        sfx.medkitUse();
       } else if (p.kind === "shield") {
         shield = Math.min(100, shield + 35);
         p.taken = true;
         banner = "SHIELD +35";
         bannerT = 60;
-        sfx.xp();
+        sfx.shieldChug();
+      } else if (p.kind === "ammo") {
+        grantChestAmmo();
+        addReserve("scar", 10);
+        p.taken = true;
+        banner = "AMMO BOX";
+        bannerT = 70;
+        sfx.pickupAmmo();
       } else if (p.kind === "llama") {
         shield = Math.min(100, shield + 25);
         hp = Math.min(100, hp + 25);
-        owned.add("scar");
-        weapon = "scar";
+        grantGun("scar", 20);
+        grantChestAmmo();
         p.taken = true;
         banner = "LLAMA LOOT";
         bannerT = 90;
-        sfx.coin();
+        sfx.llama();
       } else if (p.kind === "chest") {
         shield = Math.min(100, shield + 15);
         hp = Math.min(100, hp + 20);
-        owned.add("pump");
-        if (weapon === "pickaxe") weapon = "pump";
+        const fresh = grantGun("pump");
+        grantChestAmmo();
+        if (weapon === "pickaxe" && owned.has("pump")) weapon = "pump";
         p.taken = true;
-        banner = "CHEST LOOT";
+        banner = fresh ? "CHEST LOOT" : "CHEST +AMMO";
         bannerT = 90;
-        sfx.coin();
+        sfx.chestOpen();
       }
       pushHud();
       return;
@@ -390,9 +510,22 @@ export function mountFps(
   const shoot = () => {
     if (cool > 0 || mode !== "play") return;
     const w = WEAPONS[weapon];
+    if (weapon !== "pickaxe") {
+      const pack = ammo[weapon];
+      if (pack.mag <= 0) {
+        cool = 10;
+        sfx.dryClick();
+        banner = pack.reserve > 0 ? "RELOAD [R]" : "NO AMMO";
+        bannerT = 40;
+        pushHud();
+        return;
+      }
+      pack.mag -= 1;
+    }
     cool = w.cool;
     fireFrame = 6;
-    sfx.shoot();
+    sfx.playWeapon(weapon);
+    pushHud();
 
     for (let p = 0; p < w.pellets; p++) {
       const ang = pa + (Math.random() - 0.5) * w.spread;
@@ -434,6 +567,7 @@ export function mountFps(
     e.preventDefault();
     if (down) keys.add(e.code);
     else keys.delete(e.code);
+    if (down && !musicArmed) armMusic(mode === "play" ? "game" : "title");
     if (
       down &&
       (e.code === "Enter" || e.code === "Space") &&
@@ -448,6 +582,9 @@ export function mountFps(
       return;
     }
     if (down && e.code === "KeyE" && mode === "play") tryPickup();
+    if (down && e.code === "KeyR" && mode === "play") reload();
+    if (down && e.code === "BracketLeft" && mode === "play") cycleWeapon(-1);
+    if (down && e.code === "BracketRight" && mode === "play") cycleWeapon(1);
     if (down && e.code === "Digit1" && owned.has("pickaxe")) weapon = "pickaxe";
     if (down && e.code === "Digit2" && owned.has("pump")) weapon = "pump";
     if (down && e.code === "Digit3" && owned.has("scar")) weapon = "scar";
@@ -467,8 +604,17 @@ export function mountFps(
   };
   window.addEventListener("mousemove", onMouseMove);
 
+  const onWheel = (e: WheelEvent) => {
+    if (mode !== "play") return;
+    if (!canvasHasKeys() && e.target !== canvas) return;
+    e.preventDefault();
+    cycleWeapon(e.deltaY > 0 ? 1 : -1);
+  };
+  canvas.addEventListener("wheel", onWheel, { passive: false });
+
   const onClick = () => {
     canvas.focus();
+    if (!musicArmed) armMusic(mode === "play" ? "game" : "title");
     if (mode === "win" || mode === "over" || mode === "title") {
       reset();
       return;
@@ -485,6 +631,7 @@ export function mountFps(
 
   const onMouseDown = (e: MouseEvent) => {
     canvas.focus();
+    if (!musicArmed) armMusic(mode === "play" ? "game" : "title");
     if (e.button === 2) {
       e.preventDefault();
       if (mode === "play" && !pointerLocked) void canvas.requestPointerLock();
@@ -511,7 +658,10 @@ export function mountFps(
   };
   const onDocPointerDown = (e: PointerEvent) => {
     const t = e.target;
-    if (t instanceof Node && fpsSection.contains(t)) return;
+    if (t instanceof Node && fpsSection.contains(t)) {
+      if (!musicArmed) armMusic(mode === "play" ? "game" : "title");
+      return;
+    }
     inputArmed = false;
     if (document.activeElement !== canvas) {
       keys.clear();
@@ -531,6 +681,60 @@ export function mountFps(
     y: number;
     tex: HTMLCanvasElement;
     flash: boolean;
+    scale: number;
+  };
+
+  const floorBuf = document.createElement("canvas");
+  floorBuf.width = FLOOR_W;
+  floorBuf.height = FLOOR_H;
+  const floorCtx = floorBuf.getContext("2d", { willReadFrequently: true })!;
+  const floorImg = floorCtx.createImageData(FLOOR_W, FLOOR_H);
+  const floorPix = floorImg.data;
+
+  const themeAt = (wx: number, wy: number): FloorTheme => {
+    const gx = Math.floor(wx);
+    const gy = Math.floor(wy);
+    if (gx < 0 || gy < 0 || gx >= MAP_W || gy >= MAP_H) return "outdoor";
+    return floorTheme[gy][gx];
+  };
+
+  const sampleFloor = (tile: FloorSample, u: number, v: number, shade: number, di: number) => {
+    const mask = tile.size - 1;
+    const tx = (u * tile.size) & mask;
+    const ty = (v * tile.size) & mask;
+    const si = (ty * tile.size + tx) * 4;
+    floorPix[di] = tile.data[si] * shade;
+    floorPix[di + 1] = tile.data[si + 1] * shade;
+    floorPix[di + 2] = tile.data[si + 2] * shade;
+    floorPix[di + 3] = 255;
+  };
+
+  const renderFloor = () => {
+    const dirX = Math.cos(pa);
+    const dirY = Math.sin(pa);
+    const planeScale = Math.tan(FOV / 2);
+    const planeX = Math.cos(pa + Math.PI / 2) * planeScale;
+    const planeY = Math.sin(pa + Math.PI / 2) * planeScale;
+    const posZ = FLOOR_H / 2;
+    for (let y = 0; y < FLOOR_H; y++) {
+      const rowDist = posZ / (y + 0.5);
+      const stepX = (rowDist * (dirX + planeX - (dirX - planeX))) / FLOOR_W;
+      const stepY = (rowDist * (dirY + planeY - (dirY - planeY))) / FLOOR_W;
+      let floorX = px + rowDist * (dirX - planeX);
+      let floorY = py + rowDist * (dirY - planeY);
+      const dim = Math.max(0.32, 1 - rowDist / MAX_DEPTH);
+      for (let x = 0; x < FLOOR_W; x++) {
+        const cellX = Math.floor(floorX);
+        const cellY = Math.floor(floorY);
+        const u = floorX - cellX;
+        const v = floorY - cellY;
+        const tile = floorTiles[themeAt(floorX, floorY)];
+        sampleFloor(tile, u, v, dim, (y * FLOOR_W + x) * 4);
+        floorX += stepX;
+        floorY += stepY;
+      }
+    }
+    floorCtx.putImageData(floorImg, 0, 0);
   };
 
   /** Classic Wolfenstein DDA + canvas column strips (no ImageData gaps). */
@@ -544,7 +748,8 @@ export function mountFps(
     const skyShift = ((pa / (Math.PI * 2)) * w + w * 8) % w;
     offCtx.drawImage(skyCanvas, 0, 0, w, half, -skyShift, 0, w, half);
     offCtx.drawImage(skyCanvas, 0, 0, w, half, w - skyShift, 0, w, half);
-    offCtx.drawImage(floorCanvas, 0, 0, w, half, 0, half, w, h - half);
+    renderFloor();
+    offCtx.drawImage(floorBuf, 0, 0, FLOOR_W, FLOOR_H, 0, half, w, h - half);
 
     const planeX = Math.cos(pa + Math.PI / 2);
     const planeY = Math.sin(pa + Math.PI / 2);
@@ -655,7 +860,7 @@ export function mountFps(
 
       const tex = sp.tex;
       const aspect = tex.width / Math.max(1, tex.height);
-      const spriteH = Math.abs((h / dist) | 0);
+      const spriteH = Math.abs(((h / dist) * sp.scale) | 0);
       const spriteW = Math.abs((spriteH * aspect) | 0);
       const spriteScreenX = ((w / 2) * (1 + Math.tan(rel) / halfTan)) | 0;
       const drawStartY = Math.max(0, ((h - spriteH) / 2) | 0);
@@ -787,7 +992,7 @@ export function mountFps(
           }
           hp -= dmg;
           hurtFlash = 10;
-          sfx.hit();
+          sfx.playerHurt();
           if (hp <= 0) finish(false);
           pushHud();
         }
@@ -801,19 +1006,7 @@ export function mountFps(
     }
 
     if (mode === "title") {
-      offCtx.fillStyle = "#05000a";
-      offCtx.fillRect(0, 0, RENDER_W, RENDER_H);
-      offCtx.fillStyle = "#00e800";
-      offCtx.font = '28px "Press Start 2P", monospace';
-      offCtx.fillText("VIPER FPS", 150, 100);
-      offCtx.fillStyle = "#ffcc00";
-      offCtx.font = '11px "Press Start 2P", monospace';
-      offCtx.fillText("RAYCAST ISLAND", 200, 140);
-      offCtx.fillText("VIPER · PEELY · CHIEF", 150, 175);
-      if (Math.floor(tick / 30) % 2 === 0) {
-        offCtx.fillStyle = "#ff6a00";
-        offCtx.fillText("ENTER / SPACE / CLICK", 145, 230);
-      }
+      paintTitlePoster(offCtx, RENDER_W, RENDER_H, tick, titleArt);
     } else {
       const zBuffer = renderWorld(offCtx);
       const sprites: SpriteDraw[] = [];
@@ -826,6 +1019,7 @@ export function mountFps(
           y: e.y,
           tex: enemyTexFor(e),
           flash: e.flash > 0,
+          scale: 1,
         });
       }
       for (const p of pickups) {
@@ -836,19 +1030,20 @@ export function mountFps(
           y: p.y,
           tex: pickupTex[p.kind],
           flash: false,
+          scale: PICKUP_SCALE,
         });
       }
       drawSprites(offCtx, zBuffer, sprites);
 
+      const kick = fireFrame > 0 ? fireFrame * 2 : 0;
       const hdGun = gunHd[weapon];
+      const gx = RENDER_W - VIEW_GUN_W - 16;
+      const gy = RENDER_H - VIEW_GUN_H - 8 + kick;
       if (hdGun) {
-        const kick = fireFrame > 0 ? fireFrame * 3 : 0;
-        const gw = 200;
-        const gh = 140;
-        offCtx.drawImage(hdGun, RENDER_W - gw - 16, RENDER_H - gh - 8 + kick, gw, gh);
+        offCtx.drawImage(hdGun, gx, gy, VIEW_GUN_W, VIEW_GUN_H);
         if (fireFrame > 0) {
           offCtx.fillStyle = "rgba(255,200,80,0.45)";
-          offCtx.fillRect(RENDER_W - 48, RENDER_H - 88 + kick, 28, 16);
+          offCtx.fillRect(RENDER_W - 36, RENDER_H - 48 + kick, 14, 8);
         }
       } else {
         if (weapon !== gunWeapon || fireFrame !== gunFrame) {
@@ -856,7 +1051,7 @@ export function mountFps(
           gunWeapon = weapon;
           gunFrame = fireFrame;
         }
-        offCtx.drawImage(gunCanvas, 0, RENDER_H - 140, RENDER_W, 140);
+        offCtx.drawImage(gunCanvas, gx, gy, VIEW_GUN_W, VIEW_GUN_H);
       }
 
       if (hurtFlash > 0) {
@@ -871,6 +1066,9 @@ export function mountFps(
       offCtx.fillText(`${Math.ceil(shield)} SHD`, 12, 32);
       offCtx.fillStyle = "#ffcc00";
       offCtx.fillText(WEAPONS[weapon].name, 12, 46);
+      offCtx.fillStyle = "#f8f0d8";
+      offCtx.fillText(weaponAmmo(), 12, 60);
+      offCtx.fillStyle = "#ffcc00";
       offCtx.fillText(`ELIMS ${elims}`, RENDER_W - 110, 18);
 
       offCtx.strokeStyle = "rgba(255,255,255,0.85)";
@@ -919,10 +1117,12 @@ export function mountFps(
     stop() {
       running = false;
       cancelAnimationFrame(raf);
+      sfx.stopFpsMusic();
       ro.disconnect();
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
       window.removeEventListener("mousemove", onMouseMove);
+      canvas.removeEventListener("wheel", onWheel);
       canvas.removeEventListener("click", onClick);
       canvas.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mouseup", onMouseUp);

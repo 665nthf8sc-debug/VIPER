@@ -209,10 +209,20 @@ export type ItemGrid = {
   shields: HTMLCanvasElement[];
 };
 
+export type ThemeArt = {
+  outdoor?: HTMLCanvasElement;
+  indoor?: HTMLCanvasElement;
+  industrial?: HTMLCanvasElement;
+};
+
 export type EnvArt = {
   interiors: HTMLCanvasElement[];
   surfaces: HTMLCanvasElement[];
   sky: HTMLCanvasElement | null;
+  title: HTMLCanvasElement | null;
+  walls: ThemeArt;
+  floors: ThemeArt;
+  skySeamless: boolean;
 };
 
 export type LockerPortraits = Partial<Record<string, HTMLCanvasElement>>;
@@ -275,8 +285,25 @@ export async function loadItemGrids(): Promise<Partial<ItemGrid>> {
   return out;
 }
 
+async function tryCanvas(path: string) {
+  try {
+    const img = await loadImage(fpsAsset(path));
+    return canvasFromImage(img);
+  } catch {
+    return null;
+  }
+}
+
 export async function loadEnvArt(): Promise<EnvArt> {
-  const env: EnvArt = { interiors: [], surfaces: [], sky: null };
+  const env: EnvArt = {
+    interiors: [],
+    surfaces: [],
+    sky: null,
+    title: null,
+    walls: {},
+    floors: {},
+    skySeamless: false,
+  };
   try {
     const img = await loadImage(fpsAsset("/fps/sprites/env-interiors.png"));
     env.interiors = sliceGrid(canvasFromImage(img), 4, 2, {
@@ -297,12 +324,30 @@ export async function loadEnvArt(): Promise<EnvArt> {
   } catch {
     /* procedural floors */
   }
-  try {
-    const img = await loadImage(fpsAsset("/fps/sprites/env-sky-storm.png"));
-    env.sky = canvasFromImage(img);
-  } catch {
-    env.sky = null;
+
+  const [wallOut, wallIn, wallInd, floorOut, floorIn, floorInd, skyStorm, skyLegacy, title] =
+    await Promise.all([
+      tryCanvas("/fps/sprites/wall-outdoor.png"),
+      tryCanvas("/fps/sprites/wall-indoor.png"),
+      tryCanvas("/fps/sprites/wall-industrial.png"),
+      tryCanvas("/fps/sprites/floor-outdoor.png"),
+      tryCanvas("/fps/sprites/floor-indoor.png"),
+      tryCanvas("/fps/sprites/floor-industrial.png"),
+      tryCanvas("/fps/sprites/sky-storm.png"),
+      tryCanvas("/fps/sprites/env-sky-storm.png"),
+      tryCanvas("/fps/sprites/title-viper-gta.png"),
+    ]);
+
+  env.walls = { outdoor: wallOut ?? undefined, indoor: wallIn ?? undefined, industrial: wallInd ?? undefined };
+  env.floors = { outdoor: floorOut ?? undefined, indoor: floorIn ?? undefined, industrial: floorInd ?? undefined };
+  if (skyStorm) {
+    env.sky = skyStorm;
+    env.skySeamless = true;
+  } else {
+    env.sky = skyLegacy;
+    env.skySeamless = false;
   }
+  env.title = title;
   return env;
 }
 
