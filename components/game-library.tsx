@@ -69,7 +69,7 @@ export function GameLibrary() {
             <p className="font-press text-[10px] text-[#e02020]">04  RAYCAST</p>
             <h3 className="font-press mt-2 text-sm text-[#e02020]">VIPER FPS</h3>
             <p className="font-vt mt-3 text-xl text-[#f8f0d8]">
-              Wolfenstein raycasting. Peely, Chief, pump, SCAR, exotic loot.
+              Wolfenstein raycasting. VIPER 8-angle, storm sky, loot sheets.
             </p>
             <Button variant="arcade" className="pointer-events-none mt-4 h-10">
               ENTER FPS

@@ -54,24 +54,34 @@ export function buildMapGrid() {
 
 export const SPAWN = { x: 16.5, y: 16.5, angle: -Math.PI / 2 };
 
-export const ENEMY_SPAWNS: Array<{ kind: "peely" | "chief" | "jonesy" | "fox"; x: number; y: number }> = [
+export const ENEMY_SPAWNS: Array<{
+  kind: "peely" | "chief" | "viper" | "stormstep";
+  x: number;
+  y: number;
+}> = [
   { kind: "peely", x: 8.5, y: 6.5 },
   { kind: "chief", x: 24.5, y: 7.5 },
-  { kind: "jonesy", x: 6.5, y: 22.5 },
-  { kind: "fox", x: 25.5, y: 20.5 },
+  { kind: "stormstep", x: 6.5, y: 22.5 },
+  { kind: "viper", x: 25.5, y: 20.5 },
   { kind: "peely", x: 16.5, y: 4.5 },
   { kind: "chief", x: 4.5, y: 14.5 },
-  { kind: "jonesy", x: 27.5, y: 14.5 },
-  { kind: "fox", x: 16.5, y: 27.5 },
+  { kind: "stormstep", x: 27.5, y: 14.5 },
+  { kind: "viper", x: 16.5, y: 27.5 },
 ];
 
-export const PICKUP_SPAWNS: Array<{ kind: "pump" | "scar" | "exotic" | "med" | "shield" | "llama"; x: number; y: number }> = [
+export const PICKUP_SPAWNS: Array<{
+  kind: "pump" | "scar" | "exotic" | "med" | "shield" | "llama" | "chest";
+  x: number;
+  y: number;
+}> = [
   { kind: "pump", x: 10.5, y: 10.5 },
   { kind: "scar", x: 22.5, y: 11.5 },
   { kind: "exotic", x: 16.5, y: 8.5 },
   { kind: "med", x: 7.5, y: 17.5 },
   { kind: "shield", x: 24.5, y: 17.5 },
   { kind: "llama", x: 16.5, y: 22.5 },
-  { kind: "med", x: 12.5, y: 25.5 },
-  { kind: "shield", x: 20.5, y: 25.5 },
+  { kind: "chest", x: 12.5, y: 25.5 },
+  { kind: "med", x: 20.5, y: 25.5 },
+  { kind: "chest", x: 5.5, y: 10.5 },
+  { kind: "shield", x: 27.5, y: 22.5 },
 ];

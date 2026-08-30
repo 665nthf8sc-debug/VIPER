@@ -18,37 +18,10 @@ import {
   PASS_EVENT,
   type PassState,
 } from "@/lib/pass";
+import { HD_SKIN, HdSkin } from "@/components/hd-skin";
+import { loadFrontPortrait } from "@/lib/fps/sprite-loader";
 import { sfx } from "@/lib/sfx";
-import { drawSprite, spriteRows, type SpriteKind } from "@/lib/sprites";
-import { useEffect, useRef, useState } from "react";
-
-function MiniSkin({
-  palette,
-  sprite,
-}: {
-  palette: Record<string, string>;
-  sprite: SpriteKind;
-}) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.imageSmoothingEnabled = false;
-    ctx.fillStyle = "#0c1408";
-    ctx.fillRect(0, 0, 40, 40);
-    drawSprite(ctx, spriteRows(sprite, 0), 12, 12, false, palette);
-  }, [palette, sprite]);
-  return (
-    <canvas
-      ref={ref}
-      width={40}
-      height={40}
-      className="pixelated mx-auto block h-14 w-14"
-    />
-  );
-}
+import { useEffect, useState } from "react";
 
 export function Locker() {
   const [pass, setPass] = useState<PassState>(EMPTY_PASS);
@@ -59,6 +32,12 @@ export function Locker() {
     sync();
     window.addEventListener(PASS_EVENT, sync);
     return () => window.removeEventListener(PASS_EVENT, sync);
+  }, []);
+
+  useEffect(() => {
+    Object.values(HD_SKIN).forEach((kind) => {
+      void loadFrontPortrait(kind);
+    });
   }, []);
 
   const chief = SKINS.find((s) => s.id === "chief")!;
@@ -72,9 +51,10 @@ export function Locker() {
         </h2>
         <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
           <div className="pixel-border bg-[#0c1408] p-4 text-center">
-            <MiniSkin
+            <HdSkin
               palette={SKINS.find((s) => s.id === pass.equipped)?.palette ?? chief.palette}
               sprite={SKINS.find((s) => s.id === pass.equipped)?.sprite ?? "fox"}
+              skinId={pass.equipped}
             />
             <p className="font-press mt-3 text-[10px] text-[#d4af37]">
               {SKINS.find((s) => s.id === pass.equipped)?.name}
@@ -146,7 +126,7 @@ export function Locker() {
                         active ? "ring-4 ring-[#d4af37]" : ""
                       }`}
                     >
-                      <MiniSkin palette={skin.palette} sprite={skin.sprite} />
+                      <HdSkin palette={skin.palette} sprite={skin.sprite} skinId={skin.id} />
                       <p className="font-press mt-2 truncate text-[8px] text-[#d4af37]">
                         {skin.name}
                       </p>

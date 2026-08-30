@@ -18,7 +18,8 @@ export type SkinId =
   | "jonesy"
   | "peely"
   | "viper"
-  | "sub";
+  | "sub"
+  | "stormstep";
 
 export type SkinTrack = "pass" | "campaign" | "achieve" | "subscribe";
 
@@ -174,6 +175,24 @@ export const SKINS: Skin[] = [
       y: "#f8f0d8",
       G: "#3cdcff",
       V: "#d4f7ff",
+    },
+  },
+  {
+    id: "stormstep",
+    name: "STORMSTEP",
+    blurb: "Lightning hoodie. Neon visor. Outrun the circle.",
+    xp: 2000,
+    track: "pass",
+    sprite: "stormstep",
+    palette: {
+      ...FOX_BASE,
+      W: "#d4f7ff",
+      b: "#081028",
+      O: "#3d7cff",
+      y: "#ffcc00",
+      G: "#3cdcff",
+      V: "#3cdcff",
+      B: "#3d7cff",
     },
   },
   {

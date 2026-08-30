@@ -1,7 +1,7 @@
 import { canvasFromMap, paintMap } from "@/lib/fps/pixel";
 
-export type EnemyKind = "peely" | "chief" | "jonesy" | "fox";
-export type PickupKind = "pump" | "scar" | "exotic" | "med" | "shield" | "llama";
+export type EnemyKind = "peely" | "chief" | "viper" | "stormstep" | "jonesy" | "fox";
+export type PickupKind = "pump" | "scar" | "exotic" | "med" | "shield" | "llama" | "chest";
 
 const INK = "#140008";
 
@@ -53,6 +53,50 @@ export function buildEnemySprite(kind: EnemyKind) {
       "...oooo......oooo.......",
       "...oGGo......oGGo.......",
       "...oGGo......oGGo.......",
+    ];
+  } else if (kind === "viper") {
+    palette = { ".": "", o: INK, G: "#2a8a28", g: "#1a5a18", V: "#ffcc00", K: "#1a1a22", S: "#f8f0d8" };
+    rows = [
+      "........oooooooo........",
+      "......ooKKKKKKoo........",
+      ".....oKKGGGGKKKo........",
+      "....oKKGSSSSGKKo........",
+      "....oKKGSbbSGKKo........",
+      "....oKKGGGGGGKKo........",
+      ".....oKKKKKKKo..........",
+      "......oooooooo..........",
+      "....oooooooooooo........",
+      "...ooGGGGGGGGGGoo.......",
+      "..ooGGGVVVVGGGGoo.......",
+      "..oGGGGVVVVGGGGGo.......",
+      "..oGGGGGGGGGGGGGo.......",
+      "..oGGGGo....oGGGGo......",
+      "...oGGo......oGGo.......",
+      "...oooo......oooo.......",
+      "...oKKo......oKKo.......",
+      "...oKKo......oKKo.......",
+    ];
+  } else if (kind === "stormstep") {
+    palette = { ".": "", o: INK, B: "#3d7cff", Y: "#ffcc00", K: "#1a1a28", S: "#f8f0d8", C: "#3cdcff" };
+    rows = [
+      "........oooooooo........",
+      "......ooBBBBBBoo........",
+      ".....oBBCCCCCBBo........",
+      "....oBBSSSSSSBBo........",
+      "....oBBSbbSSbBBo........",
+      "....oBBBBBBBBBBo........",
+      ".....oBBBBBBBo..........",
+      "......oooooooo..........",
+      "....oooooooooooo........",
+      "...ooBBBBBBBBBBoo.......",
+      "..ooBBBBYYYYBBBBoo......",
+      "..oBBBBBYYYYBBBBo.......",
+      "..oBBBBBBBBBBBBBo.......",
+      "..oBBBo......oBBBo......",
+      "...oBBo......oBBo.......",
+      "...oooo......oooo.......",
+      "...oCCo......oCCo.......",
+      "...oCCo......oCCo.......",
     ];
   } else if (kind === "jonesy") {
     palette = { ".": "", o: INK, H: "#6a5030", S: "#f8f0d8", B: "#3d7cff", Y: "#ffcc00", W: "#d0e4ff" };
@@ -118,6 +162,13 @@ export function buildPickupSprite(kind: PickupKind) {
       p: "#9a38d8",
       Y: "#ffcc00",
     }, 6, 0, 0);
+  } else if (kind === "chest") {
+    ctx.fillStyle = "#8a7040";
+    ctx.fillRect(8, 16, 32, 24);
+    ctx.fillStyle = "#ffcc00";
+    ctx.fillRect(8, 26, 32, 4);
+    ctx.fillStyle = "#c4a06a";
+    ctx.fillRect(20, 20, 8, 10);
   } else if (kind === "pump") {
     ctx.fillStyle = "#505058";
     ctx.fillRect(8, 20, 32, 8);
@@ -218,6 +269,8 @@ export function buildWeaponView(id: "pickaxe" | "pump" | "scar" | "exotic", fram
 export const ENEMY_NAMES: Record<EnemyKind, string> = {
   peely: "PEELY",
   chief: "CHIEF",
+  viper: "VIPER",
+  stormstep: "STORMSTEP",
   jonesy: "JONESY",
   fox: "RIVAL FOX",
 };
@@ -229,4 +282,15 @@ export const PICKUP_LABEL: Record<PickupKind, string> = {
   med: "MEDKIT",
   shield: "MINI SHIELD",
   llama: "LOOT LLAMA",
+  chest: "LOOT CHEST",
 };
+
+/** Map FPS rival kinds onto 8-angle sheets. */
+export function angleKindFor(
+  kind: EnemyKind
+): "viper" | "chief" | "peely" | "stormstep" {
+  if (kind === "chief") return "chief";
+  if (kind === "peely") return "peely";
+  if (kind === "stormstep" || kind === "jonesy") return "stormstep";
+  return "viper";
+}

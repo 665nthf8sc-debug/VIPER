@@ -14,37 +14,9 @@ import {
   skinById,
   type PassState,
 } from "@/lib/pass";
+import { HdSkin } from "@/components/hd-skin";
 import { sfx } from "@/lib/sfx";
-import { drawSprite, spriteRows, type SpriteKind } from "@/lib/sprites";
-import { useEffect, useRef, useState } from "react";
-
-function SkinPreview({
-  palette,
-  sprite,
-}: {
-  palette: Record<string, string>;
-  sprite: SpriteKind;
-}) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.imageSmoothingEnabled = false;
-    ctx.fillStyle = "#05000a";
-    ctx.fillRect(0, 0, 48, 48);
-    drawSprite(ctx, spriteRows(sprite, 0), 16, 16, false, palette);
-  }, [palette, sprite]);
-  return (
-    <canvas
-      ref={ref}
-      width={48}
-      height={48}
-      className="pixelated mx-auto block h-16 w-16 bg-black"
-    />
-  );
-}
+import { useEffect, useState } from "react";
 
 export function BattlePass() {
   const [pass, setPass] = useState<PassState>(EMPTY_PASS);
@@ -87,7 +59,7 @@ export function BattlePass() {
             </p>
           </div>
           <div className="pixel-bevel bg-[#05000a] p-2">
-            <SkinPreview palette={equipped.palette} sprite={equipped.sprite} />
+            <HdSkin palette={equipped.palette} sprite={equipped.sprite} skinId={equipped.id} size={72} />
           </div>
         </div>
 
@@ -114,7 +86,7 @@ export function BattlePass() {
                 <p className="font-press text-[8px] text-[#3cdcff]">
                   {`TIER ${String(i + 1).padStart(2, "0")}`}
                 </p>
-                <SkinPreview palette={skin.palette} sprite={skin.sprite} />
+                <HdSkin palette={skin.palette} sprite={skin.sprite} skinId={skin.id} size={72} />
                 <p className="font-press mt-2 text-[9px] text-[#ffcc00]">
                   {skin.name}
                 </p>

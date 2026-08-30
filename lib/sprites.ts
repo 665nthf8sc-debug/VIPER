@@ -349,7 +349,8 @@ export type SpriteKind =
   | "badkit"
   | "sonic"
   | "phantom"
-  | "viper";
+  | "viper"
+  | "stormstep";
 
 export type EmoteId = "wave" | "floss" | "griddy" | "take-l" | "hiss";
 export type SidekickId = "none" | "cat" | "dog";
@@ -363,6 +364,7 @@ export function spriteRows(kind: SpriteKind, frame: number) {
   if (kind === "sonic") return frame ? SONIC_B : SONIC_A;
   if (kind === "phantom") return frame ? PHANTOM_B : PHANTOM_A;
   if (kind === "viper") return frame ? VIPER_B : VIPER_A;
+  if (kind === "stormstep") return frame ? SONIC_B : SONIC_A;
   return frame ? FOX_B : FOX_A;
 }
 
