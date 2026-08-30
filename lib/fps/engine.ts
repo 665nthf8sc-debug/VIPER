@@ -4,6 +4,7 @@ import {
   buildWallTextures,
   type WallTexId,
 } from "@/lib/fps/textures";
+import { loadHdEnemySprites } from "@/lib/fps/sprite-loader";
 import {
   buildEnemySprite,
   buildPickupSprite,
@@ -92,12 +93,15 @@ export function mountFps(
   const wallTex = buildWallTextures();
   const skyCanvas = buildSkyCanvas(RENDER_W, RENDER_H);
   const floorCanvas = buildFloorCanvas(RENDER_W, RENDER_H);
-  const enemyTex = {
+  let enemyTex = {
     peely: buildEnemySprite("peely"),
     chief: buildEnemySprite("chief"),
     jonesy: buildEnemySprite("jonesy"),
     fox: buildEnemySprite("fox"),
   };
+  void loadHdEnemySprites(enemyTex).then((loaded) => {
+    enemyTex = loaded;
+  });
   const pickupTex = {
     pump: buildPickupSprite("pump"),
     scar: buildPickupSprite("scar"),
@@ -483,22 +487,26 @@ export function mountFps(
       while (rel < -Math.PI) rel += Math.PI * 2;
       if (Math.abs(rel) > FOV * 0.58) continue;
 
-      const spriteScreenX = ((w / 2) * (1 + Math.tan(rel) / halfTan)) | 0;
+      const tex = sp.tex;
+      const aspect = tex.width / Math.max(1, tex.height);
       const spriteH = Math.abs((h / dist) | 0);
-      const spriteW = spriteH;
+      const spriteW = Math.abs((spriteH * aspect) | 0);
+      const spriteScreenX = ((w / 2) * (1 + Math.tan(rel) / halfTan)) | 0;
       const drawStartY = Math.max(0, ((h - spriteH) / 2) | 0);
       const drawEndY = Math.min(h, drawStartY + spriteH);
       const drawStartX = Math.max(0, spriteScreenX - (spriteW >> 1));
       const drawEndX = Math.min(w, spriteScreenX + (spriteW >> 1));
-
-      const tex = sp.tex;
       const dark = Math.max(0.35, 1 - dist / MAX_DEPTH);
 
       for (let stripe = drawStartX; stripe < drawEndX; stripe++) {
         if (dist >= zBuffer[stripe]) continue;
-        const texX = (((stripe - drawStartX) * tex.width) / Math.max(1, drawEndX - drawStartX)) | 0;
+        const texX = Math.min(
+          tex.width - 1,
+          (((stripe - drawStartX) * tex.width) / Math.max(1, drawEndX - drawStartX)) | 0
+        );
         offCtx.save();
         offCtx.globalAlpha = dark;
+        offCtx.globalCompositeOperation = "source-over";
         if (sp.flash) {
           offCtx.filter = "brightness(1.45) saturate(1.2)";
         }
