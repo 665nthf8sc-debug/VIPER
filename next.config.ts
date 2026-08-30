@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
     unoptimized: isGitHubPages,
   },
   trailingSlash: isGitHubPages,
+  transpilePackages: ["three"],
 };
 
 export default nextConfig;

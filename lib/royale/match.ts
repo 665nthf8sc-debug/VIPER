@@ -1,5 +1,23 @@
 import * as THREE from "three";
 import { equippedSkin, grantPlayXp } from "@/lib/pass";
+import {
+  addFortniteSky,
+  makeBuilding,
+  makeBus,
+  makeChest,
+  makeCloud,
+  makeFighter,
+  makeGrassField,
+  makePickaxe,
+  makeRifle,
+  makeShotgun,
+  makeTree,
+  markShadow,
+  phong,
+  toon,
+  type FighterStyle,
+} from "@/lib/royale/look";
+import { RoyaleScore } from "@/lib/royale/score";
 import { sfx } from "@/lib/sfx";
 
 export type RoyaleMode = "title" | "bus" | "drop" | "play" | "over" | "win";
@@ -42,46 +60,25 @@ type Tree = {
   hp: number;
 };
 
-function lambert(color: string | number) {
-  return new THREE.MeshLambertMaterial({ color });
+function dist2(ax: number, az: number, bx: number, bz: number) {
+  const dx = ax - bx;
+  const dz = az - bz;
+  return Math.hypot(dx, dz);
 }
 
-function makeFighter(body: string, skin: string, accent: string) {
-  const g = new THREE.Group();
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.88, 0.42), lambert(body));
-  torso.position.y = 1.08;
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.44, 0.44), lambert(skin));
-  head.position.y = 1.68;
-  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.12, 0.08), lambert(accent));
-  visor.position.set(0, 1.7, 0.22);
-  const hip = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.22, 0.4), lambert(body));
-  hip.position.y = 0.58;
-  const legL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.58, 0.3), lambert("#1a1a28"));
-  legL.position.set(-0.18, 0.28, 0);
-  const legR = legL.clone();
-  legR.position.x = 0.18;
-  const armL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.7, 0.22), lambert(body));
-  armL.position.set(-0.5, 1.05, 0);
-  const armR = armL.clone();
-  armR.position.x = 0.5;
-  g.add(torso, head, visor, hip, legL, legR, armL, armR);
-  g.userData.armR = armR;
-  return g;
+function fighterStyle(): FighterStyle {
+  const id = equippedSkin().sprite;
+  if (id === "peely" || id === "chief" || id === "jonesy") return id;
+  return "fox";
 }
 
-function makeBus() {
-  const g = new THREE.Group();
-  const balloon = new THREE.Mesh(new THREE.SphereGeometry(2.4, 12, 10), lambert("#ffcc00"));
-  balloon.position.y = 5.2;
-  balloon.scale.set(1.4, 0.85, 1);
-  const rope = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.2, 0.08), lambert("#f8f0d8"));
-  rope.position.y = 3.2;
-  const body = new THREE.Mesh(new THREE.BoxGeometry(5.2, 1.8, 2.2), lambert("#3d7cff"));
-  body.position.y = 0.9;
-  const stripe = new THREE.Mesh(new THREE.BoxGeometry(5.3, 0.25, 2.3), lambert("#ff6a00"));
-  stripe.position.y = 1.35;
-  g.add(balloon, rope, body, stripe);
-  return g;
+function swingLegs(group: THREE.Group, moving: boolean, t: number) {
+  const l = group.userData.legL as THREE.Mesh | undefined;
+  const r = group.userData.legR as THREE.Mesh | undefined;
+  if (!l || !r) return;
+  const a = moving ? Math.sin(t * 10) * 0.55 : 0;
+  l.rotation.x = a;
+  r.rotation.x = -a;
 }
 
 function collide(x: number, z: number, boxes: BoxCol[], rad = 0.42) {
@@ -93,12 +90,6 @@ function collide(x: number, z: number, boxes: BoxCol[], rad = 0.42) {
     if (dx * dx + dz * dz < rad * rad) return true;
   }
   return false;
-}
-
-function dist2(ax: number, az: number, bx: number, bz: number) {
-  const dx = ax - bx;
-  const dz = az - bz;
-  return Math.hypot(dx, dz);
 }
 
 export function mountRoyale(
@@ -118,41 +109,68 @@ export function mountRoyale(
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
   renderer.setClearColor(0x7ec8f8, 1);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.12;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x9ad4ff, 48, 170);
-  scene.background = new THREE.Color(0x7ec8f8);
+  const camera = new THREE.PerspectiveCamera(68, 16 / 9, 0.1, 500);
+  addFortniteSky(scene);
 
-  const camera = new THREE.PerspectiveCamera(70, 16 / 9, 0.1, 400);
-
-  scene.add(new THREE.HemisphereLight(0xfff6d8, 0x3d8a44, 1.15));
-  const sun = new THREE.DirectionalLight(0xffffff, 1.05);
-  sun.position.set(40, 70, 20);
+  scene.add(new THREE.HemisphereLight(0xfff4d6, 0x3d8a48, 1.05));
+  const sun = new THREE.DirectionalLight(0xfff1d0, 1.35);
+  sun.position.set(48, 70, 22);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.camera.near = 10;
+  sun.shadow.camera.far = 180;
+  sun.shadow.camera.left = -80;
+  sun.shadow.camera.right = 80;
+  sun.shadow.camera.top = 80;
+  sun.shadow.camera.bottom = -80;
   scene.add(sun);
 
   const water = new THREE.Mesh(
-    new THREE.CircleGeometry(140, 48),
-    lambert("#1a7aaa")
+    new THREE.CircleGeometry(160, 64),
+    phong("#1a88b8", { shininess: 90, specular: 0x88ddff })
   );
   water.rotation.x = -Math.PI / 2;
-  water.position.y = -0.45;
+  water.position.y = -0.5;
+  water.receiveShadow = true;
   scene.add(water);
 
-  const island = new THREE.Mesh(
-    new THREE.CircleGeometry(ISLAND_R, 64),
-    lambert("#4cbf5a")
-  );
+  const islandGeo = new THREE.CircleGeometry(ISLAND_R, 96);
+  const islandPos = islandGeo.attributes.position;
+  for (let i = 0; i < islandPos.count; i++) {
+    const x = islandPos.getX(i);
+    const y = islandPos.getY(i);
+    const r = Math.hypot(x, y);
+    islandPos.setZ(
+      i,
+      Math.sin(x * 0.09) * Math.cos(y * 0.08) * (1 - r / ISLAND_R) * 1.4
+    );
+  }
+  islandGeo.computeVertexNormals();
+  const island = new THREE.Mesh(islandGeo, toon("#48c45c"));
   island.rotation.x = -Math.PI / 2;
-  island.position.y = 0;
+  island.receiveShadow = true;
   scene.add(island);
 
   const sand = new THREE.Mesh(
-    new THREE.RingGeometry(ISLAND_R - 6, ISLAND_R, 64),
-    lambert("#e2c07a")
+    new THREE.RingGeometry(ISLAND_R - 7, ISLAND_R + 0.4, 72),
+    toon("#e8c888")
   );
   sand.rotation.x = -Math.PI / 2;
-  sand.position.y = 0.02;
+  sand.position.y = 0.03;
+  sand.receiveShadow = true;
   scene.add(sand);
+  scene.add(makeGrassField(180));
+  scene.add(makeCloud(-40, 28, -30, 2.4));
+  scene.add(makeCloud(50, 32, 10, 2.8));
+  scene.add(makeCloud(10, 36, -55, 3.1));
+  scene.add(makeCloud(-20, 30, 48, 2.2));
+  scene.add(makeCloud(35, 26, 40, 1.8));
 
   const boxes: BoxCol[] = [];
   const addBuilding = (
@@ -161,74 +179,60 @@ export function mountRoyale(
     w: number,
     d: number,
     h: number,
-    color: string
+    color: string,
+    roof?: string
   ) => {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), lambert(color));
-    mesh.position.set(x, h / 2, z);
-    scene.add(mesh);
+    scene.add(makeBuilding(x, z, w, d, h, color, roof));
     boxes.push({
       minX: x - w / 2,
       maxX: x + w / 2,
       minZ: z - d / 2,
       maxZ: z + d / 2,
     });
-    const win = new THREE.Mesh(
-      new THREE.BoxGeometry(w * 0.7, h * 0.35, 0.08),
-      lambert("#ffcc66")
-    );
-    win.position.set(x, h * 0.55, z + d / 2 + 0.02);
-    scene.add(win);
   };
 
-  addBuilding(-18, -8, 10, 10, 14, "#8a8a96");
-  addBuilding(-6, -10, 12, 10, 18, "#9a9aa8");
-  addBuilding(8, -8, 10, 10, 12, "#7a7a88");
-  addBuilding(20, -6, 8, 8, 9, "#6a6a78");
-  addBuilding(22, 18, 14, 8, 5, "#c45a3a");
-  addBuilding(8, 22, 10, 8, 4.5, "#d4b060");
-  addBuilding(-28, 16, 8, 8, 4, "#e8d8c0");
-  addBuilding(-38, 10, 7, 7, 3.5, "#f0e0c8");
+  addBuilding(-18, -8, 10, 10, 14, "#9aa3b0", "#5a6270");
+  addBuilding(-6, -10, 12, 10, 18, "#b8c0cc", "#6a7380");
+  addBuilding(8, -8, 10, 10, 12, "#8e97a6", "#4a5360");
+  addBuilding(20, -6, 8, 8, 9, "#7d8794", "#3d4550");
+  addBuilding(22, 18, 14, 8, 5, "#d45a3c", "#8a2818");
+  addBuilding(8, 22, 10, 8, 4.5, "#e0b24a", "#8a5a18");
+  addBuilding(-28, 16, 8, 8, 4, "#f0e2cc", "#8a5040");
+  addBuilding(-38, 10, 7, 7, 3.5, "#f7ead8", "#7a4030");
 
   const lake = new THREE.Mesh(
-    new THREE.CircleGeometry(14, 24),
-    lambert("#2aa0d0")
+    new THREE.CircleGeometry(14, 32),
+    phong("#2eb0d8", { shininess: 80, specular: 0xa0eeff })
   );
   lake.rotation.x = -Math.PI / 2;
-  lake.position.set(-8, 0.04, 28);
+  lake.position.set(-8, 0.06, 28);
   scene.add(lake);
 
   const trees: Tree[] = [];
-  for (let i = 0; i < 22; i++) {
-    const ang = (i / 22) * Math.PI * 2;
-    const r = 28 + (i % 5) * 7;
+  for (let i = 0; i < 26; i++) {
+    const ang = (i / 26) * Math.PI * 2;
+    const r = 26 + (i % 6) * 6.5;
     const tx = Math.cos(ang) * r;
     const tz = Math.sin(ang) * r;
     if (dist2(tx, tz, -8, 28) < 16) continue;
-    const g = new THREE.Group();
-    const trunk = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.28, 0.38, 2.2, 6),
-      lambert("#6a3a18")
-    );
-    trunk.position.y = 1.1;
-    const leaves = new THREE.Mesh(
-      new THREE.ConeGeometry(1.6, 2.8, 7),
-      lambert("#2f9a3a")
-    );
-    leaves.position.y = 3.1;
-    g.add(trunk, leaves);
+    const g = makeTree();
     g.position.set(tx, 0, tz);
     scene.add(g);
     trees.push({ mesh: g, x: tx, z: tz, hp: 40 });
     boxes.push({
-      minX: tx - 0.5,
-      maxX: tx + 0.5,
-      minZ: tz - 0.5,
-      maxZ: tz + 0.5,
+      minX: tx - 0.55,
+      maxX: tx + 0.55,
+      minZ: tz - 0.55,
+      maxZ: tz + 0.55,
     });
   }
 
-  const loot: Array<{ mesh: THREE.Mesh; x: number; z: number; live: boolean }> =
-    [];
+  const loot: Array<{
+    mesh: THREE.Object3D;
+    x: number;
+    z: number;
+    live: boolean;
+  }> = [];
   const lootSpots = [
     [0, 0],
     [16, 12],
@@ -238,44 +242,33 @@ export function mountRoyale(
     [4, -22],
   ];
   for (const [lx, lz] of lootSpots) {
-    const chest = new THREE.Mesh(
-      new THREE.BoxGeometry(0.9, 0.55, 0.7),
-      lambert("#e8b020")
-    );
-    chest.position.set(lx, 0.3, lz);
+    const chest = makeChest();
+    chest.position.set(lx, 0, lz);
     scene.add(chest);
     loot.push({ mesh: chest, x: lx, z: lz, live: true });
   }
 
-  const player = makeFighter(body, skinTone, accent);
+  const player = makeFighter(fighterStyle(), body, skinTone, accent);
   scene.add(player);
 
-  const gun = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 1.1), lambert("#2a2a38"));
-  gun.position.set(0.42, 1.15, 0.55);
-  player.add(gun);
-  const pick = new THREE.Mesh(
-    new THREE.BoxGeometry(0.12, 0.9, 0.12),
-    lambert("#c9a06a")
-  );
-  pick.position.set(0.5, 1.35, 0.3);
-  pick.rotation.z = -0.5;
-  const pickHead = new THREE.Mesh(
-    new THREE.BoxGeometry(0.55, 0.18, 0.18),
-    lambert("#8a8a96")
-  );
-  pickHead.position.set(0.5, 1.75, 0.15);
-  player.add(pick, pickHead);
+  const rifle = makeRifle();
+  const shotgun = makeShotgun();
+  const pick = makePickaxe();
+  player.add(rifle, shotgun, pick);
 
   const bus = makeBus();
   scene.add(bus);
+  const score = new RoyaleScore();
 
   const stormWall = new THREE.Mesh(
-    new THREE.CylinderGeometry(1, 1, 28, 48, 1, true),
-    new THREE.MeshLambertMaterial({
+    new THREE.CylinderGeometry(1, 1, 32, 64, 1, true),
+    new THREE.MeshPhongMaterial({
       color: 0xa060ff,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.2,
       side: THREE.DoubleSide,
+      emissive: 0x4a2088,
+      emissiveIntensity: 0.25,
     })
   );
   stormWall.position.y = 14;
@@ -299,6 +292,7 @@ export function mountRoyale(
     const ang = Math.random() * Math.PI * 2;
     const r = 18 + Math.random() * 40;
     const mesh = makeFighter(
+      "bot",
       botColors[i % botColors.length],
       "#f0d8c0",
       "#ffffff"
@@ -392,6 +386,7 @@ export function mountRoyale(
     setBanner(win ? "VICTORY ROYALE" : "ELIMINATED", 8);
     grantPlayXp(win ? 400 : 80 + elims * 40, elims);
     sfx.gameOver();
+    score.setIntensity(win ? "win" : "over");
     if (document.pointerLockElement) document.exitPointerLock();
     pushHud();
   };
@@ -471,9 +466,10 @@ export function mountRoyale(
       const d = alongX ? 4 : 0.35;
       const mesh = new THREE.Mesh(
         new THREE.BoxGeometry(w, 3.2, d),
-        lambert("#c4a06a")
+        toon("#c4a06a")
       );
       mesh.position.set(gx, 1.6, gz);
+      markShadow(mesh);
       scene.add(mesh);
       boxes.push({
         minX: gx - w / 2,
@@ -482,10 +478,11 @@ export function mountRoyale(
         maxZ: gz + d / 2,
       });
     } else {
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(4, 0.28, 4), lambert("#c4a06a"));
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(4, 0.28, 4), toon("#c4a06a"));
       mesh.position.set(gx, 1.1, gz);
       mesh.rotation.x = -0.55;
       mesh.rotation.y = yaw;
+      markShadow(mesh);
       scene.add(mesh);
     }
     sfx.select();
@@ -524,6 +521,8 @@ export function mountRoyale(
       drop.mesh.visible = true;
     }
     player.visible = true;
+    score.start();
+    score.setIntensity("bus");
     pushHud();
     sfx.bus();
   };
@@ -679,6 +678,7 @@ export function mountRoyale(
         mode = "play";
         setBanner("WELCOME TO THE ISLAND");
         sfx.start();
+        score.setIntensity("play");
       }
       player.position.set(px, py, pz);
       player.rotation.y = yaw;
@@ -763,11 +763,20 @@ export function mountRoyale(
       camera.lookAt(px, py + 1.45, pz);
     }
 
-    gun.visible = weapon !== "pickaxe";
+    rifle.visible = weapon === "ar";
+    shotgun.visible = weapon === "shotgun";
     pick.visible = weapon === "pickaxe";
-    pickHead.visible = weapon === "pickaxe";
     const arm = player.userData.armR as THREE.Mesh;
-    arm.rotation.x = swing > 0 ? -1.1 : 0;
+    if (arm) arm.rotation.x = swing > 0 ? -1.1 : 0;
+
+    const moving =
+      Boolean(keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD) &&
+      (mode === "play" || mode === "drop");
+    swingLegs(player, moving && grounded, now / 1000);
+
+    if (mode === "play" && stormR < 36 && score.intensity !== "storm") {
+      score.setIntensity("storm");
+    }
 
     stormWall.scale.set(stormR, 1, stormR);
     stormRing.scale.set(stormR, stormR, 1);
@@ -808,6 +817,7 @@ export function mountRoyale(
         bot.mesh.position.z = nz;
       }
       bot.mesh.rotation.y = bot.yaw;
+      swingLegs(bot.mesh, true, now / 1000 + bot.mesh.id);
       if (Math.hypot(bx, bz) > stormR) {
         bot.hp -= 10 * dt;
         if (bot.hp <= 0) {
@@ -835,8 +845,10 @@ export function mountRoyale(
 
   return {
     start: reset,
+    setMusicMuted: (m: boolean) => score.setMuted(m),
     stop() {
       running = false;
+      score.stop();
       cancelAnimationFrame(raf);
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);

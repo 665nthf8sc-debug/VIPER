@@ -37,8 +37,8 @@ export function GameLibrary() {
               VIPER ROYALE
             </h3>
             <p className="font-vt mt-3 text-xl text-[#f8f0d8]">
-              Third-person Battle Royale. Battle bus, storm circle, pickaxe,
-              AR, pump, walls and ramps. Looks like Fortnite.
+              Third-person Fortnite look: toon fighters, sunny island, storm,
+              and an original drop soundtrack.
             </p>
             <span className="mt-4 inline-flex items-center gap-2">
               <PixelIcon name="game" />

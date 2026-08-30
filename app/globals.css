@@ -204,6 +204,10 @@
   padding: 0;
 }
 
+.royale-wrap {
+  background: linear-gradient(180deg, #071018 0%, #12304a 40%, #1a6a9c 100%);
+}
+
 .royale-stage {
   aspect-ratio: 16 / 9;
   min-height: 280px;

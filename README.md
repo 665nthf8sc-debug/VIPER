@@ -36,7 +36,7 @@ On Pages there is no Node server, so the hall of fame uses `localStorage`. Local
 - **Battle Pass** — eight skins, XP bar, equip from the track
 - **Library** — two cabinets: 8-bit **VIPER DROP** and 3D **VIPER Royale**
 - **VIPER DROP** — 8-bit Fortnite: battle bus, health + shields, loot, jump, POIs
-- **VIPER Royale** — third-person 3D Battle Royale: bus, storm, pickaxe, AR, pump, walls, ramps, 10 bots, Victory Royale. Uses your equipped locker skin
+- **VIPER Royale** — third-person Fortnite-style Battle Royale: toon characters, sunny island, storm, pickaxe/AR/pump, walls, ramps, 10 bots, original drop soundtrack, Victory Royale. Uses your equipped locker skin
 - **Squads** — Solo / Duo / Trio. Fill with bots or a local invite code (another tab on this PC). Couch P2 uses arrows + K
 - **Knocked** — In duo/trio you get downed. A teammate standing on you for 5 seconds revives you
 - **Campaign** — Chapter 1, eight drops. Unlock **Jonesy** at Tilted and **Peely** after The Cube
