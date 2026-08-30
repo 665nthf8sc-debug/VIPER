@@ -25,6 +25,14 @@ type Meteor = {
   trail: Array<{ x: number; y: number }>;
 };
 
+type Shot = {
+  x: number;
+  y: number;
+  vx: number;
+  friendly: boolean;
+  color: string;
+};
+
 type BrickCell = { x: number; y: number; color: string };
 type Particle = {
   x: number;
@@ -44,7 +52,7 @@ type Fighter = {
   hp: number;
   inv: number;
   cool: number;
-  punch: number;
+  muzzle: number;
   palette: Record<string, string>;
 };
 
@@ -132,17 +140,25 @@ function drawSprite(
   }
 }
 
-function drawFist(
+function drawGun(
   ctx: CanvasRenderingContext2D,
   fighter: Fighter,
-  palette: Record<string, string>
+  flash: boolean
 ) {
-  const fistX = fighter.facing > 0 ? fighter.x + 14 : fighter.x - 4;
-  const fistY = fighter.y + 8;
-  ctx.fillStyle = palette.o;
-  ctx.fillRect(fistX, fistY, 6, 6);
-  ctx.fillStyle = palette.W;
-  ctx.fillRect(fistX + 1, fistY + 1, 4, 4);
+  const y = fighter.y + 9;
+  const facing = fighter.facing > 0;
+  const x = facing ? fighter.x + 12 : fighter.x - 8;
+  ctx.fillStyle = "#2a2a38";
+  ctx.fillRect(x, y, 9, 3);
+  ctx.fillRect(facing ? x : x + 5, y + 2, 3, 4);
+  ctx.fillStyle = "#6a6a78";
+  ctx.fillRect(facing ? x + 1 : x + 1, y + 1, 7, 1);
+  if (flash) {
+    ctx.fillStyle = "#ffcc00";
+    ctx.fillRect(facing ? x + 9 : x - 3, y, 4, 3);
+    ctx.fillStyle = "#fff4c2";
+    ctx.fillRect(facing ? x + 11 : x - 4, y + 1, 3, 1);
+  }
 }
 
 function makeCity(): BrickCell[] {
@@ -188,15 +204,6 @@ function aabb(
 
 function padScore(n: number) {
   return String(Math.max(0, Math.min(999999, Math.floor(n)))).padStart(6, "0");
-}
-
-function punchBox(f: Fighter) {
-  return {
-    x: f.facing > 0 ? f.x + 12 : f.x - 8,
-    y: f.y + 4,
-    w: 12,
-    h: 12,
-  };
 }
 
 export function MeteorGame() {
@@ -258,12 +265,13 @@ export function MeteorGame() {
       hp: 3,
       inv: 0,
       cool: 0,
-      punch: 0,
+      muzzle: 0,
       palette: BASE_PALETTE,
     };
     const bricks = makeCity();
     let meteors: Meteor[] = [];
     let rivals: Fighter[] = [];
+    let shots: Shot[] = [];
     let parts: Particle[] = [];
 
     const reset = () => {
@@ -275,9 +283,10 @@ export function MeteorGame() {
       player.hp = 3;
       player.inv = 0;
       player.cool = 0;
-      player.punch = 0;
+      player.muzzle = 0;
       meteors = [];
       rivals = [];
+      shots = [];
       parts = [];
       tick = 0;
       spawnMeteorIn = 28;
@@ -317,6 +326,19 @@ export function MeteorGame() {
       sfx.gameOver();
     };
 
+    const fire = (fighter: Fighter, friendly: boolean) => {
+      shots.push({
+        x: fighter.facing > 0 ? fighter.x + 20 : fighter.x - 6,
+        y: fighter.y + 10,
+        vx: fighter.facing * (friendly ? 3.4 : 2.6),
+        friendly,
+        color: friendly ? "#ffcc00" : fighter.palette.O,
+      });
+      fighter.muzzle = 4;
+      fighter.cool = friendly ? 9 : 32;
+      sfx.shoot();
+    };
+
     const spawnRival = () => {
       if (rivals.length >= MAX_RIVALS) return;
       const left = Math.random() > 0.5;
@@ -328,8 +350,8 @@ export function MeteorGame() {
         frame: 0,
         hp: 2,
         inv: 20,
-        cool: 20,
-        punch: 0,
+        cool: 24,
+        muzzle: 0,
         palette: RIVAL_KITS[rivals.length % RIVAL_KITS.length],
       });
     };
@@ -451,25 +473,10 @@ export function MeteorGame() {
         if (Math.abs(player.vx) > 0.4 && tick % 6 === 0) player.frame ^= 1;
         if (player.inv > 0) player.inv -= 1;
         if (player.cool > 0) player.cool -= 1;
-        if (player.punch > 0) player.punch -= 1;
+        if (player.muzzle > 0) player.muzzle -= 1;
 
         if (keys.current.attack && player.cool === 0) {
-          player.cool = 16;
-          player.punch = 8;
-          sfx.punch();
-          const box = punchBox(player);
-          for (const rival of rivals) {
-            if (
-              aabb(box.x, box.y, box.w, box.h, rival.x + 2, rival.y + 2, 12, 14)
-            ) {
-              rival.hp -= 1;
-              rival.inv = 12;
-              rival.x += player.facing * 10;
-              boom(rival.x + 8, rival.y + 8, 6, rival.palette.O);
-              scoreRef.current += 40;
-              sfx.ko();
-            }
-          }
+          fire(player, true);
         }
 
         for (let i = rivals.length - 1; i >= 0; i--) {
@@ -482,34 +489,72 @@ export function MeteorGame() {
           }
           if (rival.inv > 0) rival.inv -= 1;
           if (rival.cool > 0) rival.cool -= 1;
-          if (rival.punch > 0) rival.punch -= 1;
+          if (rival.muzzle > 0) rival.muzzle -= 1;
 
           const incoming = meteors.find(
             (m) => Math.abs(m.x - rival.x) < 16 && m.y < rival.y && m.y > rival.y - 70
           );
+          const gap = rival.x - player.x;
           if (incoming) {
             rival.vx = incoming.x < rival.x ? 1.6 : -1.6;
-          } else if (Math.abs(rival.x - player.x) > 14) {
-            rival.vx = player.x > rival.x ? 0.9 : -0.9;
+          } else if (Math.abs(gap) > 70) {
+            rival.vx = player.x > rival.x ? 0.95 : -0.95;
+          } else if (Math.abs(gap) < 28) {
+            rival.vx = gap > 0 ? 1.1 : -1.1;
           } else {
-            rival.vx *= 0.5;
-            if (rival.cool === 0) {
-              rival.cool = 36;
-              rival.punch = 8;
-              rival.facing = player.x >= rival.x ? 1 : -1;
-              const box = punchBox(rival);
-              if (
-                player.inv === 0 &&
-                aabb(box.x, box.y, box.w, box.h, player.x + 2, player.y + 2, 12, 14)
-              ) {
-                hurtPlayer();
+            rival.vx *= 0.45;
+          }
+          rival.facing = player.x >= rival.x ? 1 : -1;
+          if (rival.cool === 0 && Math.abs(gap) > 18 && Math.abs(gap) < 140) {
+            fire(rival, false);
+          }
+          rival.x = Math.max(2, Math.min(W - 18, rival.x + rival.vx));
+          rival.facing = player.x >= rival.x ? 1 : -1;
+          if (Math.abs(rival.vx) > 0.3 && tick % 6 === 0) rival.frame ^= 1;
+        }
+
+        for (let i = shots.length - 1; i >= 0; i--) {
+          const shot = shots[i];
+          shot.x += shot.vx;
+          if (shot.x < -8 || shot.x > W + 8) {
+            shots.splice(i, 1);
+            continue;
+          }
+          let spent = false;
+          if (shot.friendly) {
+            for (let r = rivals.length - 1; r >= 0; r--) {
+              const rival = rivals[r];
+              if (aabb(shot.x, shot.y, 5, 2, rival.x + 2, rival.y + 2, 12, 14)) {
+                rival.hp -= 1;
+                rival.inv = 10;
+                rival.x += shot.vx > 0 ? 6 : -6;
+                boom(shot.x, shot.y, 5, shot.color);
+                scoreRef.current += 35;
+                sfx.ko();
+                spent = true;
+                break;
+              }
+            }
+          } else if (
+            player.inv === 0 &&
+            aabb(shot.x, shot.y, 5, 2, player.x + 2, player.y + 2, 12, 14)
+          ) {
+            hurtPlayer();
+            spent = true;
+          }
+          if (!spent) {
+            for (let m = meteors.length - 1; m >= 0; m--) {
+              const rock = meteors[m];
+              if (aabb(shot.x, shot.y, 5, 2, rock.x, rock.y, rock.s, rock.s)) {
+                boom(rock.x, rock.y, 8, "#ff6a00");
+                meteors.splice(m, 1);
+                if (shot.friendly) scoreRef.current += 15;
+                spent = true;
+                break;
               }
             }
           }
-          rival.x = Math.max(2, Math.min(W - 18, rival.x + rival.vx));
-          if (rival.vx > 0.2) rival.facing = 1;
-          if (rival.vx < -0.2) rival.facing = -1;
-          if (Math.abs(rival.vx) > 0.3 && tick % 6 === 0) rival.frame ^= 1;
+          if (spent) shots.splice(i, 1);
         }
 
         for (let i = meteors.length - 1; i >= 0; i--) {
@@ -566,6 +611,13 @@ export function MeteorGame() {
         drawSprite(ctx, METEOR, Math.floor(m.x), Math.floor(m.y));
       }
 
+      for (const shot of shots) {
+        ctx.fillStyle = "#140008";
+        ctx.fillRect(shot.x, shot.y, 6, 3);
+        ctx.fillStyle = shot.color;
+        ctx.fillRect(shot.x + 1, shot.y, 5, 2);
+      }
+
       for (const rival of rivals) {
         if (rival.inv === 0 || Math.floor(tick / 4) % 2 === 0) {
           drawSprite(
@@ -576,7 +628,7 @@ export function MeteorGame() {
             rival.facing < 0,
             rival.palette
           );
-          if (rival.punch > 0) drawFist(ctx, rival, rival.palette);
+          drawGun(ctx, rival, rival.muzzle > 0);
         }
       }
 
@@ -588,7 +640,7 @@ export function MeteorGame() {
           Math.floor(player.y),
           player.facing < 0
         );
-        if (player.punch > 0) drawFist(ctx, player, BASE_PALETTE);
+        drawGun(ctx, player, player.muzzle > 0);
       }
 
       ctx.fillStyle = "#00e800";
@@ -612,7 +664,7 @@ export function MeteorGame() {
         ctx.fillStyle = "#f8f0d8";
         ctx.font = '8px "Press Start 2P", monospace';
         ctx.fillText("DODGE THE ROCKS.", 56, 100);
-        ctx.fillText("FIGHT THE SQUAD.", 56, 116);
+        ctx.fillText("BLAST THE SQUAD.", 56, 116);
         if (Math.floor(tick / 30) % 2 === 0) {
           ctx.fillStyle = "#ff6a00";
           ctx.fillText("PRESS START", 76, 150);
@@ -707,7 +759,7 @@ export function MeteorGame() {
                 onPointerUp={() => hold("attack", false)}
                 onPointerLeave={() => hold("attack", false)}
               >
-                FIGHT
+                FIRE
               </Button>
               <Button
                 variant="arcade"
@@ -730,7 +782,7 @@ export function MeteorGame() {
                 onPointerUp={() => hold("attack", false)}
                 onPointerLeave={() => hold("attack", false)}
               >
-                FIGHT
+                FIRE
               </Button>
               <Button
                 variant="arcade"
@@ -743,8 +795,8 @@ export function MeteorGame() {
                 {muted ? "SFX OFF" : "SFX ON"}
               </Button>
               <p className="font-vt text-lg text-[#c9a0ff]">
-                Arrows move. Space / Z / FIGHT punches. Dodge rocks, KO the
-                other droppers.
+                Arrows move. Hold Space / Z / FIRE to shoot. Dodge rocks,
+                beam the other droppers.
               </p>
             </div>
 
@@ -822,7 +874,8 @@ export function MeteorGame() {
               ))}
             </ol>
             <p className="font-vt mt-4 text-lg text-[#c9a0ff]">
-              Survive the rocks. Wipe the other squad. Beat VIP if you can.
+              Survive the rocks. Gun down the other squad. Beat VIP if you
+              can.
             </p>
           </div>
         </div>

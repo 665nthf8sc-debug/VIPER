@@ -35,7 +35,7 @@ On Pages there is no Node server, so the hall of fame uses `localStorage`. Local
 
 - **Hero** — pixel title, blinking RPG prompt, live countdown to the next season on October 1 (Chapter 7 Season 4), meteor sky
 - **Tilted TV** — CRT bezel around `@coolfox3384` videos and a subscribe button
-- **Meteor Strike** — dodge rocks aimed at you, punch other droppers; GAME OVER reads `ELIMINATED`
+- **Meteor Strike** — dodge rocks, shoot other droppers; GAME OVER reads `ELIMINATED`
 - **Hall of Fame** — 3-letter arcade initials
 - **Quest log** — Chapter 1 timeline in RPG dialog boxes
 - **Memory Pak** — before/after Tilted with a pixel wipe
