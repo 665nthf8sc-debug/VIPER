@@ -127,9 +127,9 @@ export function ViperFps() {
                 {muted ? "SFX OFF" : "SFX ON"}
               </Button>
               <p className="font-vt text-lg text-[#c9a0ff]">
-                Click the view to lock the mouse (Esc unlocks). WASD move ·
-                mouse or arrows/Q/C look · click/Space shoot · walk over loot
-                (or E) · 1–4 or [ ] / wheel cycle · R reload · Shift sprint.
+                WASD move · Q/E turn · Space shoot · 1–4 / wheel weapons ·
+                Shift sprint. Mouse look: click the view (Esc unlocks). Walk
+                over loot. Arrows also turn. R reload.
               </p>
             </div>
             {hud.banner ? (

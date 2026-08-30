@@ -43,6 +43,7 @@ import {
   hitscanTarget,
   wallDistance,
 } from "@/lib/fps/hitscan";
+import { buildRadarWalls, drawMinimap } from "@/lib/fps/minimap";
 import { sfx } from "@/lib/sfx";
 
 export type FpsMode = "title" | "play" | "win" | "over";
@@ -95,6 +96,7 @@ const ROT_SPEED = 2.4;
 const VIEW_GUN_W = 100;
 const VIEW_GUN_H = 70;
 const PICKUP_SCALE = 0.5;
+const CHAR_SCALE = 1.15;
 const PICKUP_REACH = 1.6;
 const MELEE_REACH = 0.7;
 const FLOOR_W = 640;
@@ -139,6 +141,7 @@ export function mountFps(
   ctx.imageSmoothingEnabled = false;
 
   const grid = buildMapGrid();
+  const radarWalls = buildRadarWalls(grid);
   const floorTheme = buildFloorThemes(grid);
   const wallTex = buildWallTextures();
   let skyCanvas = buildSkyCanvas(RENDER_W, RENDER_H);
@@ -285,7 +288,7 @@ export function mountFps(
     code === "ArrowLeft" ||
     code === "ArrowRight" ||
     code === "KeyQ" ||
-    code === "KeyC" ||
+    code === "KeyE" ||
     code === "Comma" ||
     code === "Period";
 
@@ -318,7 +321,6 @@ export function mountFps(
       isLookKey(e.code) ||
       isMoveKey(e.code) ||
       isInvKey(e.code) ||
-      e.code === "KeyE" ||
       e.code === "KeyM" ||
       e.code === "Enter"
     );
@@ -611,7 +613,6 @@ export function mountFps(
       else requestLock();
       return;
     }
-    if (down && e.code === "KeyE" && mode === "play") tryPickup();
     if (down && e.code === "KeyR" && mode === "play") reload();
     if (down && e.code === "BracketLeft" && mode === "play") cycleWeapon(-1);
     if (down && e.code === "BracketRight" && mode === "play") cycleWeapon(1);
@@ -619,7 +620,7 @@ export function mountFps(
     if (down && e.code === "Digit2" && owned.has("pump")) weapon = "pump";
     if (down && e.code === "Digit3" && owned.has("scar")) weapon = "scar";
     if (down && e.code === "Digit4" && owned.has("exotic")) weapon = "exotic";
-    if (down && ["Digit1", "Digit2", "Digit3", "Digit4", "KeyE"].includes(e.code)) {
+    if (down && ["Digit1", "Digit2", "Digit3", "Digit4"].includes(e.code)) {
       sfx.select();
       pushHud();
     }
@@ -719,6 +720,29 @@ export function mountFps(
     tex: HTMLCanvasElement;
     flash: boolean;
     scale: number;
+    smooth?: boolean;
+  };
+
+  const scaleCache = new WeakMap<HTMLCanvasElement, Map<string, HTMLCanvasElement>>();
+  const scaledSprite = (tex: HTMLCanvasElement, w: number, h: number) => {
+    const key = `${w}x${h}`;
+    let bucket = scaleCache.get(tex);
+    if (!bucket) {
+      bucket = new Map();
+      scaleCache.set(tex, bucket);
+    }
+    const hit = bucket.get(key);
+    if (hit) return hit;
+    if (bucket.size > 20) bucket.clear();
+    const out = document.createElement("canvas");
+    out.width = Math.max(1, w);
+    out.height = Math.max(1, h);
+    const sctx = out.getContext("2d")!;
+    sctx.imageSmoothingEnabled = true;
+    sctx.imageSmoothingQuality = "high";
+    sctx.drawImage(tex, 0, 0, out.width, out.height);
+    bucket.set(key, out);
+    return out;
   };
 
   const floorBuf = document.createElement("canvas");
@@ -891,7 +915,6 @@ export function mountFps(
     const w = RENDER_W;
     const h = RENDER_H;
     const halfTan = Math.tan(FOV / 2);
-    offCtx.imageSmoothingEnabled = false;
 
     for (const sp of list) {
       const dx = sp.x - px;
@@ -904,40 +927,54 @@ export function mountFps(
 
       const tex = sp.tex;
       const aspect = tex.width / Math.max(1, tex.height);
-      const spriteH = Math.abs(((h / dist) * sp.scale) | 0);
-      const spriteW = Math.abs((spriteH * aspect) | 0);
+      const wallH = Math.max(8, Math.abs((h / dist) | 0));
+      const spriteH = Math.max(8, Math.abs((wallH * sp.scale) | 0));
+      const spriteW = Math.max(2, Math.abs((spriteH * aspect) | 0));
       const spriteScreenX = ((w / 2) * (1 + Math.tan(rel) / halfTan)) | 0;
-      const drawStartY = Math.max(0, ((h - spriteH) / 2) | 0);
-      const drawEndY = Math.min(h, drawStartY + spriteH);
-      const drawStartX = Math.max(0, spriteScreenX - (spriteW >> 1));
-      const drawEndX = Math.min(w, spriteScreenX + (spriteW >> 1));
+      const floorY = Math.min(h, ((h + wallH) / 2) | 0);
+      const drawStartY = floorY - spriteH;
+      const drawStartX = spriteScreenX - (spriteW >> 1);
+      const clipStartX = Math.max(0, drawStartX);
+      const clipEndX = Math.min(w, drawStartX + spriteW);
+      if (clipEndX <= clipStartX) continue;
       const dark = Math.max(0.35, 1 - dist / MAX_DEPTH);
 
-      for (let stripe = drawStartX; stripe < drawEndX; stripe++) {
-        if (dist >= zBuffer[stripe]) continue;
-        const texX = Math.min(
-          tex.width - 1,
-          (((stripe - drawStartX) * tex.width) / Math.max(1, drawEndX - drawStartX)) | 0
-        );
-        offCtx.save();
-        offCtx.globalAlpha = dark;
-        offCtx.globalCompositeOperation = "source-over";
-        if (sp.flash) {
-          offCtx.filter = "brightness(1.45) saturate(1.2)";
-        }
-        offCtx.drawImage(
-          tex,
-          texX,
-          0,
-          1,
-          tex.height,
-          stripe,
-          drawStartY,
-          1,
-          drawEndY - drawStartY
-        );
-        offCtx.restore();
+      let hidden = 0;
+      for (let stripe = clipStartX; stripe < clipEndX; stripe++) {
+        if (dist >= zBuffer[stripe]) hidden += 1;
       }
+      if (hidden >= clipEndX - clipStartX) continue;
+      const occluded = hidden > 0;
+
+      offCtx.save();
+      offCtx.globalAlpha = dark;
+      offCtx.globalCompositeOperation = "source-over";
+      if (sp.flash) offCtx.globalAlpha = Math.min(1, dark + 0.28);
+
+      if (sp.smooth && !occluded) {
+        offCtx.imageSmoothingEnabled = true;
+        offCtx.imageSmoothingQuality = "high";
+        offCtx.drawImage(tex, 0, 0, tex.width, tex.height, drawStartX, drawStartY, spriteW, spriteH);
+      } else if (sp.smooth) {
+        const scaled = scaledSprite(tex, spriteW, spriteH);
+        offCtx.imageSmoothingEnabled = false;
+        for (let stripe = clipStartX; stripe < clipEndX; stripe++) {
+          if (dist >= zBuffer[stripe]) continue;
+          const sx = stripe - drawStartX;
+          offCtx.drawImage(scaled, sx, 0, 1, scaled.height, stripe, drawStartY, 1, spriteH);
+        }
+      } else {
+        offCtx.imageSmoothingEnabled = false;
+        for (let stripe = clipStartX; stripe < clipEndX; stripe++) {
+          if (dist >= zBuffer[stripe]) continue;
+          const texX = Math.min(
+            tex.width - 1,
+            (((stripe - drawStartX) * tex.width) / Math.max(1, spriteW)) | 0
+          );
+          offCtx.drawImage(tex, texX, 0, 1, tex.height, stripe, drawStartY, 1, spriteH);
+        }
+      }
+      offCtx.restore();
     }
   };
 
@@ -967,7 +1004,7 @@ export function mountFps(
       if (keys.has("ArrowLeft") || keys.has("KeyQ") || keys.has("Comma")) {
         pa -= ROT_SPEED * dt;
       }
-      if (keys.has("ArrowRight") || keys.has("KeyC") || keys.has("Period")) {
+      if (keys.has("ArrowRight") || keys.has("KeyE") || keys.has("Period")) {
         pa += ROT_SPEED * dt;
       }
 
@@ -1090,7 +1127,8 @@ export function mountFps(
           y: e.y,
           tex: enemyTexFor(e),
           flash: e.flash > 0,
-          scale: 1,
+          scale: CHAR_SCALE,
+          smooth: true,
         });
       }
       for (const p of pickups) {
@@ -1181,6 +1219,15 @@ export function mountFps(
       offCtx.fillText(weaponAmmo(), 12, 60);
       offCtx.fillStyle = "#ffcc00";
       offCtx.fillText(`ELIMS ${elims}`, RENDER_W - 110, 18);
+      drawMinimap(offCtx, {
+        wallMap: radarWalls,
+        px,
+        py,
+        pa,
+        fov: FOV,
+        enemies,
+        viewW: RENDER_W,
+      });
 
       offCtx.strokeStyle = "rgba(255,255,255,0.85)";
       offCtx.lineWidth = 1;

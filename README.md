@@ -40,7 +40,7 @@ On Pages there is no Node server, so the hall of fame uses `localStorage`. Local
 - **Tilted + Meteor** — VIPER's Fortnite Creative map (Tilted Towers + giant meteor + secrets) with a chill plaza to hang and emote together. Mystery short slot for the upcoming secrets video. Not a second shooter.
 - **Library** — four cabinets: 8-bit **VIPER DROP**, Creative **MAP**, 3D **Island Drop**, raycast **VIPER FPS**
 - **VIPER DROP** — 8-bit Fortnite: 12-player lobby, battle bus, health + shields, loot, jump, POIs. Wipe the lobby for a **Victory Royale**. No endless respawns.
-- **VIPER FPS** — Wolfenstein-style raycasting on a Fortnite island. High-res pixel walls, Peely / Chief / Jonesy rivals, pump / SCAR / exotic pickups. WASD + mouse look.
+- **VIPER FPS** — Wolfenstein-style raycasting on a Fortnite island. High-res pixel walls, VIPER / Peely / Chief / Stormstep rivals, pump / SCAR / exotic pickups. WASD move, Q/E turn, Space shoot, 1–4 / wheel weapons, Shift sprint. Radar in the top-right.
 - **VIPER Royale / Island Drop** — third-person Battle Royale with smooth (not blocky) Fortnite-style models: Peely, Master Chief armor, a detailed Battle Bus, sunny sky, storm, pickaxe/AR/pump, builds, 10 bots, original drop soundtrack, Victory Royale. Free 360° mouse look. Uses your equipped locker skin. This 3D match does **not** use the 8-bit VIPER cabinet look.
 - **Squads** — Solo / Duo / Trio. Fill with bots or a local invite code (another tab on this PC). Couch P2 uses arrows + K
 - **Knocked** — In duo/trio you get downed. A teammate standing on you for 5 seconds revives you
