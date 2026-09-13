@@ -1,6 +1,6 @@
-# VIPER3384 DROP ZONE
+# VIPER3384 ARCADE
 
-An 8-bit NES-style Fortnite hub for **VIPER3384** (`@coolfox3384`), plus a 3D Battle Royale minigame that looks like Fortnite.
+A walkable Paper Mario-style 2.5D arcade for **VIPER3384**. This is not a scrolling website — you enter the building, walk the floor, and jack into cabinets.
 
 GitHub: [665nthf8sc-debug/VIPER](https://github.com/665nthf8sc-debug/VIPER)  
 Pages: [https://665nthf8sc-debug.github.io/VIPER/](https://665nthf8sc-debug.github.io/VIPER/)
@@ -14,45 +14,34 @@ npm run dev
 
 Open [http://127.0.0.1:43180](http://127.0.0.1:43180).
 
-```bash
-npm run build
-npm start
-```
+## Controls
 
-## Publish to GitHub Pages
+- **WASD / arrows** — walk the arcade (A/D along the floor, W/S a little depth)
+- **E / Space** — interact (insert coin, keypad, terminals)
+- **B** — dance emote
+- **Esc** — close menus / leave a cabinet
+- Mobile: on-screen D-pad + E/B
 
-This repo deploys with GitHub Actions on push to `main`. After the first push:
+## Cabinets
 
-1. Repo **Settings → Pages → Build and deployment → Source** → **GitHub Actions**
-2. Wait for the **Deploy GitHub Pages** workflow
-3. Open `https://665nthf8sc-debug.github.io/VIPER/`
+1. **VIPER DROP** — 12-player battle royale (neon reskin of the cart)
+2. **VIPER FPS** — Wolfenstein-style raycast, 3 levels + bosses
+3. **VIPER CROSSING** — Frogger across Tilted traffic
+4. **VIPER SNAKE** — llamas + closing storm
+5. **VIPER DEFENDER** — Storm King invaders
 
-On Pages there is no Node server, so the hall of fame uses `localStorage`. Locally (and on Vercel) scores still go through `/api/scores` into SQLite. Battle Pass XP and skins always live in `localStorage`.
+Three more cabinets sit under caution tape (pinball, racing, fighting).
 
-## What's on the cart
+## Codes
 
-- **Hero** — VIPER drop zone, battle bus sky, countdown to the next season on October 1
-- **VIPER TV** — Watch a tape for **+8 XP** (once). Like a tape for **+12 XP**. Subscribe, then claim the **Channel 3384** exclusive skin.
-- **Battle Pass** — Slow grind. A match caps around **35 XP**. Tiers go through Bad Kit, Kit, Sonic, Phantom, Chief, and Mythic. You cannot finish the pass in one game.
-- **Lobby** — Pre-game pad: swap skins, click a dance (it actually plays), pets, then wait for friends with an invite code. B or 1–5 also emotes on the cart.
-- **Achievements** — Wins unlock Floss and the **VIPER** skin. 10 elims unlock Griddy. Island finds unlock cat/dog sidekicks.
-- **Locker** — Skins, emotes, pets, finds from in-game loot, and achievements.
-- **Tilted + Meteor** — VIPER's Fortnite Creative map (Tilted Towers + giant meteor + secrets) with a chill plaza to hang and emote together. Mystery short slot for the upcoming secrets video. Not a second shooter.
-- **Library** — four cabinets: 8-bit **VIPER DROP**, Creative **MAP**, 3D **Island Drop**, raycast **VIPER FPS**
-- **VIPER DROP** — 8-bit Fortnite: 12-player lobby, battle bus, health + shields, loot, jump, POIs. Wipe the lobby for a **Victory Royale**. No endless respawns.
-- **VIPER FPS** — Three-level raycast island (Beach / Villa / Foundry). Wolf3D stats bar (level / score / lives / VIPER face / health / ammo / gun). Animated viewmodel, rivals shoot back. +100 per elim, +500 boss, 3 lives. WASD move, Q/E turn, Space shoot, 1–4 / wheel weapons, Shift sprint. Radar top-right of the world pane.
-- **VIPER Royale / Island Drop** — third-person Battle Royale with smooth (not blocky) Fortnite-style models: Peely, Master Chief armor, a detailed Battle Bus, sunny sky, storm, pickaxe/AR/pump, builds, 10 bots, original drop soundtrack, Victory Royale. Free 360° mouse look. Uses your equipped locker skin. This 3D match does **not** use the 8-bit VIPER cabinet look.
-- **Squads** — Solo / Duo / Trio. Fill with bots or a local invite code (another tab on this PC). Couch P2 uses arrows + K
-- **Knocked** — In duo/trio you get downed. A teammate standing on you for 5 seconds revives you
-- **Campaign** — Chapter 1, eight drops. Unlock **Jonesy** at Tilted and **Peely** after The Cube
-- **Bots** — Rivals shoot each other. Squad bots follow, fight, and revive
-- **Fullscreen** — `FULL` in the nav, `FULLSCREEN` on the cabinet
-- **Chief's locker** — Armory 117 plus campaign exclusives
-- **Hall of Fame** — 3-letter arcade initials
-- **Quest log** — Chapter 1 timeline
+Walk to the cyan keypad on the back wall. Try `BANK`, `GRIND`, `SUNSET`, `STEEL`, or **`3384`** for the sliding-wall admin room.
 
-Royale: drag the lobby to look around, then **Drop in**. **WASD** move (relative to camera), mouse look 360°, **Space** jump / leave the bus, **1/2/3** weapons, click harvest/shoot, **Q** wall, **E/C** ramp, **Shift** sprint.
+## Accounts
+
+Register on the boot screen (stored locally, password hashed). GitHub Pages has no server, so progress also exports as a `VIPER3384.` save code. Friend invite links encode your equipped skin as an NPC visitor.
+
+Tickets drop from arcade scores. The prize counter (old battle pass) redeems skins, emotes, and pets.
 
 ## Stack
 
-Next.js, TypeScript, Tailwind, shadcn/ui, Three.js, Press Start 2P + VT323, SQLite (local/Vercel) + localStorage (GitHub Pages).
+Next.js, TypeScript, Tailwind, canvas minigames, localStorage (+ SQLite scores when not on Pages).

@@ -41,6 +41,53 @@ export function knockChroma(
   return source;
 }
 
+/** Knock a sampled corner backdrop (fixes VIPER sheets with purple fill). */
+export function knockCornerBackdrop(source: HTMLCanvasElement) {
+  const ctx = ctx2d(source);
+  const { width, height } = source;
+  if (width < 4 || height < 4) return source;
+  const frame = ctx.getImageData(0, 0, width, height);
+  const d = frame.data;
+  const idx = (x: number, y: number) => (y * width + x) * 4;
+  const samples = [
+    idx(0, 0),
+    idx(width - 1, 0),
+    idx(0, height - 1),
+    idx(width - 1, height - 1),
+    idx(2, 2),
+    idx(width - 3, 2),
+  ];
+  let r0 = 0;
+  let g0 = 0;
+  let b0 = 0;
+  for (const i of samples) {
+    r0 += d[i];
+    g0 += d[i + 1];
+    b0 += d[i + 2];
+  }
+  r0 /= samples.length;
+  g0 /= samples.length;
+  b0 /= samples.length;
+  const purple =
+    b0 > 70 &&
+    r0 > 35 &&
+    g0 < b0 * 0.88 &&
+    g0 < r0 * 1.05 &&
+    b0 + r0 > g0 * 2.1;
+  const mag = isMagentaKey(r0, g0, b0);
+  if (!purple && !mag) return source;
+  const thresh = 58;
+  const t2 = thresh * thresh * 3;
+  for (let i = 0; i < d.length; i += 4) {
+    const dr = d[i] - r0;
+    const dg = d[i + 1] - g0;
+    const db = d[i + 2] - b0;
+    if (dr * dr + dg * dg + db * db < t2) d[i + 3] = 0;
+  }
+  ctx.putImageData(frame, 0, 0);
+  return source;
+}
+
 export function cropToAlpha(source: HTMLCanvasElement) {
   const ctx = ctx2d(source);
   const { width, height } = source;
@@ -254,10 +301,11 @@ const ANGLE_FILES: Record<AngleKind, string> = {
   bush: "/fps/sprites/char-bush-8angle.png",
 };
 
-async function loadKeyedSheet(path: string) {
+async function loadKeyedSheet(path: string, knockBackdrop = false) {
   const img = await loadImage(fpsAsset(path));
   const canvas = canvasFromImage(img);
   knockChroma(canvas, "magenta");
+  if (knockBackdrop) knockCornerBackdrop(canvas);
   return canvas;
 }
 
@@ -266,8 +314,14 @@ export async function loadAngleSheets(): Promise<Partial<AngleSet>> {
   await Promise.all(
     (Object.keys(ANGLE_FILES) as AngleKind[]).map(async (kind) => {
       try {
-        const sheet = await loadKeyedSheet(ANGLE_FILES[kind]);
-        out[kind] = sliceAngleStrip(sheet);
+        const sheet = await loadKeyedSheet(ANGLE_FILES[kind], kind === "viper");
+        if (kind === "viper") {
+          for (const cell of (out[kind] = sliceAngleStrip(sheet))) {
+            knockCornerBackdrop(cell);
+          }
+        } else {
+          out[kind] = sliceAngleStrip(sheet);
+        }
       } catch {
         /* procedural fallback */
       }
