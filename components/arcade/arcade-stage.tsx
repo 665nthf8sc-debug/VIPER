@@ -2,6 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
+import { SkinBillboard } from "@/components/arcade/skin-billboard";
 import { arcadeAsset } from "@/lib/arcade/asset";
 import { PET_PORTRAITS, THEMES, skinByPortrait, type ThemeId } from "@/lib/arcade/catalog";
 import type { PublicProfile } from "@/lib/arcade/save";
@@ -64,7 +65,7 @@ export function ArcadeStage({
   const playerRef = useRef<HTMLDivElement>(null);
   const palmsRef = useRef<HTMLDivElement>(null);
   const signsRef = useRef<HTMLDivElement>(null);
-  const pos = useRef<Vec>({ x: 380, z: 72 });
+  const pos = useRef<Vec>({ x: 760, z: 92 });
   const facing = useRef(1);
   const cam = useRef(200);
   const look = useRef(0);
@@ -184,7 +185,6 @@ export function ArcadeStage({
   }, [onInteract, overlay, secret]);
 
   const t = THEMES[theme];
-  const portrait = arcadeAsset(skinByPortrait(skin).portrait);
   const petSrc =
     pet !== "none" ? arcadeAsset(PET_PORTRAITS[pet as Exclude<SidekickId, "none">]) : null;
   const machines = visibleMachines(secret);
@@ -283,12 +283,12 @@ export function ArcadeStage({
               zIndex: 160,
             }}
           >
-            <img src={arcadeAsset(skinByPortrait(visitor.equipped).portrait)} alt="" />
+            <SkinBillboard src={skinByPortrait(visitor.equipped).portrait} />
             <em>{visitor.username}</em>
           </div>
         ) : null}
         <div ref={playerRef} className="arcade-player">
-          <img src={portrait} alt="" draggable={false} />
+          <SkinBillboard src={skinByPortrait(skin).portrait} />
           {petSrc ? <img className="arcade-pet" src={petSrc} alt="" /> : null}
         </div>
       </div>

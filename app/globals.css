@@ -433,7 +433,7 @@
 }
 
 .cabinet-screen {
-  height: 78px;
+  height: 96px;
   margin: 0 10px;
   background:
     linear-gradient(180deg, #00ffff55, transparent 40%),
@@ -458,7 +458,7 @@
 }
 
 .cabinet-body {
-  height: 64px;
+  height: 78px;
   margin: 0 6px;
   background: linear-gradient(90deg, #0a0010, var(--accent, #111), #0a0010);
   border: 3px solid #050008;
@@ -566,25 +566,29 @@
 .arcade-player,
 .arcade-npc {
   position: absolute;
-  width: 170px;
+  width: 132px;
   pointer-events: none;
   will-change: transform;
   filter: drop-shadow(0 18px 0 #0005);
 }
 
 .arcade-player img,
-.arcade-npc img {
+.arcade-player canvas,
+.arcade-npc img,
+.arcade-npc canvas {
   width: 100%;
   height: auto;
   object-fit: contain;
   user-select: none;
 }
 
-.arcade-player.is-walk img {
+.arcade-player.is-walk img,
+.arcade-player.is-walk canvas {
   animation: walk-bob 0.32s steps(3) infinite;
 }
 
-.arcade-player.is-dance img {
+.arcade-player.is-dance img,
+.arcade-player.is-dance canvas {
   animation: dance-3 0.45s steps(3) infinite;
 }
 
