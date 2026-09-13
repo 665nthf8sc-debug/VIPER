@@ -27,6 +27,7 @@ import { POIS, type Poi } from "@/lib/pois";
 import { sfx } from "@/lib/sfx";
 import {
   drawBattleBus,
+  drawDanceExtras,
   drawEmoteName,
   drawGun,
   drawSidekick,
@@ -271,7 +272,13 @@ type Snap = {
   loot: Loot[];
 };
 
-export function ViperDrop() {
+export function ViperDrop({
+  embedded,
+  onExit,
+}: {
+  embedded?: boolean;
+  onExit?: () => void;
+} = {}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const pads = useRef<Pad[]>([
@@ -569,6 +576,12 @@ export function ViperDrop() {
       recordElims(elimsRef.current);
       if (win) recordWin();
       setXpGain(reward.gained);
+      void import("@/lib/arcade/save").then((m) => {
+        m.awardArcade("drop", scoreRef.current, {
+          win,
+          elims: elimsRef.current,
+        });
+      });
       sfx.gameOver();
     };
 
@@ -870,14 +883,26 @@ export function ViperDrop() {
         if (f.inv > 0 && Math.floor(tick / 4) % 2 === 1) return;
         const dancing = f.slot === 0 && f.team === 0 && tick < danceUntil;
         const pad = dancing ? emotePose(loadPass().emote, tick) : null;
+        const dx = Math.floor(f.x) + (pad ? pad.ox : 0);
+        const dy = Math.floor(f.y) + (pad ? pad.oy : 0);
         drawSprite(
           ctx,
           spriteRows(f.sprite, pad ? pad.frame : f.frame),
-          Math.floor(f.x) + (pad ? pad.ox : 0),
-          Math.floor(f.y) + (pad ? pad.oy : 0),
+          dx,
+          dy,
           pad ? pad.flip : f.facing < 0,
           f.palette
         );
+        if (dancing) {
+          drawDanceExtras(
+            ctx,
+            dx,
+            dy,
+            pad?.flip ? -1 : f.facing,
+            pad?.dance ?? 0,
+            f.palette.y ?? "#ffcc00"
+          );
+        }
         if (!f.knocked && !dancing) drawGun(ctx, f.x, f.y, f.facing, f.muzzle > 0);
         if (f.slot === 0 && f.team === 0) {
           drawSidekick(ctx, loadPass().sidekick, f.x + 16, f.y + 8, tick);
@@ -1328,6 +1353,16 @@ export function ViperDrop() {
           pose.flip,
           skin.palette
         );
+        if (dancing && "dance" in pose) {
+          drawDanceExtras(
+            ctx,
+            120 + pose.ox,
+            132 + pose.oy,
+            pose.flip ? -1 : 1,
+            pose.dance as 0 | 1 | 2,
+            skin.palette.y ?? "#ffcc00"
+          );
+        }
         drawSidekick(ctx, pad.sidekick, 140, 146, tick);
         if (dancing) {
           const label = EMOTES.find((e) => e.id === pad.emote)?.name ?? "EMOTE";
@@ -1479,8 +1514,25 @@ export function ViperDrop() {
   };
 
   return (
-    <section id="game" className="section-wrap py-16 sm:py-20">
-      <PixelPanel title="8-BIT CART  •  VIPER DROP" tone="orange">
+    <section
+      id="game"
+      className={
+        embedded
+          ? "arcade-embed-game"
+          : "section-wrap py-16 sm:py-20"
+      }
+    >
+      {embedded && onExit ? (
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="font-press text-[10px] tracking-[0.2em] text-[#00ffff]">
+            VIPER DROP
+          </p>
+          <Button variant="arcade" className="h-10 px-4" onClick={onExit}>
+            EXIT CABINET
+          </Button>
+        </div>
+      ) : null}
+      <PixelPanel title="VIPER DROP  •  INSERT COIN" tone="orange">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
           <div>
             <div

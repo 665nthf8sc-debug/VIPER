@@ -30,13 +30,32 @@ const EMPTY: FpsHud = {
   lives: 3,
 };
 
-export function ViperFps() {
+export function ViperFps({
+  embedded,
+  onExit,
+}: {
+  embedded?: boolean;
+  onExit?: () => void;
+} = {}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<ReturnType<typeof mountFps> | null>(null);
   const [hud, setHud] = useState<FpsHud>(EMPTY);
   const [full, setFull] = useState(false);
   const [muted, setMuted] = useState(false);
+  const awarded = useRef(false);
+
+  useEffect(() => {
+    if (hud.mode === "win" || hud.mode === "over") {
+      if (awarded.current) return;
+      awarded.current = true;
+      void import("@/lib/arcade/save").then((m) => {
+        m.awardArcade("fps", hud.score, { win: hud.mode === "win", elims: hud.elims });
+      });
+    } else if (hud.mode === "play" || hud.mode === "title") {
+      awarded.current = false;
+    }
+  }, [hud.mode, hud.score, hud.elims]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -80,7 +99,20 @@ export function ViperFps() {
   };
 
   return (
-    <section id="fps" className="section-wrap py-16 sm:py-20">
+    <section
+      id="fps"
+      className={embedded ? "arcade-embed-game" : "section-wrap py-16 sm:py-20"}
+    >
+      {embedded && onExit ? (
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="font-press text-[10px] tracking-[0.2em] text-[#ff4060]">
+            VIPER FPS
+          </p>
+          <Button variant="arcade" className="h-10 px-4" onClick={onExit}>
+            EXIT CABINET
+          </Button>
+        </div>
+      ) : null}
       <PixelPanel title="VIPER FPS  •  3 LEVELS + BOSSES" tone="orange">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
           <div>

@@ -353,7 +353,7 @@ export type SpriteKind =
   | "stormstep";
 
 export type EmoteId = "wave" | "floss" | "griddy" | "take-l" | "hiss";
-export type SidekickId = "none" | "cat" | "dog";
+export type SidekickId = "none" | "cat" | "dog" | "llama";
 
 export function spriteRows(kind: SpriteKind, frame: number) {
   if (kind === "chief") return frame ? CHIEF_B : CHIEF_A;
@@ -377,46 +377,81 @@ export function idlePose(tick: number) {
   };
 }
 
+export function danceFrame(tick: number): 0 | 1 | 2 {
+  return (Math.floor(tick / 6) % 3) as 0 | 1 | 2;
+}
+
 export function emotePose(id: EmoteId, tick: number) {
-  const t = tick / 3;
+  const frame = danceFrame(tick);
+  const t = tick / 4;
   if (id === "floss") {
     return {
-      ox: Math.sin(t * 2.6) * 16,
-      oy: Math.abs(Math.sin(t * 5.2)) * 10,
-      flip: Math.sin(t * 2.6) > 0,
-      frame: tick % 6 < 3 ? 0 : 1,
+      ox: Math.sin(t * 2.2) * 10,
+      oy: frame === 1 ? 3 : frame === 2 ? 0 : -2,
+      flip: frame === 2,
+      frame: (frame % 2) as 0 | 1,
+      dance: frame,
     };
   }
   if (id === "griddy") {
     return {
-      ox: Math.sin(t * 2.2) * 20,
-      oy: Math.abs(Math.sin(t * 6)) * 12,
-      flip: Math.sin(t * 1.4) > 0,
-      frame: tick % 4 < 2 ? 0 : 1,
+      ox: (frame - 1) * 8,
+      oy: frame === 1 ? 4 : 0,
+      flip: frame === 0,
+      frame: (frame % 2) as 0 | 1,
+      dance: frame,
     };
   }
   if (id === "take-l") {
     return {
-      ox: Math.sin(t) * 10,
-      oy: Math.abs(Math.sin(t * 3.2)) * 12,
-      flip: Math.floor(tick / 7) % 2 === 0,
-      frame: 1,
+      ox: 0,
+      oy: frame === 1 ? -6 : 2,
+      flip: false,
+      frame: 1 as 0 | 1,
+      dance: frame,
     };
   }
   if (id === "hiss") {
     return {
-      ox: Math.sin(t * 14) * 8,
-      oy: Math.abs(Math.sin(t * 9)) * 10,
+      ox: Math.sin(t * 10) * 3,
+      oy: frame === 2 ? -3 : 0,
       flip: false,
-      frame: tick % 8 < 4 ? 0 : 1,
+      frame: (frame % 2) as 0 | 1,
+      dance: frame,
     };
   }
   return {
-    ox: Math.sin(t * 1.6) * 12,
-    oy: Math.abs(Math.sin(t * 3.4)) * 10,
-    flip: Math.sin(t * 0.8) > 0,
-    frame: tick % 8 < 4 ? 0 : 1,
+    ox: Math.sin(t * 1.4) * 8,
+    oy: frame === 1 ? -5 : 1,
+    flip: frame === 2,
+    frame: (frame % 2) as 0 | 1,
+    dance: frame,
   };
+}
+
+export function drawDanceExtras(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  facing: number,
+  frame: 0 | 1 | 2,
+  accent: string
+) {
+  const dir = facing >= 0 ? 1 : -1;
+  ctx.fillStyle = accent;
+  if (frame === 0) {
+    ctx.fillRect(x + 2, y + 6, 3, 2);
+    ctx.fillRect(x + 11, y + 6, 3, 2);
+    ctx.fillRect(x + (dir > 0 ? 14 : -1), y + 4, 3, 2);
+  } else if (frame === 1) {
+    ctx.fillRect(x + 1, y + 9, 4, 2);
+    ctx.fillRect(x + 11, y + 9, 4, 2);
+    ctx.fillRect(x + 6, y - 1, 4, 2);
+  } else {
+    ctx.fillRect(x + (dir > 0 ? 13 : -2), y + 12, 5, 2);
+    ctx.fillRect(x + 3, y + 5, 2, 3);
+    ctx.fillRect(x + 11, y + 5, 2, 3);
+  }
 }
 
 export function drawEmoteName(
@@ -440,29 +475,59 @@ export function drawSidekick(
   tick: number
 ) {
   if (kind === "none") return;
-  const bob = Math.sin(tick / 8) * 1.5;
+  const bob = Math.sin(tick / 7) * 2;
   const px = Math.round(x);
   const py = Math.round(y + bob);
-  if (kind === "cat") {
-    ctx.fillStyle = "#f0c070";
-    ctx.fillRect(px + 1, py + 2, 6, 5);
-    ctx.fillRect(px, py, 2, 3);
-    ctx.fillRect(px + 6, py, 2, 3);
+  if (kind === "llama") {
     ctx.fillStyle = "#140008";
-    ctx.fillRect(px + 2, py + 3, 1, 1);
-    ctx.fillRect(px + 5, py + 3, 1, 1);
-    ctx.fillStyle = "#ff6a00";
-    ctx.fillRect(px + 7, py + 4, 3, 1);
-  } else {
-    ctx.fillStyle = "#c4a06a";
-    ctx.fillRect(px + 1, py + 2, 7, 5);
-    ctx.fillRect(px, py + 1, 2, 2);
+    ctx.fillRect(px, py, 14, 11);
+    ctx.fillStyle = "#f4e8ff";
+    ctx.fillRect(px + 1, py + 1, 12, 9);
+    ctx.fillStyle = "#FF0080";
+    ctx.fillRect(px + 2, py + 2, 4, 3);
+    ctx.fillStyle = "#00FFFF";
+    ctx.fillRect(px + 7, py + 2, 4, 3);
+    ctx.fillStyle = "#ffcc00";
+    ctx.fillRect(px + 4, py + 6, 6, 3);
     ctx.fillStyle = "#140008";
     ctx.fillRect(px + 3, py + 3, 1, 1);
-    ctx.fillRect(px + 6, py + 3, 1, 1);
-    ctx.fillStyle = "#3a2210";
-    ctx.fillRect(px + 7, py + 1, 2, 3);
+    ctx.fillRect(px + 9, py + 3, 1, 1);
+    ctx.fillRect(px + 12, py - 3, 2, 5);
+    ctx.fillRect(px - 2, py + 4, 3, 2);
+    return;
   }
+  if (kind === "cat") {
+    ctx.fillStyle = "#140008";
+    ctx.fillRect(px, py, 12, 10);
+    ctx.fillStyle = "#f0a040";
+    ctx.fillRect(px + 1, py + 1, 10, 8);
+    ctx.fillStyle = "#c06018";
+    ctx.fillRect(px + 1, py + 1, 2, 3);
+    ctx.fillRect(px + 9, py + 1, 2, 3);
+    ctx.fillStyle = "#00FFFF";
+    ctx.fillRect(px + 3, py + 3, 2, 2);
+    ctx.fillRect(px + 7, py + 3, 2, 2);
+    ctx.fillStyle = "#FF0080";
+    ctx.fillRect(px + 5, py + 6, 2, 1);
+    ctx.fillRect(px + 10, py + 7, 4, 1);
+    ctx.fillStyle = "#140008";
+    ctx.fillRect(px + 2, py, 2, 2);
+    ctx.fillRect(px + 8, py, 2, 2);
+    return;
+  }
+  ctx.fillStyle = "#140008";
+  ctx.fillRect(px, py, 13, 10);
+  ctx.fillStyle = "#d4a05a";
+  ctx.fillRect(px + 1, py + 1, 11, 8);
+  ctx.fillStyle = "#00FFFF";
+  ctx.fillRect(px + 1, py + 4, 11, 2);
+  ctx.fillStyle = "#140008";
+  ctx.fillRect(px + 3, py + 3, 2, 2);
+  ctx.fillRect(px + 8, py + 3, 2, 2);
+  ctx.fillStyle = "#3a2210";
+  ctx.fillRect(px + 11, py, 3, 4);
+  ctx.fillStyle = "#FF0080";
+  ctx.fillRect(px + 5, py + 6, 3, 1);
 }
 
 export function drawSprite(

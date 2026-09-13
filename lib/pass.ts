@@ -19,7 +19,8 @@ export type SkinId =
   | "peely"
   | "viper"
   | "sub"
-  | "stormstep";
+  | "stormstep"
+  | "admin";
 
 export type SkinTrack = "pass" | "campaign" | "achieve" | "subscribe";
 
@@ -395,6 +396,23 @@ export const SKINS: Skin[] = [
       V: "#ffe0e0",
     },
   },
+  {
+    id: "admin",
+    name: "SECRET ADMIN",
+    blurb: "Exclusive owner. Hologram panels. Glowing eyes.",
+    xp: 99999,
+    track: "achieve",
+    sprite: "viper",
+    palette: {
+      ...FOX_BASE,
+      W: "#e8ffe8",
+      b: "#05080c",
+      O: "#141820",
+      y: "#39ff14",
+      G: "#00e800",
+      V: "#39ff14",
+    },
+  },
 ];
 
 export const EMOTES: EmoteDef[] = [
@@ -407,8 +425,9 @@ export const EMOTES: EmoteDef[] = [
 
 export const SIDEKICKS: SidekickDef[] = [
   { id: "none", name: "NO PET", blurb: "Just you." },
-  { id: "cat", name: "LOBBY CAT", blurb: "Find a collar on the island." },
-  { id: "dog", name: "DROP DOG", blurb: "Find a treat on the island." },
+  { id: "cat", name: "LOBBY CAT", blurb: "Find a collar, or buy at the prize counter." },
+  { id: "dog", name: "DROP DOG", blurb: "Find a treat, or buy at the prize counter." },
+  { id: "llama", name: "LOOT LLAMA", blurb: "Prize counter exclusive companion." },
 ];
 
 export const FINDS: FindDef[] = [
@@ -565,9 +584,13 @@ export function loadPass(): PassState {
   }
 }
 
-function persist(state: PassState) {
+export function persistPass(state: PassState) {
   window.localStorage.setItem(KEY, JSON.stringify(state));
   window.dispatchEvent(new Event(PASS_EVENT));
+}
+
+function persist(state: PassState) {
+  persistPass(state);
 }
 
 function grantAchievement(state: PassState, id: AchievementId, extraXp = 0) {
@@ -617,9 +640,18 @@ export function equippedSkin() {
 }
 
 export function isUnlocked(skin: Skin, pass: PassState) {
+  if (pass.unlocked.includes(skin.id)) return true;
   if (skin.track === "pass") return pass.xp >= skin.xp;
   if (skin.track === "subscribe") return pass.subscribed;
-  return pass.unlocked.includes(skin.id);
+  return false;
+}
+
+export function unlockSkin(id: SkinId) {
+  const state = loadPass();
+  if (state.unlocked.includes(id)) return false;
+  state.unlocked = [...state.unlocked, id];
+  persist(state);
+  return true;
 }
 
 export function isEmoteUnlocked(id: EmoteId, pass: PassState) {
